@@ -17,9 +17,9 @@ export type FactorDirection = 'amplifying' | 'dampening' | 'neutral'
 // ── v2 Enterprise Enums ─────────────────────────
 
 export type ScenarioDomain = 'energy' | 'telecom' | 'banking' | 'insurance' | 'policy' | 'brand' | 'supply-chain' | 'security'
-export type ScenarioRegion = 'gcc' | 'saudi' | 'kuwait' | 'uae' | 'qatar' | 'bahrain' | 'oman'
-export type TriggerType = 'price-change' | 'leak' | 'announcement' | 'rumor' | 'incident' | 'regulatory' | 'cyberattack' | 'fraud'
-export type SignalType = 'social' | 'media' | 'economic' | 'policy' | 'business'
+export type ScenarioRegion = 'gcc' | 'saudi' | 'kuwait' | 'uae' | 'qatar' | 'bahrain' | 'oman' | 'gcc-wide'
+export type TriggerType = 'price-change' | 'leak' | 'announcement' | 'rumor' | 'incident' | 'regulatory' | 'cyberattack' | 'fraud' | 'regulation' | 'social-media' | 'competitor' | 'geopolitical' | 'natural-disaster' | 'cyber-attack' | 'market-shift'
+export type SignalType = 'social' | 'media' | 'economic' | 'policy' | 'business' | 'news' | 'regulatory' | 'market' | 'internal' | 'geopolitical'
 export type AnnouncementStrategy = 'aggressive' | 'soft' | 'delayed' | 'silent'
 
 // ── Bilingual Content ───────────────────────────
