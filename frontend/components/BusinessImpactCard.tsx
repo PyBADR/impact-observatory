@@ -100,36 +100,36 @@ function ImpactDimension({ icon, title, value, description, compact }: Dimension
 
 export default function BusinessImpactCard({ impact, compact = false }: BusinessImpactCardProps) {
   const overallRisk = (
-    impact.financial * 0.35 +
-    impact.customer * 0.25 +
-    impact.regulatory * 0.25 +
-    impact.reputation * 0.15
+    impact.financial.score * 0.35 +
+    impact.customer.score * 0.25 +
+    impact.regulatory.score * 0.25 +
+    impact.reputation.score * 0.15
   )
 
   const dimensions = [
     {
       icon: <DollarSign className="w-3.5 h-3.5" />,
       title: label('financialImpact'),
-      value: impact.financial,
-      description: impact.financialDetails || 'Potential revenue and cost implications from this scenario.',
+      value: impact.financial.score,
+      description: impact.financial.detail || 'Potential revenue and cost implications from this scenario.',
     },
     {
       icon: <Users className="w-3.5 h-3.5" />,
       title: label('customerImpact'),
-      value: impact.customer,
-      description: impact.customerDetails || 'Expected impact on customer satisfaction, retention, and acquisition.',
+      value: impact.customer.score,
+      description: impact.customer.detail || 'Expected impact on customer satisfaction, retention, and acquisition.',
     },
     {
       icon: <Scale className="w-3.5 h-3.5" />,
       title: label('regulatoryRisk'),
-      value: impact.regulatory,
-      description: impact.regulatoryDetails || 'Regulatory exposure including SAMA, CMA, and PDPL compliance risk.',
+      value: impact.regulatory.score,
+      description: impact.regulatory.detail || 'Regulatory exposure including SAMA, CMA, and PDPL compliance risk.',
     },
     {
       icon: <Shield className="w-3.5 h-3.5" />,
       title: label('reputationDamage'),
-      value: impact.reputation,
-      description: impact.reputationDetails || 'Brand perception and public trust impact assessment.',
+      value: impact.reputation.score,
+      description: impact.reputation.detail || 'Brand perception and public trust impact assessment.',
     },
   ]
 
