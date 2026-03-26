@@ -218,10 +218,12 @@ export interface Agent {
   id: string
   name: string
   nameAr?: string
+  type?: EntityType
   archetype: AgentArchetype
   platform: AgentPlatform
   influence: number
-  region: string
+  sentiment?: number
+  region?: string
   description?: string
   descriptionAr?: string
 }
