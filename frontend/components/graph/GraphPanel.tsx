@@ -1,18 +1,21 @@
 'use client'
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Eye, EyeOff, ZoomIn, ZoomOut, Maximize } from 'lucide-react'
 import { getNodeColor } from '@/lib/utils'
 
-/* ==================================================
-   Deevo Sim - Pure SVG Graph Panel
-   No React Flow dependency - zero crash risk
-   ================================================== */
+/* ══════════════════════════════════════════════════
+   Deevo Sim — Pure SVG Graph Panel
+   No React Flow dependency — zero crash risk
+   ══════════════════════════════════════════════════ */
 
+/* Accept ANY node shape — flat or nested */
 interface NodeData {
   id: string
-  position: { x: number; y: number }
-  data: { label: string; type: string; weight: number }
+  position?: { x: number; y: number }
+  data?: { label: string; type: string; weight: number }
+  label?: string
   type?: string
+  weight?: number
 }
 
 interface EdgeData {
@@ -23,14 +26,24 @@ interface EdgeData {
   animated?: boolean
 }
 
+/* Internal normalized node used for rendering */
+interface NormalizedNode {
+  id: string
+  x: number
+  y: number
+  label: string
+  type: string
+  weight: number
+}
+
 interface GraphPanelProps {
   initialNodes: NodeData[]
   initialEdges: EdgeData[]
 }
 
-/* --------------------------------------------------
-   Animated Edge - SVG path with flow animation
-   -------------------------------------------------- */
+/* ──────────────────────────────────────────────
+   Animated Edge — SVG path with flow animation
+   ────────────────────────────────────────────── */
 function AnimatedEdge({
   x1, y1, x2, y2, label, animated, focusMode,
 }: {
@@ -39,6 +52,7 @@ function AnimatedEdge({
 }) {
   const mx = (x1 + x2) / 2
   const my = (y1 + y2) / 2
+  const id = `edge-${x1}-${y1}-${x2}-${y2}`
 
   return (
     <g>
@@ -49,6 +63,7 @@ function AnimatedEdge({
         strokeDasharray={animated ? '6 4' : undefined}
         className={animated ? 'animate-dash' : ''}
       />
+      {/* Glow line */}
       <line
         x1={x1} y1={y1} x2={x2} y2={y2}
         stroke={focusMode ? '#2A2A3D' : '#1E1E30'}
@@ -84,9 +99,9 @@ function AnimatedEdge({
   )
 }
 
-/* --------------------------------------------------
-   Graph Node - cinematic glowing circle
-   -------------------------------------------------- */
+/* ──────────────────────────────────────────────
+   Graph Node — cinematic glowing circle
+   ────────────────────────────────────────────── */
 function GraphNode({
   x, y, label, type, weight, onHover, isHovered,
 }: {
@@ -139,7 +154,7 @@ function GraphNode({
         fontWeight={600}
         fontFamily="system-ui, sans-serif"
       >
-        {label.length > 14 ? label.slice(0, 12) + '...' : label}
+        {label.length > 14 ? label.slice(0, 12) + '…' : label}
       </text>
 
       {/* Hover tooltip */}
@@ -161,7 +176,7 @@ function GraphNode({
             fontSize={8}
             fontFamily="'JetBrains Mono', monospace"
           >
-            {type} - {Math.round(weight * 100)}%
+            {type} · {Math.round(weight * 100)}%
           </text>
         </g>
       )}
@@ -178,11 +193,11 @@ function GraphNode({
       )}
     </g>
   )
-      }
+}
 
-/* --------------------------------------------------
-   Graph Panel - main export
-   -------------------------------------------------- */
+/* ──────────────────────────────────────────────
+   Graph Panel — main export
+   ────────────────────────────────────────────── */
 export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelProps) {
   const [focusMode, setFocusMode] = useState(false)
   const [hoveredNode, setHoveredNode] = useState<string | null>(null)
@@ -192,18 +207,39 @@ export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelPro
   const [panStart, setPanStart] = useState({ x: 0, y: 0 })
   const svgRef = useRef<SVGSVGElement>(null)
 
-  const nodeMap = new Map(initialNodes.map(n => [n.id, n]))
+  /* ── Normalize nodes: handle BOTH flat and nested formats ── */
+  const nodes: NormalizedNode[] = initialNodes.map((n, i) => {
+    // Extract label/type/weight from whichever shape we received
+    const label = n.data?.label || n.label || 'Unknown'
+    const type  = n.data?.type  || (n.type !== 'custom' ? n.type : undefined) || 'Topic'
+    const weight = n.data?.weight ?? n.weight ?? 0.5
+
+    // Auto-layout in ellipse if no explicit position
+    const hasPosition = n.position && (n.position.x !== 0 || n.position.y !== 0)
+    const angle = (2 * Math.PI * i) / initialNodes.length - Math.PI / 2
+    const cx = 425 + 220 * Math.cos(angle)
+    const cy = 275 + 170 * Math.sin(angle)
+    const x = hasPosition ? n.position!.x + 40 : cx
+    const y = hasPosition ? n.position!.y + 40 : cy
+
+    return { id: n.id, x, y, label, type, weight }
+  })
+
+  // Node center lookup for edge rendering
+  const nodeMap = new Map(nodes.map(n => [n.id, n]))
 
   const getNodeCenter = (nodeId: string) => {
     const node = nodeMap.get(nodeId)
-    if (!node || !node.position) return { x: 400, y: 300 }
-    return { x: node.position.x + 40, y: node.position.y + 40 }
+    if (!node) return { x: 425, y: 275 }
+    return { x: node.x, y: node.y }
   }
 
+  // Zoom controls
   const handleZoomIn = () => setZoom(z => Math.min(z * 1.3, 3))
   const handleZoomOut = () => setZoom(z => Math.max(z / 1.3, 0.3))
   const handleFitView = () => { setZoom(1); setPan({ x: 0, y: 0 }) }
 
+  // Pan handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button === 0) {
       setIsPanning(true)
@@ -225,7 +261,8 @@ export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelPro
     setZoom(z => Math.max(0.3, Math.min(3, z * delta)))
   }, [])
 
-  const uniqueTypes = [...new Set(initialNodes.map(n => n.data?.type || 'Topic'))]
+  // Unique types for gradient defs
+  const uniqueTypes = [...new Set(nodes.map(n => n.type))]
 
   return (
     <div className="w-full h-full bg-ds-surface rounded-ds-xl border border-ds-border overflow-hidden relative">
@@ -237,17 +274,33 @@ export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelPro
           <span className="text-nano text-ds-text-dim font-mono ml-1">LIVE</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="ds-panel-header-meta">{initialNodes.length} nodes - {initialEdges.length} edges</span>
-          <button onClick={handleZoomIn} className="p-1 rounded hover:bg-ds-card transition-colors text-ds-text-muted hover:text-ds-text" title="Zoom In">
+          <span className="ds-panel-header-meta">{nodes.length} nodes · {initialEdges.length} edges</span>
+          <button
+            onClick={handleZoomIn}
+            className="p-1 rounded hover:bg-ds-card transition-colors text-ds-text-muted hover:text-ds-text"
+            title="Zoom In"
+          >
             <ZoomIn size={13} />
           </button>
-          <button onClick={handleZoomOut} className="p-1 rounded hover:bg-ds-card transition-colors text-ds-text-muted hover:text-ds-text" title="Zoom Out">
+          <button
+            onClick={handleZoomOut}
+            className="p-1 rounded hover:bg-ds-card transition-colors text-ds-text-muted hover:text-ds-text"
+            title="Zoom Out"
+          >
             <ZoomOut size={13} />
           </button>
-          <button onClick={handleFitView} className="p-1 rounded hover:bg-ds-card transition-colors text-ds-text-muted hover:text-ds-text" title="Fit View">
+          <button
+            onClick={handleFitView}
+            className="p-1 rounded hover:bg-ds-card transition-colors text-ds-text-muted hover:text-ds-text"
+            title="Fit View"
+          >
             <Maximize size={13} />
           </button>
-          <button onClick={() => setFocusMode(!focusMode)} className="p-1.5 rounded-md hover:bg-ds-card transition-colors text-ds-text-muted hover:text-ds-text" title={focusMode ? 'Exit Focus Mode' : 'Focus Mode'}>
+          <button
+            onClick={() => setFocusMode(!focusMode)}
+            className="p-1.5 rounded-md hover:bg-ds-card transition-colors text-ds-text-muted hover:text-ds-text"
+            title={focusMode ? 'Exit Focus Mode' : 'Focus Mode'}
+          >
             {focusMode ? <EyeOff size={14} /> : <Eye size={14} />}
           </button>
         </div>
@@ -272,6 +325,7 @@ export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelPro
             transformOrigin: 'center center',
           }}
         >
+          {/* Defs — gradients, filters, animations */}
           <defs>
             {uniqueTypes.map(type => {
               const color = getNodeColor(type)
@@ -282,16 +336,32 @@ export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelPro
                 </radialGradient>
               )
             })}
-            <filter id="nodeGlow"><feGaussianBlur stdDeviation="2" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
-            <filter id="dotGlow"><feGaussianBlur stdDeviation="1.5" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
-            <filter id="edgeGlow"><feGaussianBlur stdDeviation="2" /></filter>
+            <filter id="nodeGlow">
+              <feGaussianBlur stdDeviation="2" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <filter id="dotGlow">
+              <feGaussianBlur stdDeviation="1.5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <filter id="edgeGlow">
+              <feGaussianBlur stdDeviation="2" />
+            </filter>
           </defs>
 
+          {/* Grid background */}
           <pattern id="grid" width="36" height="36" patternUnits="userSpaceOnUse">
             <circle cx="0.5" cy="0.5" r="0.5" fill="#1A1A28" />
           </pattern>
           <rect width="100%" height="100%" fill="url(#grid)" />
 
+          {/* Edges */}
           {initialEdges.map(edge => {
             const source = getNodeCenter(edge.source)
             const target = getNodeCenter(edge.target)
@@ -307,21 +377,23 @@ export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelPro
             )
           })}
 
-          {initialNodes.map(node => (
+          {/* Nodes */}
+          {nodes.map(node => (
             <GraphNode
               key={node.id}
-              x={(node.position?.x ?? 0) + 40}
-              y={(node.position?.y ?? 0) + 40}
-              label={node.data?.label || 'Unknown'}
-              type={node.data?.type || 'Topic'}
-              weight={node.data?.weight || 0.5}
+              x={node.x}
+              y={node.y}
+              label={node.label}
+              type={node.type}
+              weight={node.weight}
               onHover={setHoveredNode}
-              isHovered={hoveredNode === (node.data?.label || '')}
+              isHovered={hoveredNode === node.label}
             />
           ))}
         </svg>
       </div>
 
+      {/* Focus mode overlay */}
       {focusMode && (
         <div className="absolute top-14 left-1/2 -translate-x-1/2 bg-ds-accent/10 border border-ds-accent/20 backdrop-blur-sm rounded-full px-3 py-1 text-nano font-mono text-ds-accent flex items-center gap-1.5">
           <Eye size={10} />
@@ -329,11 +401,21 @@ export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelPro
         </div>
       )}
 
+      {/* CSS animations */}
       <style jsx>{`
-        @keyframes dash { to { stroke-dashoffset: -20; } }
-        .animate-dash { animation: dash 1.5s linear infinite; }
-        @keyframes ping-slow { 0% { opacity: 0.6; } 100% { opacity: 0; transform: scale(1.4); } }
-        .animate-ping-slow { animation: ping-slow 2s ease-out infinite; }
+        @keyframes dash {
+          to { stroke-dashoffset: -20; }
+        }
+        .animate-dash {
+          animation: dash 1.5s linear infinite;
+        }
+        @keyframes ping-slow {
+          0% { opacity: 0.6; transform-origin: center; }
+          100% { opacity: 0; transform: scale(1.4); transform-origin: center; }
+        }
+        .animate-ping-slow {
+          animation: ping-slow 2s ease-out infinite;
+        }
       `}</style>
     </div>
   )
