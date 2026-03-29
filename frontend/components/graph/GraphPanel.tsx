@@ -1,7 +1,8 @@
 'use client'
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import {
   ReactFlow,
+  ReactFlowProvider,
   Background,
   Controls,
   MiniMap,
@@ -9,6 +10,7 @@ import {
   useEdgesState,
   type Node,
   type Edge,
+  type ReactFlowInstance,
   Handle,
   Position,
 } from '@xyflow/react'
@@ -16,6 +18,9 @@ import '@xyflow/react/dist/style.css'
 import { Eye, EyeOff } from 'lucide-react'
 import { getNodeColor } from '@/lib/utils'
 
+/* ──────────────────────────────────────────────
+   Custom Node — cinematic, glowing, alive
+   ────────────────────────────────────────────── */
 function CustomNode({ data }: { data: { label: string; type: string; weight: number } }) {
   const color = getNodeColor(data.type)
   const weight = data.weight || 0.5
@@ -26,6 +31,8 @@ function CustomNode({ data }: { data: { label: string; type: string; weight: num
   return (
     <div className="relative group">
       <Handle type="target" position={Position.Top} className="!bg-transparent !border-0 !w-3 !h-3" />
+
+      {/* Outer glow ring */}
       <div
         className={`absolute inset-0 rounded-full ${pulseClass}`}
         style={{
@@ -35,6 +42,8 @@ function CustomNode({ data }: { data: { label: string; type: string; weight: num
           pointerEvents: 'none',
         }}
       />
+
+      {/* Node body */}
       <div
         className="relative flex flex-col items-center justify-center rounded-full border transition-all duration-300 group-hover:scale-110"
         style={{
@@ -42,17 +51,33 @@ function CustomNode({ data }: { data: { label: string; type: string; weight: num
           height: size,
           borderColor: `${color}55`,
           backgroundColor: `${color}12`,
-          boxShadow: `0 0 ${glowIntensity}px ${color}20, inset 0 0 ${glowIntensity / 2}px ${color}08, 0 0 ${glowIntensity * 2}px ${color}08`,
+          boxShadow: `
+            0 0 ${glowIntensity}px ${color}20,
+            inset 0 0 ${glowIntensity / 2}px ${color}08,
+            0 0 ${glowIntensity * 2}px ${color}08
+          `,
         }}
       >
-        <div className="w-2 h-2 rounded-full mb-1" style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}60` }} />
-        <span className="text-[9px] font-semibold text-ds-text text-center leading-tight px-1" style={{ maxWidth: size + 16 }}>
+        {/* Inner dot */}
+        <div
+          className="w-2 h-2 rounded-full mb-1"
+          style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}60` }}
+        />
+        <span
+          className="text-[9px] font-semibold text-ds-text text-center leading-tight px-1"
+          style={{ maxWidth: size + 16 }}
+        >
           {data.label}
         </span>
       </div>
-      <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[9px] font-mono text-ds-text-muted whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-300 bg-ds-bg/90 backdrop-blur-sm px-2 py-0.5 rounded border border-ds-border/50">
+
+      {/* Hover tooltip */}
+      <div
+        className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[9px] font-mono text-ds-text-muted whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-300 bg-ds-bg/90 backdrop-blur-sm px-2 py-0.5 rounded border border-ds-border/50"
+      >
         {data.type} · {Math.round(weight * 100)}%
       </div>
+
       <Handle type="source" position={Position.Bottom} className="!bg-transparent !border-0 !w-3 !h-3" />
     </div>
   )
@@ -60,15 +85,25 @@ function CustomNode({ data }: { data: { label: string; type: string; weight: num
 
 const nodeTypes = { custom: CustomNode }
 
-interface GraphPanelProps {
+/* ──────────────────────────────────────────────
+   Inner Flow — separated so hooks run inside Provider
+   ────────────────────────────────────────────── */
+interface FlowInnerProps {
   initialNodes: Node[]
   initialEdges: Edge[]
 }
 
-export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelProps) {
+function FlowInner({ initialNodes, initialEdges }: FlowInnerProps) {
   const [nodes, , onNodesChange] = useNodesState(initialNodes)
   const [edges, , onEdgesChange] = useEdgesState(initialEdges)
   const [focusMode, setFocusMode] = useState(false)
+
+  const onInit = useCallback((instance: ReactFlowInstance) => {
+    // Delay fitView to ensure nodes are measured
+    setTimeout(() => {
+      instance.fitView({ padding: 0.35 })
+    }, 50)
+  }, [])
 
   const styledEdges = edges.map(e => ({
     ...e,
@@ -86,6 +121,7 @@ export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelPro
 
   return (
     <div className="w-full h-full bg-ds-surface rounded-ds-xl border border-ds-border overflow-hidden relative">
+      {/* Panel header */}
       <div className="ds-panel-header">
         <div className="ds-panel-header-title">
           <div className="w-2 h-2 rounded-full bg-ds-success animate-pulse" />
@@ -103,6 +139,8 @@ export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelPro
           </button>
         </div>
       </div>
+
+      {/* Graph */}
       <div className="h-[calc(100%-52px)]">
         <ReactFlow
           nodes={nodes}
@@ -110,15 +148,17 @@ export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelPro
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           nodeTypes={nodeTypes}
-          fitView
-          fitViewOptions={{ padding: 0.35 }}
+          onInit={onInit}
+          defaultViewport={{ x: 0, y: 0, zoom: 0.85 }}
           proOptions={{ hideAttribution: true }}
           className="!bg-ds-surface"
           minZoom={0.3}
           maxZoom={2}
         >
           <Background color="#1A1A28" gap={36} size={1} />
-          <Controls className="!bg-ds-card !border-ds-border !rounded-ds-lg !shadow-ds [&>button]:!bg-ds-card [&>button]:!border-ds-border [&>button]:!text-ds-text-muted [&>button:hover]:!bg-ds-card-hover [&>button:hover]:!text-ds-text" />
+          <Controls
+            className="!bg-ds-card !border-ds-border !rounded-ds-lg !shadow-ds [&>button]:!bg-ds-card [&>button]:!border-ds-border [&>button]:!text-ds-text-muted [&>button:hover]:!bg-ds-card-hover [&>button:hover]:!text-ds-text"
+          />
           <MiniMap
             nodeColor={(node) => getNodeColor(node.data?.type as string || 'Topic')}
             maskColor="rgba(6, 6, 10, 0.85)"
@@ -127,6 +167,8 @@ export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelPro
           />
         </ReactFlow>
       </div>
+
+      {/* Focus mode overlay indicator */}
       {focusMode && (
         <div className="absolute top-14 left-1/2 -translate-x-1/2 bg-ds-accent/10 border border-ds-accent/20 backdrop-blur-sm rounded-full px-3 py-1 text-nano font-mono text-ds-accent flex items-center gap-1.5">
           <Eye size={10} />
@@ -135,4 +177,20 @@ export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelPro
       )}
     </div>
   )
-          }
+}
+
+/* ──────────────────────────────────────────────
+   Graph Panel — wrapped with ReactFlowProvider
+   ────────────────────────────────────────────── */
+interface GraphPanelProps {
+  initialNodes: Node[]
+  initialEdges: Edge[]
+}
+
+export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelProps) {
+  return (
+    <ReactFlowProvider>
+      <FlowInner initialNodes={initialNodes} initialEdges={initialEdges} />
+    </ReactFlowProvider>
+  )
+}
