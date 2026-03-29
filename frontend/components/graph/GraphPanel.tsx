@@ -1,191 +1,231 @@
 'use client'
-import { useState, useCallback, Component, type ReactNode } from 'react'
-import {
-  ReactFlow,
-  ReactFlowProvider,
-  Background,
-  Controls,
-  useNodesState,
-  useEdgesState,
-  useReactFlow,
-  type Node,
-  type Edge,
-  Handle,
-  Position,
-} from '@xyflow/react'
-import '@xyflow/react/dist/style.css'
-import { Eye, EyeOff } from 'lucide-react'
+import { useState, useRef, useCallback } from 'react'
+import { Eye, EyeOff, ZoomIn, ZoomOut, Maximize } from 'lucide-react'
 import { getNodeColor } from '@/lib/utils'
 
-/* ──────────────────────────────────────────────
-   Error Boundary — catches React Flow crashes
-   ────────────────────────────────────────────── */
-interface EBProps { children: ReactNode; fallbackNodes: Node[]; fallbackEdges: Edge[] }
-interface EBState { hasError: boolean }
+/* ==================================================
+   Deevo Sim - Pure SVG Graph Panel
+   No React Flow dependency - zero crash risk
+   ================================================== */
 
-class GraphErrorBoundary extends Component<EBProps, EBState> {
-  state: EBState = { hasError: false }
-  static getDerivedStateFromError(): EBState { return { hasError: true } }
-  render() {
-    if (this.state.hasError) {
-      return <StaticGraphFallback nodes={this.props.fallbackNodes} edges={this.props.fallbackEdges} />
-    }
-    return this.props.children
-  }
+interface NodeData {
+  id: string
+  position: { x: number; y: number }
+  data: { label: string; type: string; weight: number }
+  type?: string
 }
 
-/* ──────────────────────────────────────────────
-   Static SVG Fallback — renders if React Flow dies
-   ────────────────────────────────────────────── */
-function StaticGraphFallback({ nodes, edges }: { nodes: Node[]; edges: Edge[] }) {
-  const nodeMap = new Map(nodes.map(n => [n.id, n]))
+interface EdgeData {
+  id: string
+  source: string
+  target: string
+  label?: string
+  animated?: boolean
+}
+
+interface GraphPanelProps {
+  initialNodes: NodeData[]
+  initialEdges: EdgeData[]
+}
+
+/* --------------------------------------------------
+   Animated Edge - SVG path with flow animation
+   -------------------------------------------------- */
+function AnimatedEdge({
+  x1, y1, x2, y2, label, animated, focusMode,
+}: {
+  x1: number; y1: number; x2: number; y2: number
+  label?: string; animated?: boolean; focusMode: boolean
+}) {
+  const mx = (x1 + x2) / 2
+  const my = (y1 + y2) / 2
+
   return (
-    <div className="w-full h-full bg-ds-surface rounded-ds-xl border border-ds-border overflow-hidden relative">
-      <div className="ds-panel-header">
-        <div className="ds-panel-header-title">
-          <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-          <span className="text-caption font-semibold text-ds-text tracking-tight">Entity Graph</span>
-          <span className="text-nano text-amber-400 font-mono ml-1">STATIC</span>
-        </div>
-        <span className="ds-panel-header-meta">{nodes.length} nodes · {edges.length} edges</span>
-      </div>
-      <svg viewBox="0 0 800 520" className="w-full h-[calc(100%-52px)]">
-        <defs>
-          <filter id="glow"><feGaussianBlur stdDeviation="3" result="g" /><feMerge><feMergeNode in="g" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
-        </defs>
-        {edges.map(e => {
-          const s = nodeMap.get(e.source)
-          const t = nodeMap.get(e.target)
-          if (!s || !t) return null
-          return <line key={e.id} x1={s.position.x + 40} y1={s.position.y + 40} x2={t.position.x + 40} y2={t.position.y + 40} stroke="#1C1C2A" strokeWidth={1.2} />
-        })}
-        {nodes.map(n => {
-          const color = getNodeColor(n.data?.type as string || 'Topic')
-          const w = (n.data?.weight as number) || 0.5
-          const r = 16 + w * 14
-          return (
-            <g key={n.id} filter="url(#glow)">
-              <circle cx={n.position.x + 40} cy={n.position.y + 40} r={r} fill={`${color}20`} stroke={`${color}55`} strokeWidth={1} />
-              <circle cx={n.position.x + 40} cy={n.position.y + 40} r={3} fill={color} />
-              <text x={n.position.x + 40} y={n.position.y + 40 + r + 12} textAnchor="middle" fill="#A0A0B0" fontSize={9} fontFamily="sans-serif">{n.data?.label as string}</text>
-            </g>
-          )
-        })}
-      </svg>
-    </div>
+    <g>
+      <line
+        x1={x1} y1={y1} x2={x2} y2={y2}
+        stroke={focusMode ? '#2A2A3D' : '#1E1E30'}
+        strokeWidth={1.2}
+        strokeDasharray={animated ? '6 4' : undefined}
+        className={animated ? 'animate-dash' : ''}
+      />
+      <line
+        x1={x1} y1={y1} x2={x2} y2={y2}
+        stroke={focusMode ? '#2A2A3D' : '#1E1E30'}
+        strokeWidth={3}
+        strokeOpacity={0.15}
+        filter="url(#edgeGlow)"
+      />
+      {label && (
+        <>
+          <rect
+            x={mx - label.length * 3.2 - 6}
+            y={my - 8}
+            width={label.length * 6.4 + 12}
+            height={16}
+            rx={4}
+            fill="#0E0E14"
+            fillOpacity={0.92}
+            stroke="#1A1A2A"
+            strokeWidth={0.5}
+          />
+          <text
+            x={mx} y={my + 3}
+            textAnchor="middle"
+            fill="#5A5A70"
+            fontSize={8}
+            fontFamily="'JetBrains Mono', monospace"
+          >
+            {label}
+          </text>
+        </>
+      )}
+    </g>
   )
-  }
+}
 
-/* ──────────────────────────────────────────────
-   Custom Node — cinematic, glowing, alive
-   ────────────────────────────────────────────── */
-function CustomNode({ data }: { data: { label: string; type: string; weight: number } }) {
-  const color = getNodeColor(data.type)
-  const weight = data.weight || 0.5
-  const size = 44 + weight * 36
-  const glowIntensity = Math.round(weight * 40)
-  const pulseClass = weight > 0.7 ? 'animate-pulse-glow' : ''
+/* --------------------------------------------------
+   Graph Node - cinematic glowing circle
+   -------------------------------------------------- */
+function GraphNode({
+  x, y, label, type, weight, onHover, isHovered,
+}: {
+  x: number; y: number; label: string; type: string; weight: number
+  onHover: (id: string | null) => void; isHovered: boolean
+}) {
+  const color = getNodeColor(type)
+  const r = 18 + weight * 18
+  const glowR = r * 2.2
+  const innerR = 3
 
   return (
-    <div className="relative group">
-      <Handle type="target" position={Position.Top} className="!bg-transparent !border-0 !w-3 !h-3" />
-
-      {/* Outer glow ring */}
-      <div
-        className={`absolute inset-0 rounded-full ${pulseClass}`}
-        style={{
-          background: `radial-gradient(circle, ${color}${Math.round(weight * 20).toString(16).padStart(2, '0')} 0%, transparent 70%)`,
-          transform: 'scale(1.8)',
-          filter: `blur(${8 + weight * 12}px)`,
-          pointerEvents: 'none',
-        }}
+    <g
+      onMouseEnter={() => onHover(label)}
+      onMouseLeave={() => onHover(null)}
+      style={{ cursor: 'pointer' }}
+    >
+      {/* Outer glow */}
+      <circle
+        cx={x} cy={y} r={glowR}
+        fill={`url(#glow-${type})`}
+        opacity={isHovered ? 0.5 : 0.2}
+        className="transition-opacity duration-300"
       />
 
-      {/* Node body */}
-      <div
-        className="relative flex flex-col items-center justify-center rounded-full border transition-all duration-300 group-hover:scale-110"
-        style={{
-          width: size,
-          height: size,
-          borderColor: `${color}55`,
-          backgroundColor: `${color}12`,
-          boxShadow: `
-            0 0 ${glowIntensity}px ${color}20,
-            inset 0 0 ${glowIntensity / 2}px ${color}08,
-            0 0 ${glowIntensity * 2}px ${color}08
-          `,
-        }}
+      {/* Node ring */}
+      <circle
+        cx={x} cy={y} r={r}
+        fill={`${color}12`}
+        stroke={`${color}${isHovered ? '88' : '44'}`}
+        strokeWidth={isHovered ? 1.5 : 1}
+        className="transition-all duration-300"
+        filter="url(#nodeGlow)"
+      />
+
+      {/* Inner dot */}
+      <circle
+        cx={x} cy={y - (r > 28 ? 6 : 4)}
+        r={innerR}
+        fill={color}
+        filter="url(#dotGlow)"
+      />
+
+      {/* Label */}
+      <text
+        x={x} y={y + (r > 28 ? 2 : 1)}
+        textAnchor="middle"
+        fill="#E0E0F0"
+        fontSize={r > 28 ? 9 : 8}
+        fontWeight={600}
+        fontFamily="system-ui, sans-serif"
       >
-        {/* Inner dot */}
-        <div
-          className="w-2 h-2 rounded-full mb-1"
-          style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}60` }}
-        />
-        <span
-          className="text-[9px] font-semibold text-ds-text text-center leading-tight px-1"
-          style={{ maxWidth: size + 16 }}
-        >
-          {data.label}
-        </span>
-      </div>
+        {label.length > 14 ? label.slice(0, 12) + '...' : label}
+      </text>
 
       {/* Hover tooltip */}
-      <div
-        className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[9px] font-mono text-ds-text-muted whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-300 bg-ds-bg/90 backdrop-blur-sm px-2 py-0.5 rounded border border-ds-border/50"
-      >
-        {data.type} · {Math.round(weight * 100)}%
-      </div>
+      {isHovered && (
+        <g>
+          <rect
+            x={x - 40} y={y + r + 6}
+            width={80} height={18}
+            rx={4}
+            fill="#0E0E14"
+            fillOpacity={0.95}
+            stroke={`${color}30`}
+            strokeWidth={0.5}
+          />
+          <text
+            x={x} y={y + r + 18}
+            textAnchor="middle"
+            fill="#8888A0"
+            fontSize={8}
+            fontFamily="'JetBrains Mono', monospace"
+          >
+            {type} - {Math.round(weight * 100)}%
+          </text>
+        </g>
+      )}
 
-      <Handle type="source" position={Position.Bottom} className="!bg-transparent !border-0 !w-3 !h-3" />
-    </div>
+      {/* Pulse ring for high-weight nodes */}
+      {weight > 0.7 && (
+        <circle
+          cx={x} cy={y} r={r + 4}
+          fill="none"
+          stroke={`${color}30`}
+          strokeWidth={1}
+          className="animate-ping-slow"
+        />
+      )}
+    </g>
   )
-}
+      }
 
-const nodeTypes = { custom: CustomNode }
-
-/* ──────────────────────────────────────────────
-   Flow Inner — must be inside ReactFlowProvider
-   ────────────────────────────────────────────── */
-interface FlowInnerProps {
-  initialNodes: Node[]
-  initialEdges: Edge[]
-}
-
-function FlowInner({ initialNodes, initialEdges }: FlowInnerProps) {
-  const { fitView } = useReactFlow()
-
-  // Ensure every node has type: 'custom' and valid position
-  // Do NOT add width/height — let the custom node component control its own size
-  const safeNodes = initialNodes.map(n => ({
-    ...n,
-    type: 'custom',
-    position: n.position ?? { x: 0, y: 0 },
-  }))
-
-  const [nodes, , onNodesChange] = useNodesState(safeNodes)
-  const [edges, , onEdgesChange] = useEdgesState(initialEdges)
+/* --------------------------------------------------
+   Graph Panel - main export
+   -------------------------------------------------- */
+export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelProps) {
   const [focusMode, setFocusMode] = useState(false)
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null)
+  const [zoom, setZoom] = useState(1)
+  const [pan, setPan] = useState({ x: 0, y: 0 })
+  const [isPanning, setIsPanning] = useState(false)
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 })
+  const svgRef = useRef<SVGSVGElement>(null)
 
-  const styledEdges = edges.map(e => ({
-    ...e,
-    style: {
-      stroke: focusMode ? '#2A2A3D' : '#1C1C2A',
-      strokeWidth: 1.2,
-      strokeDasharray: e.animated ? '6 4' : undefined,
-    },
-    animated: true,
-    labelStyle: { fill: '#5A5A70', fontSize: 9, fontFamily: 'JetBrains Mono, monospace' },
-    labelBgStyle: { fill: '#0E0E14', fillOpacity: 0.95 },
-    labelBgPadding: [6, 3] as [number, number],
-    labelBgBorderRadius: 6,
-  }))
+  const nodeMap = new Map(initialNodes.map(n => [n.id, n]))
 
-  const onInit = useCallback(() => {
-    // Delay fitView so React Flow has time to measure custom nodes
-    setTimeout(() => {
-      try { fitView({ padding: 0.35 }) } catch { /* swallow */ }
-    }, 200)
-  }, [fitView])
+  const getNodeCenter = (nodeId: string) => {
+    const node = nodeMap.get(nodeId)
+    if (!node || !node.position) return { x: 400, y: 300 }
+    return { x: node.position.x + 40, y: node.position.y + 40 }
+  }
+
+  const handleZoomIn = () => setZoom(z => Math.min(z * 1.3, 3))
+  const handleZoomOut = () => setZoom(z => Math.max(z / 1.3, 0.3))
+  const handleFitView = () => { setZoom(1); setPan({ x: 0, y: 0 }) }
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.button === 0) {
+      setIsPanning(true)
+      setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
+    }
+  }, [pan])
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (isPanning) {
+      setPan({ x: e.clientX - panStart.x, y: e.clientY - panStart.y })
+    }
+  }, [isPanning, panStart])
+
+  const handleMouseUp = useCallback(() => setIsPanning(false), [])
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault()
+    const delta = e.deltaY > 0 ? 0.9 : 1.1
+    setZoom(z => Math.max(0.3, Math.min(3, z * delta)))
+  }, [])
+
+  const uniqueTypes = [...new Set(initialNodes.map(n => n.data?.type || 'Topic'))]
 
   return (
     <div className="w-full h-full bg-ds-surface rounded-ds-xl border border-ds-border overflow-hidden relative">
@@ -196,65 +236,105 @@ function FlowInner({ initialNodes, initialEdges }: FlowInnerProps) {
           <span className="text-caption font-semibold text-ds-text tracking-tight">Entity Graph</span>
           <span className="text-nano text-ds-text-dim font-mono ml-1">LIVE</span>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="ds-panel-header-meta">{nodes.length} nodes · {edges.length} edges</span>
-          <button
-            onClick={() => setFocusMode(!focusMode)}
-            className="p-1.5 rounded-md hover:bg-ds-card transition-colors text-ds-text-muted hover:text-ds-text"
-            title={focusMode ? 'Exit Focus Mode' : 'Focus Mode'}
-          >
+        <div className="flex items-center gap-2">
+          <span className="ds-panel-header-meta">{initialNodes.length} nodes - {initialEdges.length} edges</span>
+          <button onClick={handleZoomIn} className="p-1 rounded hover:bg-ds-card transition-colors text-ds-text-muted hover:text-ds-text" title="Zoom In">
+            <ZoomIn size={13} />
+          </button>
+          <button onClick={handleZoomOut} className="p-1 rounded hover:bg-ds-card transition-colors text-ds-text-muted hover:text-ds-text" title="Zoom Out">
+            <ZoomOut size={13} />
+          </button>
+          <button onClick={handleFitView} className="p-1 rounded hover:bg-ds-card transition-colors text-ds-text-muted hover:text-ds-text" title="Fit View">
+            <Maximize size={13} />
+          </button>
+          <button onClick={() => setFocusMode(!focusMode)} className="p-1.5 rounded-md hover:bg-ds-card transition-colors text-ds-text-muted hover:text-ds-text" title={focusMode ? 'Exit Focus Mode' : 'Focus Mode'}>
             {focusMode ? <EyeOff size={14} /> : <Eye size={14} />}
           </button>
         </div>
       </div>
 
-      {/* Graph */}
-      <div className="h-[calc(100%-52px)]">
-        <ReactFlow
-          nodes={nodes}
-          edges={styledEdges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          nodeTypes={nodeTypes}
-          onInit={onInit}
-          defaultViewport={{ x: 0, y: 0, zoom: 0.85 }}
-          proOptions={{ hideAttribution: true }}
-          className="!bg-ds-surface"
-          minZoom={0.3}
-          maxZoom={2}
+      {/* SVG Graph */}
+      <div
+        className="h-[calc(100%-52px)] overflow-hidden"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onWheel={handleWheel}
+        style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
+      >
+        <svg
+          ref={svgRef}
+          viewBox="0 0 850 550"
+          className="w-full h-full"
+          style={{
+            transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
+            transformOrigin: 'center center',
+          }}
         >
-          <Background color="#1A1A28" gap={36} size={1} />
-          <Controls
-            className="!bg-ds-card !border-ds-border !rounded-ds-lg !shadow-ds [&>button]:!bg-ds-card [&>button]:!border-ds-border [&>button]:!text-ds-text-muted [&>button:hover]:!bg-ds-card-hover [&>button:hover]:!text-ds-text"
-          />
-        </ReactFlow>
+          <defs>
+            {uniqueTypes.map(type => {
+              const color = getNodeColor(type)
+              return (
+                <radialGradient key={type} id={`glow-${type}`}>
+                  <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+                  <stop offset="100%" stopColor={color} stopOpacity={0} />
+                </radialGradient>
+              )
+            })}
+            <filter id="nodeGlow"><feGaussianBlur stdDeviation="2" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+            <filter id="dotGlow"><feGaussianBlur stdDeviation="1.5" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+            <filter id="edgeGlow"><feGaussianBlur stdDeviation="2" /></filter>
+          </defs>
+
+          <pattern id="grid" width="36" height="36" patternUnits="userSpaceOnUse">
+            <circle cx="0.5" cy="0.5" r="0.5" fill="#1A1A28" />
+          </pattern>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+
+          {initialEdges.map(edge => {
+            const source = getNodeCenter(edge.source)
+            const target = getNodeCenter(edge.target)
+            return (
+              <AnimatedEdge
+                key={edge.id}
+                x1={source.x} y1={source.y}
+                x2={target.x} y2={target.y}
+                label={edge.label}
+                animated={edge.animated}
+                focusMode={focusMode}
+              />
+            )
+          })}
+
+          {initialNodes.map(node => (
+            <GraphNode
+              key={node.id}
+              x={(node.position?.x ?? 0) + 40}
+              y={(node.position?.y ?? 0) + 40}
+              label={node.data?.label || 'Unknown'}
+              type={node.data?.type || 'Topic'}
+              weight={node.data?.weight || 0.5}
+              onHover={setHoveredNode}
+              isHovered={hoveredNode === (node.data?.label || '')}
+            />
+          ))}
+        </svg>
       </div>
 
-      {/* Focus mode overlay indicator */}
       {focusMode && (
         <div className="absolute top-14 left-1/2 -translate-x-1/2 bg-ds-accent/10 border border-ds-accent/20 backdrop-blur-sm rounded-full px-3 py-1 text-nano font-mono text-ds-accent flex items-center gap-1.5">
           <Eye size={10} />
           FOCUS MODE
         </div>
       )}
+
+      <style jsx>{`
+        @keyframes dash { to { stroke-dashoffset: -20; } }
+        .animate-dash { animation: dash 1.5s linear infinite; }
+        @keyframes ping-slow { 0% { opacity: 0.6; } 100% { opacity: 0; transform: scale(1.4); } }
+        .animate-ping-slow { animation: ping-slow 2s ease-out infinite; }
+      `}</style>
     </div>
-  )
-}
-
-/* ──────────────────────────────────────────────
-   Graph Panel — exported wrapper with safety layers
-   ────────────────────────────────────────────── */
-interface GraphPanelProps {
-  initialNodes: Node[]
-  initialEdges: Edge[]
-}
-
-export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelProps) {
-  return (
-    <GraphErrorBoundary fallbackNodes={initialNodes} fallbackEdges={initialEdges}>
-      <ReactFlowProvider>
-        <FlowInner initialNodes={initialNodes} initialEdges={initialEdges} />
-      </ReactFlowProvider>
-    </GraphErrorBoundary>
   )
 }
