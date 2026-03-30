@@ -1,11 +1,12 @@
 'use client'
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { Eye, EyeOff, ZoomIn, ZoomOut, Maximize } from 'lucide-react'
 import { getNodeColor } from '@/lib/utils'
 
 /* ══════════════════════════════════════════════════
-   Deevo Sim — Pure SVG Graph Panel
-   No React Flow dependency — zero crash risk
+   Deevo Sim — Pure SVG Graph Panel v3.0
+   Supports: onNodeClick, edge style pass-through,
+   polarity visual encoding, impact glow
    ══════════════════════════════════════════════════ */
 
 /* Accept ANY node shape — flat or nested */
@@ -16,6 +17,7 @@ interface NodeData {
   label?: string
   type?: string
   weight?: number
+  style?: Record<string, any>
 }
 
 interface EdgeData {
@@ -24,6 +26,7 @@ interface EdgeData {
   target: string
   label?: string
   animated?: boolean
+  style?: Record<string, any>
 }
 
 /* Internal normalized node used for rendering */
@@ -34,64 +37,87 @@ interface NormalizedNode {
   label: string
   type: string
   weight: number
+  style?: Record<string, any>
 }
 
 interface GraphPanelProps {
   initialNodes: NodeData[]
   initialEdges: EdgeData[]
+  onNodeClick?: (nodeId: string) => void
 }
 
 /* ──────────────────────────────────────────────
    Animated Edge — SVG path with flow animation
+   Supports style pass-through for polarity encoding
    ────────────────────────────────────────────── */
 function AnimatedEdge({
-  x1, y1, x2, y2, label, animated, focusMode,
+  x1, y1, x2, y2, label, animated, focusMode, style,
 }: {
   x1: number; y1: number; x2: number; y2: number
   label?: string; animated?: boolean; focusMode: boolean
+  style?: Record<string, any>
 }) {
   const mx = (x1 + x2) / 2
   const my = (y1 + y2) / 2
-  const id = `edge-${x1}-${y1}-${x2}-${y2}`
+
+  // Extract style overrides from parent (polarity colors, etc.)
+  const strokeColor = style?.stroke || (focusMode ? '#2A2A3D' : '#1E1E30')
+  const strokeWidth = style?.strokeWidth || 1.2
+  const strokeOpacity = style?.opacity ?? (focusMode ? 0.3 : 0.4)
+  const dashArray = style?.strokeDasharray || (animated ? '6 4' : undefined)
+  const isHighlighted = strokeColor !== '#1e293b' && strokeColor !== '#1E1E30'
 
   return (
     <g>
+      {/* Glow line (only for highlighted edges) */}
+      {isHighlighted && (
+        <line
+          x1={x1} y1={y1} x2={x2} y2={y2}
+          stroke={strokeColor}
+          strokeWidth={strokeWidth + 3}
+          strokeOpacity={0.12}
+          filter="url(#edgeGlow)"
+        />
+      )}
+      {/* Main line */}
       <line
         x1={x1} y1={y1} x2={x2} y2={y2}
-        stroke={focusMode ? '#2A2A3D' : '#1E1E30'}
-        strokeWidth={1.2}
-        strokeDasharray={animated ? '6 4' : undefined}
+        stroke={strokeColor}
+        strokeWidth={strokeWidth}
+        strokeOpacity={strokeOpacity}
+        strokeDasharray={dashArray}
         className={animated ? 'animate-dash' : ''}
       />
-      {/* Glow line */}
-      <line
-        x1={x1} y1={y1} x2={x2} y2={y2}
-        stroke={focusMode ? '#2A2A3D' : '#1E1E30'}
-        strokeWidth={3}
-        strokeOpacity={0.15}
-        filter="url(#edgeGlow)"
-      />
+      {/* Arrowhead */}
+      {isHighlighted && (
+        <polygon
+          points={getArrowPoints(x1, y1, x2, y2)}
+          fill={strokeColor}
+          fillOpacity={strokeOpacity}
+        />
+      )}
       {label && (
         <>
           <rect
-            x={mx - label.length * 3.2 - 6}
+            x={mx - label.length * 3 - 6}
             y={my - 8}
-            width={label.length * 6.4 + 12}
+            width={label.length * 6 + 12}
             height={16}
             rx={4}
             fill="#0E0E14"
             fillOpacity={0.92}
-            stroke="#1A1A2A"
+            stroke={isHighlighted ? `${strokeColor}40` : '#1A1A2A'}
             strokeWidth={0.5}
           />
           <text
             x={mx} y={my + 3}
             textAnchor="middle"
-            fill="#5A5A70"
+            fill={isHighlighted ? strokeColor : '#5A5A70'}
             fontSize={8}
             fontFamily="'JetBrains Mono', monospace"
+            direction="ltr"
           >
-            {label}
+            {label.length > 20 ? label.slice(0, 18) + '…' : label}
           </text>
         </>
       )}
@@ -99,40 +125,85 @@ function AnimatedEdge({
   )
 }
 
+/* Compute arrowhead triangle points */
+function getArrowPoints(x1: number, y1: number, x2: number, y2: number): string {
+  const dx = x2 - x1
+  const dy = y2 - y1
+  const len = Math.sqrt(dx * dx + dy * dy)
+  if (len < 1) return ''
+  const ux = dx / len
+  const uy = dy / len
+  const arrowLen = 6
+  const arrowWidth = 3
+  // Position arrow 20px before the target (to not overlap node)
+  const tipX = x2 - ux * 20
+  const tipY = y2 - uy * 20
+  const baseX = tipX - ux * arrowLen
+  const baseY = tipY - uy * arrowLen
+  return `${tipX},${tipY} ${baseX + uy * arrowWidth},${baseY - ux * arrowWidth} ${baseX - uy * arrowWidth},${baseY + ux * arrowWidth}`
+}
+
 /* ──────────────────────────────────────────────
    Graph Node — cinematic glowing circle
+   Now supports onClick + style pass-through
    ────────────────────────────────────────────── */
 function GraphNode({
-  x, y, label, type, weight, onHover, isHovered,
+  id, x, y, label, type, weight, onHover, isHovered, onClick, style,
 }: {
-  x: number; y: number; label: string; type: string; weight: number
+  id: string; x: number; y: number; label: string; type: string; weight: number
   onHover: (id: string | null) => void; isHovered: boolean
+  onClick?: (nodeId: string) => void
+  style?: Record<string, any>
 }) {
-  const color = getNodeColor(type)
+  // Use style overrides from parent if available
+  const baseColor = style?.background || getNodeColor(type)
+  const borderColor = style?.border ? style.border.replace(/^2px solid /, '') : undefined
+  const color = borderColor || baseColor
+  const nodeOpacity = style?.opacity ?? 1
+  const boxShadow = style?.boxShadow || ''
+  const hasGlow = boxShadow !== 'none' && boxShadow !== ''
+
   const r = 18 + weight * 18
   const glowR = r * 2.2
-  const innerR = 3
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onClick?.(id)
+  }
 
   return (
     <g
-      onMouseEnter={() => onHover(label)}
+      onMouseEnter={() => onHover(id)}
       onMouseLeave={() => onHover(null)}
-      style={{ cursor: 'pointer' }}
+      onClick={handleClick}
+      style={{ cursor: 'pointer', opacity: nodeOpacity }}
     >
-      {/* Outer glow */}
+      {/* Outer glow — stronger when impacted */}
       <circle
         cx={x} cy={y} r={glowR}
         fill={`url(#glow-${type})`}
-        opacity={isHovered ? 0.5 : 0.2}
+        opacity={isHovered ? 0.6 : (hasGlow ? 0.4 : 0.15)}
         className="transition-opacity duration-300"
       />
+
+      {/* Impact glow ring */}
+      {hasGlow && (
+        <circle
+          cx={x} cy={y} r={r + 6}
+          fill="none"
+          stroke={color}
+          strokeWidth={1.5}
+          strokeOpacity={0.25}
+          filter="url(#nodeGlow)"
+        />
+      )}
 
       {/* Node ring */}
       <circle
         cx={x} cy={y} r={r}
-        fill={`${color}12`}
-        stroke={`${color}${isHovered ? '88' : '44'}`}
-        strokeWidth={isHovered ? 1.5 : 1}
+        fill={weight > 0.05 ? `${color}18` : '#0e0e1408'}
+        stroke={isHovered ? '#ffffff88' : (weight > 0.05 ? `${color}66` : '#334155')}
+        strokeWidth={isHovered ? 2 : 1.2}
         className="transition-all duration-300"
         filter="url(#nodeGlow)"
       />
@@ -140,7 +211,7 @@ function GraphNode({
       {/* Inner dot */}
       <circle
         cx={x} cy={y - (r > 28 ? 6 : 4)}
-        r={innerR}
+        r={3}
         fill={color}
         filter="url(#dotGlow)"
       />
@@ -151,18 +222,19 @@ function GraphNode({
         textAnchor="middle"
         fill="#E0E0F0"
         fontSize={r > 28 ? 9 : 8}
-        fontWeight={600}
+        fontWeight={weight > 0.1 ? 700 : 500}
         fontFamily="system-ui, sans-serif"
+        direction="ltr"
       >
-        {label.length > 14 ? label.slice(0, 12) + '…' : label}
+        {label.length > 16 ? label.slice(0, 14) + '…' : label}
       </text>
 
       {/* Hover tooltip */}
       {isHovered && (
         <g>
           <rect
-            x={x - 40} y={y + r + 6}
-            width={80} height={18}
+            x={x - 45} y={y + r + 6}
+            width={90} height={18}
             rx={4}
             fill="#0E0E14"
             fillOpacity={0.95}
@@ -181,8 +253,8 @@ function GraphNode({
         </g>
       )}
 
-      {/* Pulse ring for high-weight nodes */}
-      {weight > 0.7 && (
+      {/* Pulse ring for high-impact nodes */}
+      {weight > 0.5 && (
         <circle
           cx={x} cy={y} r={r + 4}
           fill="none"
@@ -198,7 +270,7 @@ function GraphNode({
 /* ──────────────────────────────────────────────
    Graph Panel — main export
    ────────────────────────────────────────────── */
-export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelProps) {
+export default function GraphPanel({ initialNodes, initialEdges, onNodeClick }: GraphPanelProps) {
   const [focusMode, setFocusMode] = useState(false)
   const [hoveredNode, setHoveredNode] = useState<string | null>(null)
   const [zoom, setZoom] = useState(1)
@@ -209,12 +281,10 @@ export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelPro
 
   /* ── Normalize nodes: handle BOTH flat and nested formats ── */
   const nodes: NormalizedNode[] = initialNodes.map((n, i) => {
-    // Extract label/type/weight from whichever shape we received
     const label = n.data?.label || n.label || 'Unknown'
-    const type  = n.data?.type  || (n.type !== 'custom' ? n.type : undefined) || 'Topic'
+    const type  = n.data?.type  || (n.type !== 'custom' && n.type !== 'default' ? n.type : undefined) || 'Topic'
     const weight = n.data?.weight ?? n.weight ?? 0.5
 
-    // Auto-layout in ellipse if no explicit position
     const hasPosition = n.position && (n.position.x !== 0 || n.position.y !== 0)
     const angle = (2 * Math.PI * i) / initialNodes.length - Math.PI / 2
     const cx = 425 + 220 * Math.cos(angle)
@@ -222,10 +292,9 @@ export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelPro
     const x = hasPosition ? n.position!.x + 40 : cx
     const y = hasPosition ? n.position!.y + 40 : cy
 
-    return { id: n.id, x, y, label, type, weight }
+    return { id: n.id, x, y, label, type, weight, style: n.style }
   })
 
-  // Node center lookup for edge rendering
   const nodeMap = new Map(nodes.map(n => [n.id, n]))
 
   const getNodeCenter = (nodeId: string) => {
@@ -234,12 +303,10 @@ export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelPro
     return { x: node.x, y: node.y }
   }
 
-  // Zoom controls
   const handleZoomIn = () => setZoom(z => Math.min(z * 1.3, 3))
   const handleZoomOut = () => setZoom(z => Math.max(z / 1.3, 0.3))
   const handleFitView = () => { setZoom(1); setPan({ x: 0, y: 0 }) }
 
-  // Pan handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button === 0) {
       setIsPanning(true)
@@ -261,7 +328,6 @@ export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelPro
     setZoom(z => Math.max(0.3, Math.min(3, z * delta)))
   }, [])
 
-  // Unique types for gradient defs
   const uniqueTypes = [...new Set(nodes.map(n => n.type))]
 
   return (
@@ -274,33 +340,17 @@ export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelPro
           <span className="text-nano text-ds-text-dim font-mono ml-1">LIVE</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="ds-panel-header-meta">{nodes.length} nodes · {initialEdges.length} edges</span>
-          <button
-            onClick={handleZoomIn}
-            className="p-1 rounded hover:bg-ds-card transition-colors text-ds-text-muted hover:text-ds-text"
-            title="Zoom In"
-          >
+          <span className="ds-panel-header-meta">{nodes.length} V · {initialEdges.length} E</span>
+          <button onClick={handleZoomIn} className="p-1 rounded hover:bg-ds-card transition-colors text-ds-text-muted hover:text-ds-text" title="Zoom In">
             <ZoomIn size={13} />
           </button>
-          <button
-            onClick={handleZoomOut}
-            className="p-1 rounded hover:bg-ds-card transition-colors text-ds-text-muted hover:text-ds-text"
-            title="Zoom Out"
-          >
+          <button onClick={handleZoomOut} className="p-1 rounded hover:bg-ds-card transition-colors text-ds-text-muted hover:text-ds-text" title="Zoom Out">
             <ZoomOut size={13} />
           </button>
-          <button
-            onClick={handleFitView}
-            className="p-1 rounded hover:bg-ds-card transition-colors text-ds-text-muted hover:text-ds-text"
-            title="Fit View"
-          >
+          <button onClick={handleFitView} className="p-1 rounded hover:bg-ds-card transition-colors text-ds-text-muted hover:text-ds-text" title="Fit View">
             <Maximize size={13} />
           </button>
-          <button
-            onClick={() => setFocusMode(!focusMode)}
-            className="p-1.5 rounded-md hover:bg-ds-card transition-colors text-ds-text-muted hover:text-ds-text"
-            title={focusMode ? 'Exit Focus Mode' : 'Focus Mode'}
-          >
+          <button onClick={() => setFocusMode(!focusMode)} className="p-1.5 rounded-md hover:bg-ds-card transition-colors text-ds-text-muted hover:text-ds-text" title={focusMode ? 'Exit Focus Mode' : 'Focus Mode'}>
             {focusMode ? <EyeOff size={14} /> : <Eye size={14} />}
           </button>
         </div>
@@ -325,7 +375,6 @@ export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelPro
             transformOrigin: 'center center',
           }}
         >
-          {/* Defs — gradients, filters, animations */}
           <defs>
             {uniqueTypes.map(type => {
               const color = getNodeColor(type)
@@ -361,7 +410,7 @@ export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelPro
           </pattern>
           <rect width="100%" height="100%" fill="url(#grid)" />
 
-          {/* Edges */}
+          {/* Edges — with style pass-through for polarity encoding */}
           {initialEdges.map(edge => {
             const source = getNodeCenter(edge.source)
             const target = getNodeCenter(edge.target)
@@ -373,21 +422,25 @@ export default function GraphPanel({ initialNodes, initialEdges }: GraphPanelPro
                 label={edge.label}
                 animated={edge.animated}
                 focusMode={focusMode}
+                style={edge.style}
               />
             )
           })}
 
-          {/* Nodes */}
+          {/* Nodes — with style pass-through for impact glow */}
           {nodes.map(node => (
             <GraphNode
               key={node.id}
+              id={node.id}
               x={node.x}
               y={node.y}
               label={node.label}
               type={node.type}
               weight={node.weight}
               onHover={setHoveredNode}
-              isHovered={hoveredNode === node.label}
+              isHovered={hoveredNode === node.id}
+              onClick={onNodeClick}
+              style={node.style}
             />
           ))}
         </svg>

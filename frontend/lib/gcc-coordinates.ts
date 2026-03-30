@@ -26,6 +26,8 @@ export const nodeCoordinates: Record<string, GeoCoordinate> = {
   inf_jebel:   { lat: 24.9857, lng: 55.0272 },  // Jebel Ali Port
   inf_dammam:  { lat: 26.4473, lng: 50.1014 },  // King Abdulaziz Port
   inf_doha_p:  { lat: 25.2960, lng: 51.5488 },  // Doha Port
+  inf_desal:   { lat: 25.1100, lng: 55.2000 },  // Jebel Ali Desalination Complex
+  inf_power:   { lat: 24.9200, lng: 46.7500 },  // SEC Power Grid Hub, Riyadh
 
   // — Economy Layer —
   eco_oil:     { lat: 26.3000, lng: 50.2000 },  // Eastern Province (oil hub)

@@ -773,7 +773,7 @@ function DemoPageContent() {
             )}
             {propagation && !isRunning && viewMode === 'graph' && (
               <div className="h-full p-2 relative">
-                <GraphPanel initialNodes={graphNodes} initialEdges={graphEdges} />
+                <GraphPanel initialNodes={graphNodes} initialEdges={graphEdges} onNodeClick={setSelectedNode} />
                 <AnimatePresence>
                   {selectedNodeExpl && (
                     <NodeDetailPanel nodeExpl={selectedNodeExpl} lang={lang} onClose={() => setSelectedNode(null)} />

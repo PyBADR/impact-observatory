@@ -4,7 +4,7 @@
    Computes cascading impacts through the GCC Reality Graph.
 
    Mathematical Model:
-   1. impact_i(t+1) = Σ(w_ji × polarity_ji × impact_j(t)) × sensitivity_i - decay × impact_i(t)
+   1. impact_i(t+1) = Σ(w_ji × polarity_ji × impact_j(t)) × sensitivity_i - damping_i × impact_i(t)
    2. Severity scaling: effective_impact = impact × severity
    3. Energy: E_total = Σ impact_i²
    4. Normalization: normalized_i = impact_i / max(all node impacts)
@@ -163,7 +163,7 @@ export function runPropagation(
   iterationSnapshots.push({ iteration: 0, impacts: snap0, energy: energy0, deltaEnergy: 0 })
 
   // ── CORE MATHEMATICAL LOOP ──
-  // Formula: I_i(t+1) = clamp( Σ_j(w_ji × p_ji × I_j(t)) × s_i - decay × I_i(t) )
+  // Formula: I_i(t+1) = clamp( Σ_j(w_ji × p_ji × I_j(t)) × s_i - damping_i × I_i(t) )
   for (let iter = 0; iter < maxIterations; iter++) {
     const newImpacts = new Map<string, number>()
     let anyChange = false
@@ -199,9 +199,11 @@ export function runPropagation(
         }
       }
 
-      // I_i(t+1) = Σ(w_ji × p_ji × I_j(t)) × s_i - decay × I_i(t)
+      // I_i(t+1) = Σ(w_ji × p_ji × I_j(t)) × s_i - damping_i × I_i(t)
+      // Uses per-node damping_factor (falls back to global decayRate if absent)
       const propagated = weightedSum * node.sensitivity
-      const decayed = decayRate * currentImpact
+      const nodeDamping = (node as any).damping_factor ?? decayRate
+      const decayed = nodeDamping * currentImpact
       let newImpact = currentImpact + propagated - decayed
 
       // Clamp to [-1, 1]
