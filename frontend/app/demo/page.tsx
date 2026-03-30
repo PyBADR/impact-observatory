@@ -13,7 +13,7 @@ import {
 import dynamic from 'next/dynamic'
 import GraphPanel from '@/components/graph/GraphPanel'
 import { gccNodes, gccEdges, gccScenarios, layerMeta } from '@/lib/gcc-graph'
-import { runPropagation, formatPropagationChain, computeSectorFinancials, type PropagationResult, type NodeExplanation, type SectorFinancials } from '@/lib/propagation-engine'
+import { runPropagation, formatPropagationChain, computeSectorFinancials, computeHormuzChain, computeAviationChain, type PropagationResult, type NodeExplanation, type SectorFinancials, type HormuzChainResult, type AviationChainResult } from '@/lib/propagation-engine'
 import { setLanguage, getLanguage, type Language } from '@/lib/i18n'
 import { shippingRoutes, aviationRoutes, nodeCoordinates } from '@/lib/gcc-coordinates'
 
@@ -107,6 +107,9 @@ const UI: Record<string, { en: string; ar: string }> = {
   chainFormula: { en: 'Formula', ar: 'المعادلة' },
   chainNarrative: { en: 'Chain Narrative', ar: 'السرد السببي' },
   gdpExposure: { en: 'GDP Exposure', ar: 'التعرض للناتج المحلي' },
+  aviationEngine: { en: 'Aviation Cascade Engine', ar: 'محرك سلسلة الطيران' },
+  aviationChain: { en: 'Insurance → Fuel → Flight Cost → Demand → Airports → Tourism → GDP', ar: 'التأمين ← الوقود ← تكلفة الرحلات ← الطلب ← المطارات ← السياحة ← الناتج المحلي' },
+  airportImpact: { en: 'Airport Throughput', ar: 'حركة المطارات' },
 }
 
 const LAYER_LABELS: Record<string, { en: string; ar: string }> = {
@@ -736,6 +739,11 @@ function DemoPageContent() {
     return computeHormuzChain(propagation.nodeImpacts, severityMod)
   }, [propagation, severityMod])
 
+  const aviationChain = useMemo(() => {
+    if (!propagation) return null
+    return computeAviationChain(propagation.nodeImpacts, severityMod)
+  }, [propagation, severityMod])
+
   if (isMobile) {
     return (
       <div className="h-screen w-full bg-ds-bg flex items-center justify-center p-6" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
@@ -878,6 +886,61 @@ function DemoPageContent() {
                     {lang === 'ar' ? hormuzChain.chainNarrativeAr : hormuzChain.chainNarrative}
                   </p>
                 </div>
+              </div>
+            )}
+
+            {/* ── AVIATION CHAIN ENGINE ── */}
+            {propagation && aviationChain && aviationChain.steps[0].impactPct > 0.1 && (
+              <div className="ds-card rounded-xl p-3">
+                <h3 className="text-[10px] uppercase tracking-[0.15em] text-sky-400 font-bold mb-2 flex items-center gap-2">
+                  ✈️ {ui('aviationEngine', lang)}
+                </h3>
+                <p className="text-[9px] text-ds-muted mb-2">
+                  {ui('aviationChain', lang)}
+                </p>
+
+                {/* Aviation cascade steps */}
+                {aviationChain.steps.map((step, i) => {
+                  const color = step.direction === '↑' ? 'text-red-400' : 'text-emerald-400'
+                  return (
+                    <div key={step.id} className="mb-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] text-ds-text">{lang === 'ar' ? step.labelAr : step.label}</span>
+                        <span className={`text-[10px] font-mono font-bold ${color}`}>{step.direction} {step.impactPct.toFixed(1)}%</span>
+                      </div>
+                      <p className="text-[8px] text-ds-muted font-mono">{lang === 'ar' ? step.formulaAr : step.formula}</p>
+                      {i < aviationChain.steps.length - 1 && (
+                        <div className="text-center text-[8px] text-sky-500/60">↓</div>
+                      )}
+                    </div>
+                  )
+                })}
+
+                {/* Airport throughput breakdown */}
+                <div className="mt-2 pt-2 border-t border-ds-border/30">
+                  <h4 className="text-[9px] text-sky-400 font-bold mb-1">{ui('airportImpact', lang)}</h4>
+                  <div className="grid grid-cols-3 gap-1">
+                    {aviationChain.airportImpacts.map(apt => (
+                      <div key={apt.id} className="text-center">
+                        <span className="text-[9px] font-mono text-ds-text">{apt.label}</span>
+                        <div className={`text-[8px] font-mono ${apt.changePct < 0 ? 'text-red-400' : 'text-ds-muted'}`}>
+                          {apt.paxM}M <span className="text-[7px]">({apt.changePct.toFixed(0)}%)</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* GDP impact */}
+                <div className="mt-2 pt-2 border-t border-ds-border/30 flex items-center justify-between">
+                  <span className="text-[9px] text-ds-muted">{ui('gdpExposure', lang)}</span>
+                  <span className="font-mono text-sky-400 font-bold">${aviationChain.gdpImpact.toFixed(1)}B</span>
+                </div>
+
+                {/* Narrative */}
+                <p className="text-[8px] text-ds-muted mt-2 leading-relaxed">
+                  {lang === 'ar' ? aviationChain.chainNarrativeAr : aviationChain.chainNarrative}
+                </p>
               </div>
             )}
 

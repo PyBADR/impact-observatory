@@ -485,6 +485,8 @@ export interface SectorFinancials {
   shippingCost: SectorFinancialMetric
   insuranceRisk: SectorFinancialMetric
   aviationCost: SectorFinancialMetric
+  flightCost: SectorFinancialMetric
+  travelDemand: SectorFinancialMetric
   tourismRevenue: SectorFinancialMetric
   gdpLoss: SectorFinancialMetric
   airportThroughput: SectorFinancialMetric
@@ -507,6 +509,7 @@ const FINANCIAL_BASES = {
   shippingCost: 12,      // $B baseline shipping cost
   insurancePremium: 28,  // $B GCC insurance premiums
   aviationFuel: 42,      // $B — GCC aviation fuel cost
+  baseTicket: 320,       // $ — average GCC flight ticket price
 }
 
 export function computeSectorFinancials(impacts: Map<string, number>): SectorFinancials {
@@ -554,9 +557,26 @@ export function computeSectorFinancials(impacts: Map<string, number>): SectorFin
     aviationCostImpact * 0.08 +             // aviation (8%)
     (1 - tourismDemand / FINANCIAL_BASES.tourismRevenue) * 0.07  // tourism (7%)
 
+  // ── Aviation Phase 2 Chain Formulas ──
+
+  // Flight_cost = Base_ticket × (1 + Fuel_cost_impact × W_fuel)
+  const W_fuel_to_ticket = 0.85
+  const flightCost = FINANCIAL_BASES.baseTicket * (1 + aviationCostImpact * W_fuel_to_ticket)
+  const flightCostImpact = (flightCost - FINANCIAL_BASES.baseTicket) / FINANCIAL_BASES.baseTicket
+
+  // Demand = Base_demand × (1 - Flight_cost_impact × W_price)
+  const W_price_to_demand = 0.80
+  const travelDemand = Math.max(0, 1 - flightCostImpact * W_price_to_demand)
+
+  // Throughput_airport = Base_passengers × Demand
+  const airportThroughputFromDemand = FINANCIAL_BASES.airportPax * travelDemand
+
+  // Tourism_revenue = Base_tourism × Demand (demand-driven)
+  const tourismFromDemand = FINANCIAL_BASES.tourismRevenue * travelDemand
+
   // ── Additional sector formulas ──
 
-  // Throughput_airport = base × Π(1 - |I(airport_k)|)
+  // Throughput_airport = base × Π(1 - |I(airport_k)|) — per-node impact product
   let airportProduct = 1
   for (const id of AIRPORT_IDS) {
     airportProduct *= (1 - I(id))
@@ -586,9 +606,11 @@ export function computeSectorFinancials(impacts: Map<string, number>): SectorFin
     shippingCost:       { value: shippingCost, base: FINANCIAL_BASES.shippingCost, label: 'Shipping Cost', labelAr: 'تكلفة الشحن', unit: '$B', formula: `Base×(1+${impactOil.toFixed(2)}×0.85)`, direction: 'up' as const },
     insuranceRisk:      { value: insuranceRisk, base: FINANCIAL_BASES.insurancePremium, label: 'Insurance Risk', labelAr: 'مخاطر التأمين', unit: '$B', formula: `Base×(1+${shippingCostImpact.toFixed(2)}×0.80)`, direction: 'up' as const },
     aviationCost:       { value: aviationCost, base: FINANCIAL_BASES.aviationFuel, label: 'Aviation Fuel Cost', labelAr: 'تكلفة وقود الطيران', unit: '$B', formula: `Base×(1+${insuranceRiskImpact.toFixed(2)}×0.75)`, direction: 'up' as const },
-    tourismRevenue:     { value: tourismDemand, base: FINANCIAL_BASES.tourismRevenue, label: 'Tourism Demand', labelAr: 'الطلب السياحي', unit: '$B', formula: `Base×(1-${aviationCostImpact.toFixed(2)}×0.70)`, direction: 'down' as const },
+    flightCost:         { value: flightCost, base: FINANCIAL_BASES.baseTicket, label: 'Flight Cost', labelAr: 'تكلفة الرحلات', unit: '$', formula: `$${FINANCIAL_BASES.baseTicket}×(1+${aviationCostImpact.toFixed(2)}×0.85)=$${flightCost.toFixed(0)}`, direction: 'up' as const },
+    travelDemand:       { value: travelDemand, base: 1, label: 'Travel Demand', labelAr: 'الطلب على السفر', unit: '%', formula: `1-(${flightCostImpact.toFixed(2)}×0.80)=${(travelDemand*100).toFixed(0)}%`, direction: 'down' as const },
+    tourismRevenue:     { value: tourismFromDemand, base: FINANCIAL_BASES.tourismRevenue, label: 'Tourism Revenue', labelAr: 'إيرادات السياحة', unit: '$B', formula: `$${FINANCIAL_BASES.tourismRevenue}B×${(travelDemand*100).toFixed(0)}%=$${tourismFromDemand.toFixed(1)}B`, direction: 'down' as const },
     gdpLoss:            { value: gdpLoss, base: 0, label: 'GDP Loss', labelAr: 'خسائر الناتج المحلي', unit: 'index', formula: `Σ(sector×weight)=${(gdpLoss*100).toFixed(1)}%`, direction: 'up' as const },
-    airportThroughput:  { value: airportThroughput, base: FINANCIAL_BASES.airportPax, label: 'Airport Throughput', labelAr: 'إنتاجية المطارات', unit: 'M pax', direction: 'down' as const },
+    airportThroughput:  { value: airportThroughputFromDemand, base: FINANCIAL_BASES.airportPax, label: 'Airport Throughput', labelAr: 'حركة المطارات', unit: 'M pax', formula: `${FINANCIAL_BASES.airportPax}M×${(travelDemand*100).toFixed(0)}%=${airportThroughputFromDemand.toFixed(0)}M`, direction: 'down' as const },
     portThroughput:     { value: portThroughput, base: FINANCIAL_BASES.portTEU, label: 'Port Throughput', labelAr: 'إنتاجية الموانئ', unit: 'M TEU', direction: 'down' as const },
     bankingStress:      { value: bankingStress, base: 0, label: 'Banking Stress', labelAr: 'إجهاد المصارف', unit: 'index', direction: 'up' as const },
     foodStress:         { value: foodStress, base: 0, label: 'Food Stress', labelAr: 'إجهاد الأمن الغذائي', unit: 'index', direction: 'up' as const },
@@ -733,6 +755,157 @@ export function computeHormuzChain(
     `إجمالي التعرض: $${gdpLoss.toFixed(1)} مليار.`
 
   return { steps, gdpLoss, chainNarrative, chainNarrativeAr }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   AVIATION CHAIN — Phase 2 Financial Formula Engine
+   Chain: Insurance → Fuel → Flight Cost → Demand → Throughput → Tourism → GDP
+   ═══════════════════════════════════════════════════════════════ */
+
+export interface AviationChainStep {
+  id: string
+  label: string
+  labelAr: string
+  formula: string
+  formulaAr: string
+  value: number
+  base: number
+  unit: string
+  direction: '↑' | '↓'
+  impactPct: number
+}
+
+export interface AviationChainResult {
+  steps: AviationChainStep[]
+  gdpImpact: number
+  chainNarrative: string
+  chainNarrativeAr: string
+  airportImpacts: { id: string; label: string; labelAr: string; paxM: number; basePaxM: number; changePct: number }[]
+}
+
+const AVIATION_BASES = {
+  fuelCost: 45,          // $B annual GCC aviation fuel
+  baseTicket: 380,       // $ average GCC round-trip ticket
+  baseDemand: 350,       // M passengers/year GCC airports
+  tourismBase: 85,       // $B annual GCC tourism revenue
+  W_insurance: 1.2,      // fuel sensitivity to insurance risk
+  W_fuel: 0.65,          // ticket sensitivity to fuel cost increase
+  W_price: 0.55,         // demand sensitivity to ticket price increase
+}
+
+const AIRPORT_PAX: Record<string, { label: string; labelAr: string; basePaxM: number }> = {
+  inf_dxb: { label: 'DXB', labelAr: 'دبي', basePaxM: 87.0 },
+  inf_ruh: { label: 'RUH', labelAr: 'الرياض', basePaxM: 35.0 },
+  inf_jed: { label: 'JED', labelAr: 'جدة', basePaxM: 46.0 },
+  inf_doh: { label: 'DOH', labelAr: 'الدوحة', basePaxM: 38.0 },
+  inf_auh: { label: 'AUH', labelAr: 'أبوظبي', basePaxM: 24.0 },
+  inf_dmm: { label: 'DMM', labelAr: 'الدمام', basePaxM: 12.0 },
+  inf_kwi: { label: 'KWI', labelAr: 'الكويت', basePaxM: 15.0 },
+  inf_bah: { label: 'BAH', labelAr: 'البحرين', basePaxM: 10.0 },
+  inf_mct: { label: 'MCT', labelAr: 'مسقط', basePaxM: 18.0 },
+}
+
+export function computeAviationChain(
+  impacts: Map<string, number>,
+  severity: number = 1.0,
+): AviationChainResult {
+  const absI = (id: string) => Math.abs(impacts.get(id) ?? 0)
+
+  // Step 1: Fuel_cost = Base_fuel × (1 + Risk_insurance × W_insurance)
+  const insRisk = absI('fin_ins_risk') * severity
+  const fuelCost = AVIATION_BASES.fuelCost * (1 + insRisk * AVIATION_BASES.W_insurance)
+  const fuelIncrease = (fuelCost - AVIATION_BASES.fuelCost) / AVIATION_BASES.fuelCost
+
+  // Step 2: Flight_cost = Base_ticket × (1 + Fuel_increase × W_fuel)
+  const flightCost = AVIATION_BASES.baseTicket * (1 + fuelIncrease * AVIATION_BASES.W_fuel)
+  const ticketIncrease = (flightCost - AVIATION_BASES.baseTicket) / AVIATION_BASES.baseTicket
+
+  // Step 3: Demand = Base_demand × (1 - Ticket_increase × W_price)
+  const demand = AVIATION_BASES.baseDemand * Math.max(0, 1 - ticketIncrease * AVIATION_BASES.W_price)
+  const demandDecline = (AVIATION_BASES.baseDemand - demand) / AVIATION_BASES.baseDemand
+
+  // Step 4: Throughput per airport = Base_pax × demand_factor
+  const demandFactor = demand / AVIATION_BASES.baseDemand
+  const airportImpacts = Object.entries(AIRPORT_PAX).map(([id, info]) => {
+    const airportSpecific = absI(id) * severity
+    const combinedFactor = Math.max(0, demandFactor * (1 - airportSpecific * 0.3))
+    const paxM = info.basePaxM * combinedFactor
+    return {
+      id,
+      label: info.label,
+      labelAr: info.labelAr,
+      paxM: Math.round(paxM * 10) / 10,
+      basePaxM: info.basePaxM,
+      changePct: ((paxM - info.basePaxM) / info.basePaxM) * 100,
+    }
+  })
+
+  // Step 5: Tourism_revenue = Base_tourism × demand_factor
+  const tourismRevenue = AVIATION_BASES.tourismBase * Math.max(0, demandFactor)
+  const tourismDecline = (AVIATION_BASES.tourismBase - tourismRevenue) / AVIATION_BASES.tourismBase
+
+  // Step 6: GDP_impact = fuel_increase + tourism_decline + airline_loss
+  const gdpImpact = (fuelIncrease * 45) + (tourismDecline * 85) + (demandDecline * 25)
+
+  const steps: AviationChainStep[] = [
+    {
+      id: 'fuel', label: 'Aviation Fuel Cost', labelAr: 'تكلفة وقود الطيران',
+      formula: `$${AVIATION_BASES.fuelCost}B × (1 + ${(insRisk * 100).toFixed(0)}% × ${AVIATION_BASES.W_insurance}) = $${fuelCost.toFixed(1)}B`,
+      formulaAr: `$${AVIATION_BASES.fuelCost} مليار × (1 + ${(insRisk * 100).toFixed(0)}% × ${AVIATION_BASES.W_insurance}) = $${fuelCost.toFixed(1)} مليار`,
+      value: fuelCost, base: AVIATION_BASES.fuelCost, unit: '$B', direction: '↑', impactPct: fuelIncrease * 100,
+    },
+    {
+      id: 'ticket', label: 'Flight Cost', labelAr: 'تكلفة الرحلات',
+      formula: `$${AVIATION_BASES.baseTicket} × (1 + ${(fuelIncrease * 100).toFixed(0)}% × ${AVIATION_BASES.W_fuel}) = $${flightCost.toFixed(0)}`,
+      formulaAr: `$${AVIATION_BASES.baseTicket} × (1 + ${(fuelIncrease * 100).toFixed(0)}% × ${AVIATION_BASES.W_fuel}) = $${flightCost.toFixed(0)}`,
+      value: flightCost, base: AVIATION_BASES.baseTicket, unit: '$', direction: '↑', impactPct: ticketIncrease * 100,
+    },
+    {
+      id: 'demand', label: 'Travel Demand', labelAr: 'الطلب على السفر',
+      formula: `${AVIATION_BASES.baseDemand}M × (1 - ${(ticketIncrease * 100).toFixed(0)}% × ${AVIATION_BASES.W_price}) = ${demand.toFixed(0)}M`,
+      formulaAr: `${AVIATION_BASES.baseDemand} مليون × (1 - ${(ticketIncrease * 100).toFixed(0)}% × ${AVIATION_BASES.W_price}) = ${demand.toFixed(0)} مليون`,
+      value: demand, base: AVIATION_BASES.baseDemand, unit: 'M pax', direction: '↓', impactPct: demandDecline * 100,
+    },
+    {
+      id: 'throughput', label: 'Airport Throughput', labelAr: 'حركة المطارات',
+      formula: `Total: ${airportImpacts.reduce((s, a) => s + a.paxM, 0).toFixed(0)}M / ${airportImpacts.reduce((s, a) => s + a.basePaxM, 0)}M pax`,
+      formulaAr: `الإجمالي: ${airportImpacts.reduce((s, a) => s + a.paxM, 0).toFixed(0)} مليون / ${airportImpacts.reduce((s, a) => s + a.basePaxM, 0)} مليون مسافر`,
+      value: airportImpacts.reduce((s, a) => s + a.paxM, 0),
+      base: airportImpacts.reduce((s, a) => s + a.basePaxM, 0),
+      unit: 'M pax', direction: '↓',
+      impactPct: demandDecline * 100,
+    },
+    {
+      id: 'tourism', label: 'Tourism Revenue', labelAr: 'إيرادات السياحة',
+      formula: `$${AVIATION_BASES.tourismBase}B × ${(demandFactor * 100).toFixed(0)}% = $${tourismRevenue.toFixed(1)}B`,
+      formulaAr: `$${AVIATION_BASES.tourismBase} مليار × ${(demandFactor * 100).toFixed(0)}% = $${tourismRevenue.toFixed(1)} مليار`,
+      value: tourismRevenue, base: AVIATION_BASES.tourismBase, unit: '$B', direction: '↓', impactPct: tourismDecline * 100,
+    },
+    {
+      id: 'gdp', label: 'GDP Impact', labelAr: 'أثر الناتج المحلي',
+      formula: `Σ (fuel + tourism + airlines) = $${gdpImpact.toFixed(1)}B`,
+      formulaAr: `مجموع (الوقود + السياحة + الطيران) = $${gdpImpact.toFixed(1)} مليار`,
+      value: gdpImpact, base: 0, unit: '$B', direction: '↓', impactPct: gdpImpact > 0 ? (gdpImpact / 2100) * 100 : 0,
+    },
+  ]
+
+  const chainNarrative =
+    `Insurance risk (${(insRisk * 100).toFixed(0)}%) drives aviation fuel to $${fuelCost.toFixed(1)}B (+${(fuelIncrease * 100).toFixed(0)}%). ` +
+    `Flight costs surge to $${flightCost.toFixed(0)}/ticket (+${(ticketIncrease * 100).toFixed(0)}%), ` +
+    `depressing travel demand to ${demand.toFixed(0)}M passengers (−${(demandDecline * 100).toFixed(0)}%). ` +
+    `Airport throughput falls across all 9 GCC hubs. ` +
+    `Tourism revenue drops to $${tourismRevenue.toFixed(1)}B (−${(tourismDecline * 100).toFixed(0)}%). ` +
+    `Total aviation GDP impact: $${gdpImpact.toFixed(1)}B.`
+
+  const chainNarrativeAr =
+    `مخاطر التأمين (${(insRisk * 100).toFixed(0)}%) ترفع وقود الطيران إلى $${fuelCost.toFixed(1)} مليار (+${(fuelIncrease * 100).toFixed(0)}%). ` +
+    `ترتفع تكلفة الرحلات إلى $${flightCost.toFixed(0)}/تذكرة (+${(ticketIncrease * 100).toFixed(0)}%)، ` +
+    `مما يخفض الطلب على السفر إلى ${demand.toFixed(0)} مليون مسافر (−${(demandDecline * 100).toFixed(0)}%). ` +
+    `تنخفض حركة المطارات في جميع مطارات الخليج التسعة. ` +
+    `تتراجع إيرادات السياحة إلى $${tourismRevenue.toFixed(1)} مليار (−${(tourismDecline * 100).toFixed(0)}%). ` +
+    `إجمالي أثر الطيران على الناتج المحلي: $${gdpImpact.toFixed(1)} مليار.`
+
+  return { steps, gdpImpact, chainNarrative, chainNarrativeAr, airportImpacts }
 }
 
 /* ── Compute system energy: E = Σ impact_i² ── */

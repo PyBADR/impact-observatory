@@ -155,7 +155,7 @@ export const gccNodes: GCCNode[] = [
   { id: 'soc_media',    label: 'Media',             labelAr: 'الإعلام',           layer: 'society', type: 'Platform',      lat: 25.2000, lng: 55.2500, weight: 0.82, sensitivity: 0.5,  damping_factor: 0.06, value: 0.82 },
   { id: 'soc_social',   label: 'Social Platforms',  labelAr: 'المنصات الاجتماعية', layer: 'society', type: 'Platform',     lat: 24.7200, lng: 46.6800, weight: 0.78, sensitivity: 0.4,  damping_factor: 0.05, value: 0.78 },
   { id: 'soc_travel_d', label: 'Travel Demand',     labelAr: 'الطلب على السفر',    layer: 'society', type: 'Topic',         lat: 25.2500, lng: 55.3500, weight: 0.72, sensitivity: 0.7,  damping_factor: 0.07, value: 0.72 },
-  { id: 'soc_ticket',   label: 'Ticket Price',      labelAr: 'أسعار التذاكر',      layer: 'society', type: 'Topic',         lat: 25.2532, lng: 55.3600, weight: 0.68, sensitivity: 0.75, damping_factor: 0.08, value: 0.68 },
+  { id: 'soc_ticket',   label: 'Flight Cost',        labelAr: 'تكلفة الرحلات',      layer: 'society', type: 'Topic',         lat: 25.2532, lng: 55.3600, weight: 0.68, sensitivity: 0.75, damping_factor: 0.08, value: 0.68 },
   { id: 'soc_food_d',  label: 'Food Demand',        labelAr: 'الطلب على الغذاء',   layer: 'society', type: 'Topic',         lat: 25.3000, lng: 51.5000, weight: 0.82, sensitivity: 0.7,  damping_factor: 0.06, value: 0.82 },
   { id: 'soc_housing', label: 'Housing & Cost of Living', labelAr: 'السكن وتكلفة المعيشة', layer: 'society', type: 'Topic', lat: 24.8000, lng: 46.8000, weight: 0.75, sensitivity: 0.6, damping_factor: 0.06, value: 0.75 },
   { id: 'soc_employment',label: 'Employment',       labelAr: 'التوظيف',           layer: 'society', type: 'Topic',         lat: 24.7500, lng: 46.7500, weight: 0.80, sensitivity: 0.6,  damping_factor: 0.05, value: 0.80 },
@@ -164,6 +164,12 @@ export const gccNodes: GCCNode[] = [
 
   // ── Economy: Logistics Hub ──
   { id: 'eco_logistics',label: 'Logistics Hub',     labelAr: 'المركز اللوجستي',    layer: 'economy', type: 'Topic',         lat: 25.0100, lng: 55.0800, weight: 0.80, sensitivity: 0.6,  damping_factor: 0.05, value: 0.80 },
+
+  // ── Aviation Phase 2: Airport Throughput + Airlines ──
+  { id: 'inf_airport_throughput', label: 'Airport Throughput', labelAr: 'حركة المطارات', layer: 'infrastructure', type: 'Topic', lat: 25.15, lng: 55.20, weight: 0.82, sensitivity: 0.7, damping_factor: 0.05, value: 0.82 },
+  { id: 'eco_saudia',   label: 'Saudia Airlines',    labelAr: 'الخطوط السعودية',    layer: 'economy', type: 'Organization',  lat: 24.96, lng: 46.70, weight: 0.75, sensitivity: 0.65, damping_factor: 0.05, value: 0.75 },
+  { id: 'eco_emirates',  label: 'Emirates',           labelAr: 'طيران الإمارات',     layer: 'economy', type: 'Organization',  lat: 25.25, lng: 55.37, weight: 0.80, sensitivity: 0.6,  damping_factor: 0.05, value: 0.80 },
+  { id: 'eco_qatar_aw',  label: 'Qatar Airways',      labelAr: 'الخطوط القطرية',     layer: 'economy', type: 'Organization',  lat: 25.27, lng: 51.57, weight: 0.78, sensitivity: 0.6,  damping_factor: 0.05, value: 0.78 },
 ]
 
 /* ════════════════════════════════════════════════
@@ -205,10 +211,10 @@ export const gccEdges: GCCEdge[] = [
   // FUEL → AVIATION → TICKET → DEMAND → AIRPORTS
   // ═══════════════════════════════════
   { id: 'e14', source: 'eco_fuel',     target: 'eco_aviation',  weight: 0.90, polarity: 1, label: 'fuel cost', labelAr: 'تكلفة الوقود',       animated: true },
-  { id: 'e15', source: 'eco_aviation', target: 'soc_ticket',   weight: 0.85, polarity: 1, label: 'ticket pricing', labelAr: 'تسعير التذاكر' },
+  { id: 'e15', source: 'eco_aviation', target: 'soc_ticket',   weight: 0.85, polarity: 1, label: 'fuel raises flight cost', labelAr: 'الوقود يرفع تكلفة الرحلات', animated: true },
   // ── CRITICAL: Aviation Cost → Tourism (higher cost reduces tourism) ──
   { id: 'e137', source: 'eco_aviation', target: 'eco_tourism',  weight: 0.70, polarity: -1, label: 'cost dampens tourism', labelAr: 'التكلفة تخفض السياحة', animated: true },
-  { id: 'e16', source: 'soc_ticket',   target: 'soc_travel_d', weight: 0.70, polarity: -1, label: 'demand inverse', labelAr: 'عكس الطلب' },
+  // e16 removed — replaced by stronger e150 in Aviation Phase 2 chain
   { id: 'e17', source: 'soc_travel_d', target: 'inf_dxb',     weight: 0.80, polarity: 1, label: 'passenger flow', labelAr: 'تدفق الركاب' },
   { id: 'e18', source: 'soc_travel_d', target: 'inf_ruh',     weight: 0.70, polarity: 1, label: 'passenger flow', labelAr: 'تدفق الركاب' },
   { id: 'e19', source: 'soc_travel_d', target: 'inf_kwi',     weight: 0.55, polarity: 1, label: 'passenger flow', labelAr: 'تدفق الركاب' },
@@ -411,6 +417,46 @@ export const gccEdges: GCCEdge[] = [
   // Insurance Risk → Aviation Fuel Cost (higher insurance raises fuel cost)
   { id: 'e147', source: 'fin_insurers', target: 'eco_aviation',  weight: 0.75, polarity: 1, label: 'insurance raises fuel cost', labelAr: 'التأمين يرفع تكلفة الوقود', animated: true },
   // Aviation Cost → Tourism Demand: already exists as e137 (w=0.70, polarity=-1)
+
+  // ── Aviation Phase 2: Extended Chain ──
+  // Aviation Fuel Cost → Flight Cost: exists as e15 (w=0.85, p=1)
+  // Flight Cost → Travel Demand (higher ticket price → less demand — negative polarity)
+  { id: 'e150', source: 'soc_ticket',    target: 'soc_travel_d',           weight: 0.80, polarity: -1, label: 'price suppresses demand',        labelAr: 'السعر يخفض الطلب',           animated: true },
+  // Travel Demand → Airport Throughput (less demand → less throughput)
+  { id: 'e151', source: 'soc_travel_d',  target: 'inf_airport_throughput', weight: 0.85, polarity: 1,  label: 'demand drives throughput',       labelAr: 'الطلب يحرك حركة المطارات',   animated: true },
+  // Airport Throughput → Tourism (less throughput → less tourism)
+  { id: 'e152', source: 'inf_airport_throughput', target: 'eco_tourism',   weight: 0.80, polarity: 1,  label: 'throughput drives tourism',      labelAr: 'حركة المطارات تدعم السياحة', animated: true },
+
+  // Airport Throughput → individual airports (fan-out)
+  { id: 'e153', source: 'inf_airport_throughput', target: 'inf_ruh', weight: 0.85, polarity: 1, label: 'throughput → RUH', labelAr: 'الحركة → الرياض' },
+  { id: 'e154', source: 'inf_airport_throughput', target: 'inf_dxb', weight: 0.90, polarity: 1, label: 'throughput → DXB', labelAr: 'الحركة → دبي' },
+  { id: 'e155', source: 'inf_airport_throughput', target: 'inf_doh', weight: 0.80, polarity: 1, label: 'throughput → DOH', labelAr: 'الحركة → الدوحة' },
+  { id: 'e156', source: 'inf_airport_throughput', target: 'inf_jed', weight: 0.80, polarity: 1, label: 'throughput → JED', labelAr: 'الحركة → جدة' },
+  { id: 'e157', source: 'inf_airport_throughput', target: 'inf_kwi', weight: 0.70, polarity: 1, label: 'throughput → KWI', labelAr: 'الحركة → الكويت' },
+  { id: 'e158', source: 'inf_airport_throughput', target: 'inf_auh', weight: 0.75, polarity: 1, label: 'throughput → AUH', labelAr: 'الحركة → أبوظبي' },
+  { id: 'e159', source: 'inf_airport_throughput', target: 'inf_bah', weight: 0.60, polarity: 1, label: 'throughput → BAH', labelAr: 'الحركة → البحرين' },
+  { id: 'e160', source: 'inf_airport_throughput', target: 'inf_mct', weight: 0.55, polarity: 1, label: 'throughput → MCT', labelAr: 'الحركة → مسقط' },
+  { id: 'e161', source: 'inf_airport_throughput', target: 'inf_dmm', weight: 0.65, polarity: 1, label: 'throughput → DMM', labelAr: 'الحركة → الدمام' },
+
+  // Airlines ← Aviation Fuel Cost (fuel cost hits airlines)
+  { id: 'e162', source: 'eco_aviation',  target: 'eco_saudia',    weight: 0.80, polarity: 1, label: 'fuel cost → Saudia',   labelAr: 'تكلفة الوقود → السعودية' },
+  { id: 'e163', source: 'eco_aviation',  target: 'eco_emirates',  weight: 0.85, polarity: 1, label: 'fuel cost → Emirates', labelAr: 'تكلفة الوقود → الإمارات' },
+  { id: 'e164', source: 'eco_aviation',  target: 'eco_qatar_aw',  weight: 0.80, polarity: 1, label: 'fuel cost → Qatar',    labelAr: 'تكلفة الوقود → القطرية' },
+  // Airlines → GDP (airline revenue)
+  { id: 'e165', source: 'eco_saudia',    target: 'eco_gdp', weight: 0.45, polarity: -1, label: 'airline cost drags GDP', labelAr: 'تكلفة الطيران تضغط الناتج' },
+  { id: 'e166', source: 'eco_emirates',  target: 'eco_gdp', weight: 0.50, polarity: -1, label: 'airline cost drags GDP', labelAr: 'تكلفة الطيران تضغط الناتج' },
+  { id: 'e167', source: 'eco_qatar_aw',  target: 'eco_gdp', weight: 0.40, polarity: -1, label: 'airline cost drags GDP', labelAr: 'تكلفة الطيران تضغط الناتج' },
+  // Airlines ← Airport Throughput (passenger volume)
+  { id: 'e168', source: 'inf_airport_throughput', target: 'eco_saudia',   weight: 0.70, polarity: 1, label: 'passengers → Saudia',   labelAr: 'المسافرون → السعودية' },
+  { id: 'e169', source: 'inf_airport_throughput', target: 'eco_emirates', weight: 0.80, polarity: 1, label: 'passengers → Emirates', labelAr: 'المسافرون → الإمارات' },
+  { id: 'e170', source: 'inf_airport_throughput', target: 'eco_qatar_aw', weight: 0.70, polarity: 1, label: 'passengers → Qatar',    labelAr: 'المسافرون → القطرية' },
+
+  // Airlines → Hub Airports (airline operations drive hub traffic)
+  { id: 'e171', source: 'eco_saudia',   target: 'inf_ruh', weight: 0.80, polarity: 1, label: 'Saudia hub → RUH',   labelAr: 'مركز السعودية → الرياض',   animated: true },
+  { id: 'e172', source: 'eco_emirates',  target: 'inf_dxb', weight: 0.90, polarity: 1, label: 'Emirates hub → DXB', labelAr: 'مركز الإمارات → دبي',    animated: true },
+  { id: 'e173', source: 'eco_qatar_aw',  target: 'inf_doh', weight: 0.85, polarity: 1, label: 'Qatar hub → DOH',   labelAr: 'مركز القطرية → الدوحة',   animated: true },
+  // Saudia also serves JED (Hajj gateway)
+  { id: 'e174', source: 'eco_saudia',   target: 'inf_jed', weight: 0.75, polarity: 1, label: 'Saudia → JED',       labelAr: 'السعودية → جدة',          animated: true },
 ]
 
 /* ════════════════════════════════════════════════

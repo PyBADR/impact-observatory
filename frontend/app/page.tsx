@@ -20,7 +20,7 @@ const HP: Record<string, { en: string; ar: string }> = {
   enterSystem: { en: 'Enter the System', ar: 'ادخل النظام' },
   viewArch: { en: 'View Architecture', ar: 'عرض البنية' },
   systemOnline: { en: 'System Online', ar: 'النظام متصل' },
-  agents: { en: '68 Graph Nodes', ar: '68 عقدة بيانية' },
+  agents: { en: '72 Graph Nodes', ar: '72 عقدة بيانية' },
   gccReady: { en: '5-Layer Model', ar: 'نموذج 5 طبقات' },
   demoTag: { en: 'Demo', ar: 'عرض' },
   demoTitle: { en: 'Watch Deevo Sim in Action', ar: 'شاهد ديفو سيم في العمل' },
@@ -74,8 +74,8 @@ export default function HomePage() {
   ]
 
   const stats = [
-    { value: '68', label: { en: 'Graph Nodes', ar: 'عقدة بيانية' } },
-    { value: '149', label: { en: 'Causal Edges', ar: 'رابط سببي' } },
+    { value: '72', label: { en: 'Graph Nodes', ar: 'عقدة بيانية' } },
+    { value: '173', label: { en: 'Causal Edges', ar: 'رابط سببي' } },
     { value: '5', label: { en: 'System Layers', ar: 'طبقات النظام' } },
   ]
 

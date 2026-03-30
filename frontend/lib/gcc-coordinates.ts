@@ -98,6 +98,12 @@ export const nodeCoordinates: Record<string, GeoCoordinate> = {
   soc_sentiment: { lat: 24.8000, lng: 46.7500 }, // Public Sentiment, Riyadh
   soc_stability: { lat: 24.6500, lng: 46.7100 }, // Public Stability, Riyadh
   eco_logistics: { lat: 25.0100, lng: 55.0800 }, // Logistics Hub, Jebel Ali
+
+  // — Aviation Phase 2 —
+  inf_airport_throughput: { lat: 25.15, lng: 55.20 }, // Airport Throughput (aggregated)
+  eco_saudia:   { lat: 24.96, lng: 46.70 },  // Saudia Airlines, Riyadh
+  eco_emirates: { lat: 25.25, lng: 55.37 },  // Emirates, Dubai
+  eco_qatar_aw: { lat: 25.27, lng: 51.57 },  // Qatar Airways, Doha
 }
 
 /** Shipping routes for globe arc rendering */
@@ -132,4 +138,15 @@ export const aviationRoutes: { from: GeoCoordinate; to: GeoCoordinate; label: st
   { from: { lat: 25.2532, lng: 55.3657 }, to: { lat: 24.4430, lng: 54.6511 }, label: 'DXB → AUH' },
   { from: { lat: 25.2532, lng: 55.3657 }, to: { lat: 26.2708, lng: 50.6336 }, label: 'DXB → BAH' },
   { from: { lat: 21.6796, lng: 39.1565 }, to: { lat: 25.2731, lng: 51.6081 }, label: 'JED → DOH' },
+  // ── International Aviation Routes (Phase 2) ──
+  { from: { lat: 25.2532, lng: 55.3657 }, to: { lat: 51.4700, lng: -0.4543 }, label: 'DXB → London Heathrow' },
+  { from: { lat: 25.2532, lng: 55.3657 }, to: { lat: 19.0896, lng: 72.8656 }, label: 'DXB → Mumbai' },
+  { from: { lat: 25.2532, lng: 55.3657 }, to: { lat: 1.3644, lng: 103.9915 }, label: 'DXB → Singapore' },
+  { from: { lat: 25.2731, lng: 51.6081 }, to: { lat: 51.4700, lng: -0.4543 }, label: 'DOH → London Heathrow' },
+  { from: { lat: 25.2731, lng: 51.6081 }, to: { lat: 40.6413, lng: -73.7781 }, label: 'DOH → New York JFK' },
+  { from: { lat: 24.9578, lng: 46.6989 }, to: { lat: 36.6297, lng: 3.2141 },  label: 'RUH → Algiers' },
+  { from: { lat: 25.2532, lng: 55.3657 }, to: { lat: 31.1443, lng: 121.8083 }, label: 'DXB → Shanghai Pudong' },
+  { from: { lat: 21.6796, lng: 39.1565 }, to: { lat: 30.1127, lng: 31.4099 }, label: 'JED → Cairo' },
+  { from: { lat: 25.2532, lng: 55.3657 }, to: { lat: 35.5494, lng: 139.7798 }, label: 'DXB → Tokyo Haneda' },
+  { from: { lat: 24.4330, lng: 54.6511 }, to: { lat: 51.4700, lng: -0.4543 }, label: 'AUH → London Heathrow' },
 ]
