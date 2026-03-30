@@ -319,8 +319,12 @@ export function runPropagation(
   // ── System energy: E = Σ impact_i² ──
   const systemEnergy = computeEnergy(impacts)
 
-  // ── Confidence ──
-  const confidence = Math.min(0.95, 0.6 + chain.length * 0.005 + maxDepth * 0.05)
+  // ── Confidence: C = 1 / (1 + variance) ──
+  // Deterministic variance: spread of node impacts as uncertainty proxy
+  const impactValues = Array.from(impacts.values()).map(Math.abs)
+  const meanImpact = impactValues.reduce((a, b) => a + b, 0) / impactValues.length
+  const impactVariance = impactValues.reduce((acc, v) => acc + (v - meanImpact) ** 2, 0) / impactValues.length
+  const confidence = 1 / (1 + impactVariance)
 
   // ── Per-node explanations ──
   const maxImpactVal = Math.max(...Array.from(impacts.values()).map(Math.abs), 0.001)

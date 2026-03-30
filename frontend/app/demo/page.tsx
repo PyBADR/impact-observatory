@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import GraphPanel from '@/components/graph/GraphPanel'
-import { gccNodes, gccEdges, gccScenarios } from '@/lib/gcc-graph'
+import { gccNodes, gccEdges, gccScenarios, layerMeta } from '@/lib/gcc-graph'
 import { runPropagation, formatPropagationChain, type PropagationResult, type NodeExplanation } from '@/lib/propagation-engine'
 import { setLanguage, getLanguage, type Language } from '@/lib/i18n'
 import { shippingRoutes, aviationRoutes, nodeCoordinates } from '@/lib/gcc-coordinates'
@@ -589,13 +589,36 @@ function DemoPageContent() {
     return propagation.nodeImpacts
   }, [propagation, timelineIteration])
 
+  // Pre-compute layer-stratified positions: nodes grouped by layer band, spread horizontally
+  const layerNodePositions = useMemo(() => {
+    const layerOrder: Array<keyof typeof layerMeta> = ['geography', 'infrastructure', 'economy', 'finance', 'society']
+    const layerIndices = new Map<string, number>()
+    const layerCounts = new Map<string, number>()
+    for (const n of gccNodes) {
+      const count = layerCounts.get(n.layer) || 0
+      layerIndices.set(n.id, count)
+      layerCounts.set(n.layer, count + 1)
+    }
+    const positions = new Map<string, { x: number; y: number }>()
+    const canvasW = 850
+    for (const n of gccNodes) {
+      const meta = layerMeta[n.layer]
+      const total = layerCounts.get(n.layer) || 1
+      const idx = layerIndices.get(n.id) || 0
+      const spacing = canvasW / (total + 1)
+      positions.set(n.id, { x: spacing * (idx + 1), y: meta.yBase })
+    }
+    return positions
+  }, [])
+
   const graphNodes = useMemo(() => {
     return gccNodes.map(n => {
       const impact = Math.abs(activeImpacts.get(n.id) || 0)
       const nodeLabel = lang === 'ar' ? (n.labelAr || n.label) : n.label
+      const pos = layerNodePositions.get(n.id) || { x: 400, y: 300 }
       return {
         id: n.id, type: 'default',
-        position: { x: n.lng * 30 - 1200, y: n.lat * -30 + 900 },
+        position: { x: pos.x, y: pos.y },
         data: { label: nodeLabel, type: n.layer, weight: impact },
         style: {
           background: impact > 0.05 ? LAYER_COLORS[n.layer] : '#1e293b',
@@ -682,7 +705,7 @@ function DemoPageContent() {
               <span className="text-[10px] text-ds-text-dim">|</span>
               <span className="text-[10px] font-mono text-ds-text-dim">{ui('systemEnergy', lang)}: <span className="text-amber-400">{propagation.systemEnergy.toFixed(3)}</span></span>
               <span className="text-[10px] text-ds-text-dim">|</span>
-              <span className="text-[10px] font-mono text-ds-text-dim">{ui('confidence', lang)}: <span className="text-emerald-400">{(propagation.confidence * 100).toFixed(0)}%</span></span>
+              <span className="text-[10px] font-mono text-ds-text-dim">{ui('confidence', lang)}: <span className="text-emerald-400">{((analysisMode === 'probabilistic' && monteCarlo ? (1 / (1 + monteCarlo.variance)) : propagation.confidence) * 100).toFixed(0)}%</span></span>
               <span className="text-[10px] text-ds-text-dim">|</span>
               <span className="text-[10px] font-mono text-ds-text-dim">{ui('spread', lang)}: <span className="text-cyan-400">{lang === 'ar' ? propagation.spreadLevelAr : propagation.spreadLevel}</span></span>
               <span className="text-[10px] text-ds-text-dim">|</span>
