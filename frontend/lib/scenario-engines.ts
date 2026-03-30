@@ -525,7 +525,7 @@ function computeGenericEngine(impacts: Map<string, number>, severity: number, en
     const pct = clamp(entry.val * 100)
     return {
       id: entry.id,
-      label: entry.id.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+      label: entry.id.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
       labelAr: entry.id,
       formula: `Impact = ${pct.toFixed(0)}%`,
       formulaAr: `التأثير = ${pct.toFixed(0)}%`,

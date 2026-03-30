@@ -14,7 +14,7 @@ import dynamic from 'next/dynamic'
 import GraphPanel from '@/components/graph/GraphPanel'
 import { gccNodes, gccEdges, gccScenarios, layerMeta, SCENARIO_GROUPS, type ScenarioGroup } from '@/lib/gcc-graph'
 import { runPropagation, formatPropagationChain, computeSectorFinancials, computeHormuzChain, computeAviationChain, type PropagationResult, type NodeExplanation, type SectorFinancials, type HormuzChainResult, type AviationChainResult } from '@/lib/propagation-engine'
-import { computeScenarioEngine, type ScenarioEngineOutput } from '@/lib/scenario-engines'
+import { getScenarioEngine, type ScenarioEngineResult, type ScenarioEngine } from '@/lib/scenario-engines'
 import { setLanguage, getLanguage, type Language } from '@/lib/i18n'
 import { shippingRoutes, aviationRoutes, nodeCoordinates } from '@/lib/gcc-coordinates'
 
@@ -785,11 +785,50 @@ function DemoPageContent() {
     return computeAviationChain(propagation.nodeImpacts, severityMod)
   }, [propagation, severityMod])
 
-  const engineResult = useMemo<ScenarioEngineOutput | null>(() => {
-    if (!propagation || !scenario) return null
+  // ═══ UNIFIED ENGINE RUNTIME ═══
+  // Engine reads propagation nodeImpacts + severity → produces ScenarioEngineResult
+  // This single output drives: engine panel, formula chain, key metrics, narrative
+  const engineMeta = useMemo<ScenarioEngine | null>(() => {
+    if (!scenario) return null
     const eid = scenario.engineId || scenario.id
-    return computeScenarioEngine(eid)
-  }, [propagation, scenario, severityMod])
+    return getScenarioEngine(eid)
+  }, [scenario])
+
+  const engineResult = useMemo<ScenarioEngineResult | null>(() => {
+    if (!propagation || !engineMeta) return null
+    return engineMeta.compute(propagation.nodeImpacts, severityMod)
+  }, [propagation, engineMeta, severityMod])
+
+  // ═══ SCIENTIST LAYER ═══
+  // Computed from unified propagation state — drives scientist overlay
+  const scientist = useMemo(() => {
+    if (!propagation) return null
+    const energy = propagation.systemEnergy
+    const confidence = propagation.confidence
+    const uncertainty = 1 - confidence
+    const dominantSector = propagation.affectedSectors.length > 0
+      ? propagation.affectedSectors.reduce((a, b) => a.avgImpact > b.avgImpact ? a : b)
+      : null
+    const geoNodes = gccNodes.filter(n => n.layer === 'geography')
+    const regionalStress = geoNodes.length > 0
+      ? geoNodes.reduce((sum, n) => sum + Math.abs(propagation.nodeImpacts.get(n.id) || 0), 0) / geoNodes.length
+      : 0
+    const stage = propagation.propagationDepth <= 2 ? 'initial' : propagation.propagationDepth <= 4 ? 'cascading' : 'saturated'
+    const shockClass = severityMod >= 0.8 ? 'critical' : severityMod >= 0.5 ? 'severe' : severityMod >= 0.3 ? 'moderate' : 'low'
+    return {
+      energy, confidence, uncertainty,
+      dominantSector,
+      regionalStress,
+      stage: stage as 'initial' | 'cascading' | 'saturated',
+      stageAr: stage === 'initial' ? 'أولي' : stage === 'cascading' ? 'متسلسل' : 'مشبع',
+      timeHorizon: scenario?.timeHorizon || '—',
+      timeHorizonAr: scenario?.timeHorizonAr || '—',
+      shockClass: shockClass as 'critical' | 'severe' | 'moderate' | 'low',
+      shockClassAr: shockClass === 'critical' ? 'حرج' : shockClass === 'severe' ? 'شديد' : shockClass === 'moderate' ? 'متوسط' : 'منخفض',
+      propagationDepth: propagation.propagationDepth,
+      totalExposure: engineResult?.totalExposure ?? propagation.totalLoss,
+    }
+  }, [propagation, scenario, severityMod, engineResult])
 
   if (isMobile) {
     return (
@@ -1062,64 +1101,128 @@ function DemoPageContent() {
               </div>
             )}
 
-            {/* ═══ ENGINE INTELLIGENCE PANEL ═══ */}
-            {engineResult && (
-              <div className="ds-card rounded-xl p-3">
-                <h3 className="text-[10px] uppercase tracking-[0.15em] text-violet-400 font-bold mb-2 flex items-center gap-2">
-                  <Zap size={12} /> {lang === 'ar' ? 'محرك السيناريو' : 'Scenario Engine'}
+            {/* ═══ SCENARIO FORMULA ENGINE — UNIFIED ═══ */}
+            {propagation && engineResult && engineMeta && (
+              <div className="ds-card rounded-xl p-3 border border-cyan-500/20">
+                <h3 className="text-[10px] uppercase tracking-[0.15em] text-cyan-400 font-bold mb-2 flex items-center gap-2">
+                  <Zap size={12} /> {lang === 'ar' ? engineMeta.labelAr : engineMeta.label}
                 </h3>
-                {/* GDP Loss Metrics */}
-                <div className="space-y-1.5 mb-3">
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-ds-text-muted">{lang === 'ar' ? 'خسائر الناتج الإقليمي' : 'Regional GDP Loss'}</span>
-                    <span className="font-mono text-rose-400 font-semibold">{engineResult.metrics.regionalGdpLoss.value.toFixed(1)}%</span>
-                  </div>
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-ds-text-muted">{lang === 'ar' ? 'خسائر الناتج العالمي' : 'Global GDP Loss'}</span>
-                    <span className="font-mono text-amber-400 font-semibold">{engineResult.metrics.globalGdpLoss.value.toFixed(1)}%</span>
-                  </div>
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-ds-text-muted">{lang === 'ar' ? 'الثقة' : 'Confidence'}</span>
-                    <span className="font-mono text-cyan-400">{engineResult.metrics.confidence.value.toFixed(0)}%</span>
-                  </div>
+                <div className="text-[9px] font-mono text-ds-text-dim mb-2 leading-relaxed">
+                  {lang === 'ar' ? engineMeta.chainLabelAr : engineMeta.chainLabel}
                 </div>
-                {/* Timeframe */}
-                <div className="border-t border-ds-border pt-2 mb-3">
-                  <div className="text-[9px] uppercase tracking-widest text-ds-text-dim mb-1">{lang === 'ar' ? 'الإطار الزمني' : 'Timeframe'}</div>
-                  <div className="grid grid-cols-3 gap-1 text-[10px]">
-                    <div className="bg-rose-500/10 rounded px-1.5 py-1 text-center"><div className="text-rose-400 font-bold">{lang === 'ar' ? 'فوري' : 'Imm.'}</div><div className="text-ds-text-dim">{engineResult.timeframe.immediate}</div></div>
-                    <div className="bg-amber-500/10 rounded px-1.5 py-1 text-center"><div className="text-amber-400 font-bold">{lang === 'ar' ? 'قصير' : 'Short'}</div><div className="text-ds-text-dim">{engineResult.timeframe.shortTerm}</div></div>
-                    <div className="bg-cyan-500/10 rounded px-1.5 py-1 text-center"><div className="text-cyan-400 font-bold">{lang === 'ar' ? 'متوسط' : 'Med.'}</div><div className="text-ds-text-dim">{engineResult.timeframe.mediumTerm}</div></div>
-                  </div>
-                </div>
-                {/* Sector Impacts from Engine */}
-                <div className="border-t border-ds-border pt-2 mb-3">
-                  <div className="text-[9px] uppercase tracking-widest text-ds-text-dim mb-1">{lang === 'ar' ? 'تأثيرات القطاعات' : 'Engine Sector Impacts'}</div>
-                  <div className="space-y-1">
-                    {Object.entries(engineResult.sectorImpacts).map(([sector, impact]) => (
-                      <div key={sector}>
-                        <div className="flex items-center gap-1.5 text-[10px]">
-                          <span className="w-20 text-ds-text-muted truncate capitalize">{sector.replace(/_/g, ' ')}</span>
-                          <div className="flex-1 h-1.5 bg-ds-bg-alt rounded-full overflow-hidden">
-                            <div className="h-full rounded-full bg-rose-500 transition-all duration-500" style={{ width: `${impact.gdpLoss.value}%` }} />
+                {/* Chain Steps — formula cascade */}
+                <div className="space-y-1.5">
+                  {engineResult.steps.map((step, i) => {
+                    const dirColor = step.direction === '↑' ? '#ef4444' : step.direction === '↓' ? '#f59e0b' : '#64748b'
+                    const label = lang === 'ar' ? step.labelAr : step.label
+                    const formula = lang === 'ar' ? step.formulaAr : step.formula
+                    return (
+                      <div key={step.id} className="bg-ds-bg-alt rounded-lg px-2 py-1.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold" style={{ color: dirColor }}>{step.direction}</span>
+                            <span className="text-[11px] text-ds-text font-medium">{label}</span>
                           </div>
-                          <span className="font-mono w-10 text-end text-rose-400 text-[10px]">{impact.gdpLoss.value.toFixed(0)}%</span>
+                          <span className="text-[10px] font-mono font-bold" style={{ color: dirColor }}>
+                            {step.impactPct > 0 ? (step.direction === '↑' ? '+' : '−') : ''}{Math.abs(step.impactPct).toFixed(0)}%
+                          </span>
                         </div>
-                        <div className="text-[9px] text-ds-text-dim ps-[5.5rem] -mt-0.5">{lang === 'ar' ? impact.narrative.ar : impact.narrative.en}</div>
+                        <div className="text-[9px] font-mono text-ds-text-dim mt-0.5">{formula}</div>
+                        {i < engineResult.steps.length - 1 && (
+                          <div className="text-center text-[8px] text-ds-text-dim mt-0.5">│</div>
+                        )}
                       </div>
-                    ))}
+                    )
+                  })}
+                </div>
+                {/* Key Metrics */}
+                {engineResult.keyMetrics.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-ds-border">
+                    <h4 className="text-[9px] text-cyan-400 font-bold mb-1.5">{ui('engineMetrics', lang)}</h4>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {engineResult.keyMetrics.map((m, i) => (
+                        <div key={i} className="bg-ds-bg-alt rounded px-2 py-1">
+                          <span className="text-[8px] text-ds-text-dim block">{lang === 'ar' ? m.labelAr : m.label}</span>
+                          <span className="text-[11px] font-mono font-bold" style={{ color: m.color }}>{m.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {/* Total Exposure */}
+                <div className="mt-2 pt-2 border-t border-ds-border">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-ds-text-dim font-semibold">{ui('engineExposure', lang)}</span>
+                    <span className="font-mono text-red-400 font-bold">${engineResult.totalExposure.toFixed(1)}B</span>
                   </div>
                 </div>
-                {/* Explanation Chain */}
-                <div className="border-t border-ds-border pt-2">
-                  <div className="text-[9px] uppercase tracking-widest text-ds-text-dim mb-1">{lang === 'ar' ? 'سلسلة التفسير' : 'Explanation Chain'}</div>
-                  <div className="space-y-1">
-                    {engineResult.explanation.map((step, i) => (
-                      <div key={i} className="flex items-start gap-1.5 text-[10px]">
-                        <span className="text-violet-400 font-mono mt-0.5">{i + 1}.</span>
-                        <span className="text-ds-text-muted">{lang === 'ar' ? step.ar : step.en}</span>
-                      </div>
-                    ))}
+                {/* Bilingual Narrative */}
+                <div className="mt-2 pt-2 border-t border-ds-border">
+                  <p className="text-[10px] text-ds-text-muted leading-relaxed">
+                    {lang === 'ar' ? engineResult.narrativeAr : engineResult.narrative}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* ═══ SCIENTIST LAYER ═══ */}
+            {scientist && (
+              <div className="ds-card rounded-xl p-3 border border-emerald-500/20">
+                <h3 className="text-[10px] uppercase tracking-[0.15em] text-emerald-400 font-bold mb-2 flex items-center gap-2">
+                  <Target size={12} /> {lang === 'ar' ? 'الطبقة العلمية' : 'Scientist Layer'}
+                </h3>
+                <div className="grid grid-cols-2 gap-2 text-[10px]">
+                  {/* System Energy */}
+                  <div className="bg-ds-bg-alt rounded px-2 py-1.5">
+                    <div className="text-[8px] text-ds-text-dim">{lang === 'ar' ? 'طاقة النظام' : 'System Energy'}</div>
+                    <div className="text-[12px] font-mono font-bold text-amber-400">E = {scientist.energy.toFixed(3)}</div>
+                    <div className="text-[8px] font-mono text-ds-text-dim">E_sys = Σx²</div>
+                  </div>
+                  {/* Confidence */}
+                  <div className="bg-ds-bg-alt rounded px-2 py-1.5">
+                    <div className="text-[8px] text-ds-text-dim">{lang === 'ar' ? 'الثقة' : 'Confidence'}</div>
+                    <div className="text-[12px] font-mono font-bold" style={{ color: scientist.confidence > 0.7 ? '#22c55e' : scientist.confidence > 0.4 ? '#f59e0b' : '#ef4444' }}>C = {(scientist.confidence * 100).toFixed(0)}%</div>
+                    <div className="text-[8px] font-mono text-ds-text-dim">C = 1/(1+σ²)</div>
+                  </div>
+                  {/* Uncertainty */}
+                  <div className="bg-ds-bg-alt rounded px-2 py-1.5">
+                    <div className="text-[8px] text-ds-text-dim">{lang === 'ar' ? 'عدم اليقين' : 'Uncertainty'}</div>
+                    <div className="text-[12px] font-mono font-bold text-rose-400">U = {(scientist.uncertainty * 100).toFixed(0)}%</div>
+                    <div className="text-[8px] font-mono text-ds-text-dim">U = 1 − C</div>
+                  </div>
+                  {/* Propagation Depth */}
+                  <div className="bg-ds-bg-alt rounded px-2 py-1.5">
+                    <div className="text-[8px] text-ds-text-dim">{lang === 'ar' ? 'عمق الانتشار' : 'Prop. Depth'}</div>
+                    <div className="text-[12px] font-mono font-bold text-cyan-400">D = {scientist.propagationDepth}</div>
+                    <div className="text-[8px] font-mono text-ds-text-dim">{lang === 'ar' ? scientist.stageAr : scientist.stage}</div>
+                  </div>
+                </div>
+                {/* Dominant Sector Stress */}
+                {scientist.dominantSector && (
+                  <div className="mt-2 pt-2 border-t border-ds-border">
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className="text-ds-text-dim">{lang === 'ar' ? 'القطاع المهيمن' : 'Dominant Sector'}</span>
+                      <span className="font-mono font-bold" style={{ color: scientist.dominantSector.color }}>{layerLabel(scientist.dominantSector.sector, lang)} · {(scientist.dominantSector.avgImpact * 100).toFixed(0)}%</span>
+                    </div>
+                  </div>
+                )}
+                {/* Regional Stress + Shock + Horizon */}
+                <div className="mt-2 pt-2 border-t border-ds-border space-y-1">
+                  <div className="flex justify-between text-[10px]">
+                    <span className="text-ds-text-dim">{lang === 'ar' ? 'الضغط الإقليمي' : 'Regional Stress'}</span>
+                    <span className="font-mono text-amber-400">{(scientist.regionalStress * 100).toFixed(1)}%</span>
+                  </div>
+                  <div className="flex justify-between text-[10px]">
+                    <span className="text-ds-text-dim">{lang === 'ar' ? 'تصنيف الصدمة' : 'Shock Class'}</span>
+                    <span className="font-mono" style={{ color: scientist.shockClass === 'critical' ? '#ef4444' : scientist.shockClass === 'severe' ? '#f59e0b' : '#22c55e' }}>{lang === 'ar' ? scientist.shockClassAr : scientist.shockClass}</span>
+                  </div>
+                  <div className="flex justify-between text-[10px]">
+                    <span className="text-ds-text-dim">{lang === 'ar' ? 'الأفق الزمني' : 'Time Horizon'}</span>
+                    <span className="font-mono text-ds-text-muted">{lang === 'ar' ? scientist.timeHorizonAr : scientist.timeHorizon}</span>
+                  </div>
+                  <div className="flex justify-between text-[10px]">
+                    <span className="text-ds-text-dim">{lang === 'ar' ? 'إجمالي التعرض' : 'Total Exposure'}</span>
+                    <span className="font-mono text-red-400 font-bold">${scientist.totalExposure.toFixed(1)}B</span>
                   </div>
                 </div>
               </div>
