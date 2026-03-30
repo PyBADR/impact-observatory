@@ -8,7 +8,7 @@ import {
   Play, RotateCcw, Globe as GlobeIcon, ArrowLeft, Loader2, CheckCircle2, Circle,
   Activity, Radio, Shield, Zap, BarChart3, List, FileText, Languages,
   X, ChevronLeft, ChevronRight, TrendingUp, Target, Info, Layers,
-  Anchor, Plane, AlertTriangle, Network,
+  Anchor, Plane, AlertTriangle, Network, Users,
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import GraphPanel from '@/components/graph/GraphPanel'
@@ -103,6 +103,12 @@ const UI: Record<string, { en: string; ar: string }> = {
   bestCase: { en: 'Best Case', ar: 'أفضل حالة' },
   worstCase: { en: 'Worst Case', ar: 'أسوأ حالة' },
   sectorFinancials: { en: 'Sector Financial Formulas', ar: 'المعادلات المالية القطاعية' },
+  gccRegion: { en: 'GCC REGION', ar: 'المنطقة' },
+  corridors: { en: 'CORRIDORS', ar: 'الممرات' },
+  hormuzStrait: { en: 'Hormuz Strait', ar: 'مضيق هرمز' },
+  shippingCorr: { en: 'Shipping Lanes', ar: 'الممرات البحرية' },
+  airCorr: { en: 'Air Corridors', ar: 'الممرات الجوية' },
+  resetView: { en: 'Reset View', ar: 'إعادة العرض' },
   hormuzEngine: { en: 'Hormuz Cascade Engine', ar: 'محرك سلسلة هرمز' },
   hormuzChain: { en: 'Hormuz → Oil → Shipping → Insurance → Aviation → Tourism → GDP', ar: 'هرمز ← النفط ← الشحن ← التأمين ← الطيران ← السياحة ← الناتج المحلي' },
   chainFormula: { en: 'Formula', ar: 'المعادلة' },
@@ -234,6 +240,18 @@ function runMonteCarlo(
 const SHIPPING_SCENARIOS = new Set(['hormuz_closure', 'jebel_ali_disruption', 'gcc_port_congestion', 'military_repositioning', 'insurance_repricing', 'food_security_shock'])
 const AVIATION_SCENARIOS = new Set(['airspace_restriction', 'flight_rerouting', 'hajj_disruption'])
 
+const COUNTRY_NODES: Record<string, { name: string; nameAr: string; nodeIds: string[] }> = {
+  SA: { name: 'Saudi Arabia', nameAr: 'السعودية', nodeIds: ['geo_sa', 'inf_ruh', 'inf_jed', 'inf_dmm', 'inf_dammam', 'eco_oil', 'eco_aramco', 'soc_hajj', 'fin_tadawul', 'fin_sama', 'fin_banking', 'fin_insurers', 'inf_power', 'inf_desal', 'soc_citizens', 'soc_housing', 'soc_employment', 'soc_sentiment', 'soc_stability', 'eco_saudia', 'gov_transport', 'gov_water', 'gov_energy', 'gov_tourism', 'gov_finance'] },
+  AE: { name: 'UAE', nameAr: 'الإمارات', nodeIds: ['geo_uae', 'inf_dxb', 'inf_auh', 'inf_jebel', 'inf_khalifa', 'eco_tourism', 'eco_aviation', 'eco_adnoc', 'eco_shipping', 'eco_logistics', 'eco_emirates', 'eco_av_stress', 'fin_uae_cb', 'fin_reinsure', 'fin_ins_risk', 'soc_travelers', 'soc_business', 'soc_media', 'soc_expats', 'soc_travel_d', 'soc_ticket', 'inf_airport_throughput'] },
+  QA: { name: 'Qatar', nameAr: 'قطر', nodeIds: ['geo_qa', 'inf_doh', 'inf_doha_p', 'inf_hamad', 'eco_qatar_aw', 'fin_qa_cb', 'soc_food_d'] },
+  KW: { name: 'Kuwait', nameAr: 'الكويت', nodeIds: ['geo_kw', 'inf_kwi', 'inf_shuwaikh', 'eco_kpc', 'eco_kw_airways', 'fin_kw_cb'] },
+  BH: { name: 'Bahrain', nameAr: 'البحرين', nodeIds: ['geo_bh', 'inf_bah', 'eco_gulf_air', 'fin_bh_cb'] },
+  OM: { name: 'Oman', nameAr: 'عُمان', nodeIds: ['geo_om', 'inf_mct', 'inf_sohar', 'eco_oman_air', 'fin_om_cb'] },
+}
+
+const SHIPPING_NODE_IDS = ['eco_shipping', 'eco_logistics', 'inf_jebel', 'inf_dammam', 'inf_doha_p', 'inf_hamad', 'inf_khalifa', 'inf_shuwaikh', 'inf_sohar']
+const AVIATION_NODE_IDS = ['eco_aviation', 'eco_av_stress', 'eco_saudia', 'eco_emirates', 'eco_qatar_aw', 'eco_kw_airways', 'eco_gulf_air', 'eco_oman_air', 'inf_airport_throughput']
+
 function GlobeView({
   propagation, selectedNode, onSelectNode, lang, timelineIteration, globeMode = 'normal',
   scientist, scenarioId,
@@ -278,6 +296,26 @@ function GlobeView({
       if (abs > max) max = abs
     }
     return max
+  }, [activeImpacts])
+
+  // Country-level aggregate impacts
+  const countryImpacts = useMemo(() => {
+    return Object.entries(COUNTRY_NODES).map(([code, country]) => {
+      const impacts = country.nodeIds.map(id => Math.abs(activeImpacts.get(id) || 0))
+      const active = impacts.filter(v => v > 0)
+      const avg = active.length > 0 ? active.reduce((a, b) => a + b, 0) / active.length : 0
+      return { code, name: country.name, nameAr: country.nameAr, avgImpact: avg, nodeCount: active.length }
+    }).sort((a, b) => b.avgImpact - a.avgImpact)
+  }, [activeImpacts])
+
+  // Corridor impact computations
+  const corridorImpacts = useMemo(() => {
+    const hormuz = Math.abs(activeImpacts.get('geo_hormuz') || 0)
+    const shippingVals = SHIPPING_NODE_IDS.map(id => Math.abs(activeImpacts.get(id) || 0)).filter(v => v > 0)
+    const shippingAvg = shippingVals.length > 0 ? shippingVals.reduce((a, b) => a + b, 0) / shippingVals.length : 0
+    const aviationVals = AVIATION_NODE_IDS.map(id => Math.abs(activeImpacts.get(id) || 0)).filter(v => v > 0)
+    const aviationAvg = aviationVals.length > 0 ? aviationVals.reduce((a, b) => a + b, 0) / aviationVals.length : 0
+    return { hormuz, shippingAvg, aviationAvg }
   }, [activeImpacts])
 
   const pointsData = useMemo(() => {
@@ -412,7 +450,12 @@ function GlobeView({
         pointAltitude={(d: any) => d.impact * 0.05}
         pointRadius={(d: any) => d.size}
         pointLabel={pointLabelFn}
-        onPointClick={(point: any) => onSelectNode(point.id)}
+        onPointClick={(point: any) => {
+          onSelectNode(point.id)
+          if (globeRef.current) {
+            globeRef.current.pointOfView({ lat: point.lat, lng: point.lng, altitude: 1.5 }, 800)
+          }
+        }}
         arcsData={allArcs}
         arcStartLat="startLat"
         arcStartLng="startLng"
@@ -458,6 +501,59 @@ function GlobeView({
           <div className="text-ds-text-dim text-[8px]">{lang === 'ar' ? scientist.stageAr : scientist.stage}</div>
         </div>
       )}
+      {/* GCC Region Intelligence */}
+      <div className="absolute top-3 start-3 bg-ds-surface/85 backdrop-blur-sm rounded-lg px-3 py-2 border border-ds-border text-[8px] font-mono space-y-0.5" style={{ direction: lang === 'ar' ? 'rtl' : 'ltr' }}>
+        <div className="text-[9px] font-bold text-cyan-400 mb-1">{ui('gccRegion', lang)}</div>
+        {countryImpacts.map(c => {
+          const pct = (c.avgImpact * 100).toFixed(0)
+          const pctNum = c.avgImpact * 100
+          const color = pctNum > 30 ? '#ef4444' : pctNum > 15 ? '#f59e0b' : pctNum > 0 ? '#22c55e' : '#64748b'
+          return (
+            <div key={c.code} className="flex items-center justify-between gap-3">
+              <span className="text-ds-text-dim">{lang === 'ar' ? c.nameAr : c.name}</span>
+              <span style={{ color }} className="font-bold">{pctNum > 0 ? `${pct}%` : '—'}</span>
+            </div>
+          )
+        })}
+        <div className="border-t border-ds-border mt-1 pt-1">
+          <div className="text-[9px] font-bold text-cyan-400 mb-1">{ui('corridors', lang)}</div>
+          {(() => {
+            const hPct = (corridorImpacts.hormuz * 100).toFixed(0)
+            const hColor = corridorImpacts.hormuz * 100 > 30 ? '#ef4444' : corridorImpacts.hormuz * 100 > 15 ? '#f59e0b' : corridorImpacts.hormuz * 100 > 0 ? '#22c55e' : '#64748b'
+            const sPct = (corridorImpacts.shippingAvg * 100).toFixed(0)
+            const sColor = corridorImpacts.shippingAvg * 100 > 30 ? '#ef4444' : corridorImpacts.shippingAvg * 100 > 15 ? '#f59e0b' : corridorImpacts.shippingAvg * 100 > 0 ? '#22c55e' : '#64748b'
+            const aPct = (corridorImpacts.aviationAvg * 100).toFixed(0)
+            const aColor = corridorImpacts.aviationAvg * 100 > 30 ? '#ef4444' : corridorImpacts.aviationAvg * 100 > 15 ? '#f59e0b' : corridorImpacts.aviationAvg * 100 > 0 ? '#22c55e' : '#64748b'
+            return (
+              <>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-ds-text-dim">{ui('hormuzStrait', lang)}</span>
+                  <span style={{ color: hColor }} className="font-bold">{corridorImpacts.hormuz > 0 ? `${hPct}%` : '—'}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-ds-text-dim">{ui('shippingCorr', lang)}</span>
+                  <span style={{ color: sColor }} className="font-bold">{corridorImpacts.shippingAvg > 0 ? `${sPct}%` : '—'}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-ds-text-dim">{ui('airCorr', lang)}</span>
+                  <span style={{ color: aColor }} className="font-bold">{corridorImpacts.aviationAvg > 0 ? `${aPct}%` : '—'}</span>
+                </div>
+              </>
+            )
+          })()}
+        </div>
+      </div>
+      {/* Reset View button */}
+      <button
+        onClick={() => {
+          if (globeRef.current) {
+            globeRef.current.pointOfView({ lat: 25, lng: 51, altitude: 2.5 }, 800)
+          }
+        }}
+        className="absolute bottom-3 end-3 bg-ds-surface/80 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-ds-border text-[9px] font-mono text-ds-text-dim hover:text-cyan-400 hover:border-cyan-400/50 transition-colors cursor-pointer"
+      >
+        {ui('resetView', lang)}
+      </button>
     </div>
   )
 }
@@ -613,6 +709,77 @@ function TimelineBar({
 }
 
 /* ══════════════════════════════════════════════
+   SYNTHETIC SOCIETY PANEL
+   ══════════════════════════════════════════════ */
+const SOCIETY_CLUSTERS = [
+  { key: 'population', nodes: ['soc_citizens', 'soc_expats', 'soc_travelers', 'soc_hajj'], en: 'Population Stress', ar: 'ضغط السكان' },
+  { key: 'business', nodes: ['soc_business', 'soc_employment', 'soc_housing'], en: 'Business Climate', ar: 'مناخ الأعمال' },
+  { key: 'media', nodes: ['soc_media', 'soc_social', 'soc_sentiment'], en: 'Media Amplification', ar: 'تضخيم إعلامي' },
+  { key: 'consumer', nodes: ['soc_travel_d', 'soc_food_d', 'soc_ticket'], en: 'Consumer Demand', ar: 'طلب المستهلك' },
+  { key: 'stability', nodes: ['soc_stability'], en: 'Public Stability', ar: 'الاستقرار العام' },
+] as const
+
+function SyntheticSocietyPanel({ impacts, lang }: { impacts: Map<string, number>; lang: Language }) {
+  const clusters = SOCIETY_CLUSTERS.map(c => {
+    const values = c.nodes.map(id => Math.abs(impacts.get(id) || 0))
+    const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0
+    return { ...c, impact: avg }
+  })
+
+  // Weighted average: stability gets 2x weight (5 clusters, stability doubled = 6 total weight)
+  const totalWeight = clusters.length + 1
+  const riskIndex = clusters.reduce((sum, c) => sum + c.impact * (c.key === 'stability' ? 2 : 1), 0) / totalWeight
+
+  const severityColor = (v: number) => v > 0.6 ? '#ef4444' : v > 0.3 ? '#f59e0b' : '#22c55e'
+  const severityBg = (v: number) => v > 0.6 ? 'bg-red-500' : v > 0.3 ? 'bg-amber-500' : 'bg-emerald-500'
+
+  const hasAnyImpact = clusters.some(c => c.impact > 0)
+  if (!hasAnyImpact) return null
+
+  return (
+    <div className="bg-ds-surface rounded-xl border border-ds-border p-3">
+      <div className="flex items-center gap-2 mb-2">
+        <Users size={12} className="text-rose-400" />
+        <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-ds-text">{lang === 'ar' ? 'الطبقة الاجتماعية' : 'Synthetic Society'}</span>
+      </div>
+
+      {/* Society Risk Index */}
+      <div className="bg-ds-bg-alt rounded px-2 py-1.5 mb-2">
+        <div className="flex items-center justify-between text-[10px]">
+          <span className="text-ds-text-dim">{lang === 'ar' ? 'مؤشر المخاطر الاجتماعية' : 'Society Risk Index'}</span>
+          <span className="font-mono font-bold" style={{ color: severityColor(riskIndex) }}>
+            {(riskIndex * 100).toFixed(1)}%
+          </span>
+        </div>
+        <div className="w-full bg-ds-bg rounded-full h-1.5 mt-1">
+          <div className={`h-1.5 rounded-full ${severityBg(riskIndex)} transition-all`} style={{ width: `${Math.min(riskIndex * 100, 100)}%` }} />
+        </div>
+      </div>
+
+      {/* Cluster rows */}
+      <div className="space-y-1.5">
+        {clusters.map(c => (
+          <div key={c.key} className="bg-ds-bg-alt rounded px-2 py-1">
+            <div className="flex items-center justify-between text-[10px]">
+              <span className="text-ds-text-dim">{lang === 'ar' ? c.ar : c.en}</span>
+              <div className="flex items-center gap-1">
+                <span className="text-[8px]">{c.impact > 0 ? '↑' : '↓'}</span>
+                <span className="font-mono font-bold" style={{ color: severityColor(c.impact) }}>
+                  {(c.impact * 100).toFixed(0)}%
+                </span>
+              </div>
+            </div>
+            <div className="w-full bg-ds-bg rounded-full h-1 mt-0.5">
+              <div className={`h-1 rounded-full ${severityBg(c.impact)} transition-all`} style={{ width: `${Math.min(c.impact * 100, 100)}%` }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ══════════════════════════════════════════════
    MAIN COMMAND CENTER PAGE
    ══════════════════════════════════════════════ */
 function DemoPageContent() {
@@ -756,50 +923,147 @@ function DemoPageContent() {
     return max
   }, [activeImpacts])
 
+  // ═══ DOMINANT CHAIN DETECTION ═══
+  // Identify the strongest propagation path: nodes + edges on the primary cascade
+  // Filtered by timelineIteration for temporal accuracy
+  const dominantChainSet = useMemo(() => {
+    const nodeSet = new Set<string>()
+    const edgeSet = new Set<string>()
+    const edgeKeySet = new Set<string>()
+    if (!propagation || propagation.propagationChain.length === 0) return { nodeSet, edgeSet, edgeKeySet, rootId: '' }
+    // Filter chain by current timeline position
+    const filteredChain = propagation.propagationChain.filter(s => s.iteration <= timelineIteration)
+    if (filteredChain.length === 0) return { nodeSet, edgeSet, edgeKeySet, rootId: '' }
+    // Root = the `from` of the first step in the filtered chain (initial shock node)
+    const rootId = filteredChain[0].from
+    nodeSet.add(rootId)
+    // Walk the propagation chain: pick edges with strongest cumulative impact
+    const chainSteps = filteredChain
+      .filter(s => Math.abs(s.impact) / maxGraphImpact > 0.1)
+      .sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact))
+    for (const step of chainSteps.slice(0, 12)) {
+      nodeSet.add(step.from)
+      nodeSet.add(step.to)
+      edgeKeySet.add(`${step.from}->${step.to}`)
+      // Find matching edge
+      const edge = gccEdges.find(e => e.source === step.from && e.target === step.to)
+      if (edge) edgeSet.add(edge.id)
+    }
+    return { nodeSet, edgeSet, edgeKeySet, rootId }
+  }, [propagation, maxGraphImpact, timelineIteration])
+
   const graphNodes = useMemo(() => {
     return gccNodes.map(n => {
       const rawImpact = Math.abs(activeImpacts.get(n.id) || 0)
-      const normalizedI = rawImpact / maxGraphImpact  // I_i = x_i / max_k |x_k|
+      const normalizedI = rawImpact / maxGraphImpact
       const nodeLabel = lang === 'ar' ? (n.labelAr || n.label) : n.label
       const pos = layerNodePositions.get(n.id) || { x: 400, y: 300 }
+      const isOnDominantChain = dominantChainSet.nodeSet.has(n.id)
+      const isRoot = n.id === dominantChainSet.rootId
+      const layerColor = LAYER_COLORS[n.layer] || '#64748b'
+
+      // Visual hierarchy: root cause > chain nodes > off-chain impacted > off-chain dim
+      let effectiveOpacity: number
+      let border: string
+      let boxShadow: string
+      let weightBoost = 0
+
+      if (isRoot) {
+        // Root cause node: extra large glow, white+gold border, weight boosted
+        effectiveOpacity = 1
+        border = '2px solid #fbbf24'
+        boxShadow = `0 0 20px ${layerColor}90, 0 0 40px ${layerColor}40, 0 0 8px #fbbf2460`
+        weightBoost = 0.3
+      } else if (isOnDominantChain) {
+        // Chain nodes: brighter border at full opacity, slightly larger weight
+        effectiveOpacity = 1
+        border = `2px solid ${selectedNode === n.id ? '#fff' : layerColor}`
+        boxShadow = `0 0 ${Math.max(normalizedI * 30, 10)}px ${layerColor}60`
+        weightBoost = 0.15
+      } else if (normalizedI > 0.05) {
+        // Non-chain with impact > 0.05: keep styling but reduce opacity
+        effectiveOpacity = 0.5
+        border = `2px solid ${selectedNode === n.id ? '#fff' : layerColor + '80'}`
+        boxShadow = normalizedI > 0.2 ? `0 0 ${normalizedI * 15}px ${layerColor}25` : 'none'
+      } else {
+        // Non-chain with impact <= 0.05: dim, gray border, minimal glow
+        effectiveOpacity = 0.25
+        border = `2px solid ${selectedNode === n.id ? '#fff' : '#334155'}`
+        boxShadow = 'none'
+      }
+
       return {
         id: n.id, type: 'default',
         position: { x: pos.x, y: pos.y },
-        data: { label: nodeLabel, type: n.layer, weight: normalizedI },
+        data: { label: nodeLabel, type: n.layer, weight: Math.min(normalizedI + weightBoost, 1) },
         style: {
-          background: normalizedI > 0.05 ? LAYER_COLORS[n.layer] : '#1e293b',
+          background: (isOnDominantChain || isRoot || normalizedI > 0.05) ? layerColor : '#1e293b',
           color: '#e2e8f0',
-          border: `2px solid ${selectedNode === n.id ? '#fff' : (normalizedI > 0.05 ? LAYER_COLORS[n.layer] : '#334155')}`,
-          borderRadius: '8px', padding: '6px 10px', fontSize: '11px',
-          fontWeight: normalizedI > 0.15 ? '700' : '400',
-          opacity: normalizedI > 0.01 ? 1 : 0.5,
-          boxShadow: normalizedI > 0.2 ? `0 0 ${normalizedI * 25}px ${LAYER_COLORS[n.layer]}40` : 'none',
+          border,
+          borderRadius: isRoot ? '12px' : '8px',
+          padding: isRoot ? '8px 12px' : '6px 10px',
+          fontSize: isRoot ? '12px' : '11px',
+          fontWeight: (isOnDominantChain || isRoot || normalizedI > 0.15) ? '700' : '400',
+          opacity: effectiveOpacity,
+          boxShadow,
           cursor: 'pointer',
         },
       }
     })
-  }, [activeImpacts, maxGraphImpact, selectedNode, lang])
+  }, [activeImpacts, maxGraphImpact, selectedNode, lang, dominantChainSet])
 
   const graphEdges = useMemo(() => {
     return gccEdges.map(e => {
       const sourceImpact = Math.abs(activeImpacts.get(e.source) || 0)
       const normalizedSrc = sourceImpact / maxGraphImpact
       const strength = e.weight * normalizedSrc
-      const edgeLabel = strength > 0.05 ? (lang === 'ar' ? (e.labelAr || e.label) : e.label) : undefined
+      const edgeKey = `${e.source}->${e.target}`
+      const isChainEdge = dominantChainSet.edgeKeySet.has(edgeKey)
+      const edgeLabel = (strength > 0.05 || isChainEdge) ? (lang === 'ar' ? (e.labelAr || e.label) : e.label) : undefined
       const isNegativePolarity = e.polarity < 0
-      return {
-        id: e.id, source: e.source, target: e.target,
-        label: edgeLabel,
-        animated: strength > 0.1,
-        style: {
-          stroke: strength > 0.05 ? (isNegativePolarity ? '#ef4444' : '#22d3ee') : '#1e293b',
-          strokeWidth: 1 + strength * 4,
-          opacity: 0.2 + strength * 0.8,
-          strokeDasharray: isNegativePolarity ? '5 3' : undefined,
-        },
+
+      if (isChainEdge) {
+        // Chain edges: boosted stroke, full opacity, bright color, animated dash
+        return {
+          id: e.id, source: e.source, target: e.target,
+          label: edgeLabel,
+          animated: true,
+          style: {
+            stroke: isNegativePolarity ? '#ef4444' : '#22d3ee',
+            strokeWidth: 2 + strength * 6,
+            opacity: 1,
+            strokeDasharray: '8 4',
+          },
+        }
+      } else if (strength > 0.1) {
+        // Non-chain with strength > 0.1: keep but reduce opacity, no animation
+        return {
+          id: e.id, source: e.source, target: e.target,
+          label: edgeLabel,
+          animated: false,
+          style: {
+            stroke: isNegativePolarity ? '#ef444480' : '#22d3ee60',
+            strokeWidth: 1 + strength * 3,
+            opacity: 0.3,
+            strokeDasharray: 'none',
+          },
+        }
+      } else {
+        // Non-chain with strength <= 0.1: very dim, no animation
+        return {
+          id: e.id, source: e.source, target: e.target,
+          label: undefined,
+          animated: false,
+          style: {
+            stroke: '#1e293b',
+            strokeWidth: 0.5 + strength * 2,
+            opacity: 0.1,
+            strokeDasharray: 'none',
+          },
+        }
       }
     })
-  }, [activeImpacts, maxGraphImpact, lang])
+  }, [activeImpacts, maxGraphImpact, lang, dominantChainSet])
 
   const selectedNodeExpl = useMemo(() => {
     if (!selectedNode || !propagation) return null
@@ -1262,6 +1526,9 @@ function DemoPageContent() {
                 </div>
               </div>
             )}
+
+            {/* ═══ SYNTHETIC SOCIETY LAYER ═══ */}
+            <SyntheticSocietyPanel impacts={activeImpacts} lang={lang} />
 
             {/* Uncertainty Drivers — visible in probabilistic mode */}
             {analysisMode === 'probabilistic' && (
