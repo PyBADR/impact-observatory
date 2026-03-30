@@ -241,8 +241,8 @@ export const gccScenarios: GCCScenario[] = [
     country: 'GCC',
     shocks: [
       { nodeId: 'fin_sama', impact: 0.80 },
-      { nodeId: 'fin_cbuae', impact: 0.75 },
-      { nodeId: 'fin_tadawul', impact: 0.70 },
+      { nodeId: 'fin_uae_cb', impact: 0.75 },
+      { nodeId: 'eco_gdp', impact: 0.70 },
     ],
   },
   {
@@ -255,7 +255,7 @@ export const gccScenarios: GCCScenario[] = [
     country: 'GCC',
     shocks: [
       { nodeId: 'soc_citizens', impact: 0.85 },
-      { nodeId: 'eco_tourism', impact: 0.90 },
+      { nodeId: 'soc_travel_d', impact: 0.90 },
       { nodeId: 'inf_ruh', impact: 0.60 },
       { nodeId: 'inf_dxb', impact: 0.65 },
     ],
@@ -272,7 +272,7 @@ export const gccScenarios: GCCScenario[] = [
       { nodeId: 'inf_jebel', impact: 0.80 },
       { nodeId: 'inf_dxb', impact: 0.70 },
       { nodeId: 'eco_shipping', impact: 0.65 },
-      { nodeId: 'eco_logistics', impact: 0.75 },
+      { nodeId: 'eco_shipping', impact: 0.75 },
     ],
   },
 ]
@@ -280,12 +280,12 @@ export const gccScenarios: GCCScenario[] = [
 /* ââââââââââââââââââââââââââââââââââââââââââââââ
    LAYER METADATA â for layout & styling
    ââââââââââââââââââââââââââââââââââââââââââââââ */
-export const layerMeta: Record<GCCLayer, { label: string; color: string; yBase: number }> = {
-  geography:      { label: 'Geography', labelAr: 'Geography',      color: '#2DD4A0', yBase: 40  },
-  infrastructure: { label: 'Infrastructure', labelAr: 'Infrastructure', color: '#F5A623', yBase: 150 },
-  economy:        { label: 'Economy', labelAr: 'Economy',        color: '#5B7BF8', yBase: 270 },
-  finance:        { label: 'Finance', labelAr: 'Finance',        color: '#A78BFA', yBase: 380 },
-  society:        { label: 'Society', labelAr: 'Society',        color: '#EF5454', yBase: 480 },
+export const layerMeta: Record<GCCLayer, { label: string; labelAr: string; color: string; yBase: number }> = {
+  geography:      { label: 'Geography',      labelAr: 'الجغرافيا',       color: '#2DD4A0', yBase: 40  },
+  infrastructure: { label: 'Infrastructure', labelAr: 'البنية التحتية',  color: '#F5A623', yBase: 150 },
+  economy:        { label: 'Economy',        labelAr: 'الاقتصاد',        color: '#5B7BF8', yBase: 270 },
+  finance:        { label: 'Finance',        labelAr: 'المالية',          color: '#A78BFA', yBase: 380 },
+  society:        { label: 'Society',        labelAr: 'المجتمع',          color: '#EF5454', yBase: 480 },
 }
 
 /* ââââââââââââââââââââââââââââââââââââââââââââââ

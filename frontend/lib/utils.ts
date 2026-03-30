@@ -43,6 +43,12 @@ export function getNodeColor(type: string): string {
     platform: '#A78BFA',
     event: '#F97316',
     media: '#A78BFA',
+    // GCC layer names (when used as node type)
+    geography: '#2DD4A0',
+    infrastructure: '#F5A623',
+    economy: '#5B7BF8',
+    finance: '#A78BFA',
+    society: '#EF5454',
   }
   return colors[type] || '#5B7BF8'
 }

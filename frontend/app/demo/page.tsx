@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -127,7 +127,7 @@ function GlobeView({
         size: 0.3 + impact * 1.5,
       }
     }).filter(Boolean)
-  }, [propagation])
+  }, [propagation, lang])
 
   const arcsData = useMemo(() => {
     if (!propagation) return []
@@ -212,7 +212,7 @@ function SectorBar({ sector, avgImpact, color, lang }: { sector: string; avgImpa
 /* ══════════════════════════════════════════════
    MAIN DEMO PAGE
    ══════════════════════════════════════════════ */
-export default function DemoPage() {
+function DemoPageContent() {
   const [lang, setLang] = useState<Language>('ar')
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -289,7 +289,7 @@ export default function DemoPage() {
       return {
         id: n.id, type: 'default',
         position: { x: (coords?.lng || 50) * 30 - 1200, y: (coords?.lat || 25) * -30 + 900 },
-        data: { label: nodeLabel, layer: n.layer, impact },
+        data: { label: nodeLabel, type: n.layer, weight: impact },
         style: {
           background: impact > 0.05 ? LAYER_COLORS[n.layer] : '#1e293b',
           color: '#e2e8f0',
@@ -307,8 +307,10 @@ export default function DemoPage() {
     return gccEdges.map(e => {
       const sourceImpact = propagation ? Math.abs(propagation.nodeImpacts.get(e.source) || 0) : 0
       const strength = e.weight * sourceImpact
+      const edgeLabel = strength > 0.05 ? (lang === 'ar' ? (e.labelAr || e.label) : e.label) : undefined
       return {
         id: e.id, source: e.source, target: e.target,
+        label: edgeLabel,
         animated: strength > 0.1,
         style: {
           stroke: strength > 0.05 ? '#22d3ee' : '#1e293b',
@@ -317,7 +319,7 @@ export default function DemoPage() {
         },
       }
     })
-  }, [propagation])
+  }, [propagation, lang])
 
   const simStatus = isRunning ? 'running' : propagation ? 'complete' : scenario ? 'ready' : 'awaiting'
   const statusColor = { awaiting: '#f59e0b', running: '#3b82f6', complete: '#10b981', ready: '#64748b' }[simStatus]
@@ -620,5 +622,13 @@ export default function DemoPage() {
         <span className="text-ds-text-dim">Deevo Sim v2.0 | deevo-sim.vercel.app</span>
       </div>
     </div>
+  )
+}
+
+export default function DemoPage() {
+  return (
+    <Suspense fallback={<div className="h-screen w-full bg-ds-bg flex items-center justify-center"><Loader2 className="w-8 h-8 text-cyan-400 animate-spin" /></div>}>
+      <DemoPageContent />
+    </Suspense>
   )
 }
