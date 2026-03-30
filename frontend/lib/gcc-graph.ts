@@ -75,14 +75,14 @@ export interface GCCScenario {
   mapRelevance?: string
   mapRelevanceAr?: string
   shocks: { nodeId: string; impact: number }[]
-  keyEntities: string[]
-  mapModes: string[]
-  formulaTags: string[]
-  severityDefault: number
-  timeHorizon: string
-  timeHorizonAr: string
-  expectedPropagationDomains: string[]
-  simulationType: 'deterministic' | 'probabilistic' | 'hybrid'
+  keyEntities?: string[]
+  mapModes?: string[]
+  formulaTags?: string[]
+  severityDefault?: number
+  timeHorizon?: string
+  timeHorizonAr?: string
+  expectedPropagationDomains?: string[]
+  simulationType?: 'deterministic' | 'probabilistic' | 'hybrid'
   chokePoints?: string[]
   geospatialAnchors?: string[]
 }

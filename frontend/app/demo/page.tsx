@@ -1336,7 +1336,7 @@ function DemoPageContent() {
                   </div>
                   {scenario.sectors && scenario.sectors.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {(scenario.sectorsAr && lang === 'ar' ? scenario.sectorsAr : scenario.sectors).map((sec, i) => (
+                      {(lang === 'ar' && scenario.sectorsAr ? scenario.sectorsAr : scenario.sectors).map((sec: string, i: number) => (
                         <span key={i} className="text-[9px] px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">{sec}</span>
                       ))}
                     </div>
