@@ -170,9 +170,9 @@ export const gccScenarios: GCCScenario[] = [
   {
     id: 'hormuz_closure',
     title: 'Strait of Hormuz Closure',
-    titleAr: 'Ø¥ØºÙØ§Ù ÙØ¶ÙÙ ÙØ±ÙØ²',
+    titleAr: 'إغلاق مضيق هرمز',
     description: 'Full or partial closure of the Strait of Hormuz disrupting 21% of global oil transit, triggering multi-sector cascade across the GCC.',
-    descriptionAr: 'Ø¥ØºÙØ§Ù ÙÙÙ Ø£Ù Ø¬Ø²Ø¦Ù ÙÙØ¶ÙÙ ÙØ±ÙØ² ÙØ¹Ø·Ù 21% ÙÙ Ø¹Ø¨ÙØ± Ø§ÙÙÙØ· Ø§ÙØ¹Ø§ÙÙÙØ ÙÙØ§ ÙØ·ÙÙ Ø³ÙØ³ÙØ© ØªØ£Ø«ÙØ±Ø§Øª ÙØªØ¹Ø¯Ø¯Ø© Ø§ÙÙØ·Ø§Ø¹Ø§Øª Ø¹Ø¨Ø± Ø¯ÙÙ Ø§ÙØ®ÙÙØ¬.',
+    descriptionAr: 'إغلاق كلي أو جزئي لمضيق هرمز يعطل 21% من عبور النفط العالمي، مما يطلق سلسلة تأثيرات متعددة القطاعات عبر دول الخليج.',
     category: 'economy',
     country: 'GCC',
     shocks: [
@@ -182,9 +182,9 @@ export const gccScenarios: GCCScenario[] = [
   {
     id: 'oil_price_crash',
     title: 'Oil Price Crash (-40%)',
-    titleAr: 'Ø§ÙÙÙØ§Ø± Ø£Ø³Ø¹Ø§Ø± Ø§ÙÙÙØ· (-40%)',
+    titleAr: 'انهيار أسعار النفط (-40%)',
     description: 'Sudden 40% drop in global oil prices due to demand destruction, impacting GCC fiscal positions and downstream sectors.',
-    descriptionAr: 'Ø§ÙØ®ÙØ§Ø¶ ÙÙØ§Ø¬Ø¦ Ø¨ÙØ³Ø¨Ø© 40% ÙÙ Ø£Ø³Ø¹Ø§Ø± Ø§ÙÙÙØ· Ø§ÙØ¹Ø§ÙÙÙØ© Ø¨Ø³Ø¨Ø¨ ØªØ±Ø§Ø¬Ø¹ Ø§ÙØ·ÙØ¨Ø ÙÙØ§ ÙØ¤Ø«Ø± Ø¹ÙÙ Ø§ÙØ£ÙØ¶Ø§Ø¹ Ø§ÙÙØ§ÙÙØ© ÙØ¯ÙÙ Ø§ÙØ®ÙÙØ¬ ÙØ§ÙÙØ·Ø§Ø¹Ø§Øª Ø§ÙØªØ§Ø¨Ø¹Ø©.',
+    descriptionAr: 'انخفاض مفاجئ بنسبة 40% في أسعار النفط العالمية بسبب تراجع الطلب، مما يؤثر على الأوضاع المالية لدول الخليج والقطاعات التابعة.',
     category: 'economy',
     country: 'GCC',
     shocks: [
@@ -195,9 +195,9 @@ export const gccScenarios: GCCScenario[] = [
   {
     id: 'port_disruption',
     title: 'Jebel Ali Port Disruption',
-    titleAr: 'ØªØ¹Ø·Ù ÙÙÙØ§Ø¡ Ø¬Ø¨Ù Ø¹ÙÙ',
+    titleAr: 'تعطل ميناء جبل علي',
     description: 'Major disruption at Jebel Ali Port affecting 30% of Middle East trade volume, cascading through logistics and insurance.',
-    descriptionAr: 'ØªØ¹Ø·Ù ÙØ¨ÙØ± ÙÙ ÙÙÙØ§Ø¡ Ø¬Ø¨Ù Ø¹ÙÙ ÙØ¤Ø«Ø± Ø¹ÙÙ 30% ÙÙ Ø­Ø¬Ù Ø§ÙØªØ¬Ø§Ø±Ø© ÙÙ Ø§ÙØ´Ø±Ù Ø§ÙØ£ÙØ³Ø·Ø ÙØ¹ ØªØ¯Ø§Ø¹ÙØ§Øª Ø¹ÙÙ Ø§ÙÙÙØ¬Ø³ØªÙØ§Øª ÙØ§ÙØªØ£ÙÙÙ.',
+    descriptionAr: 'تعطل كبير في ميناء جبل علي يؤثر على 30% من حجم التجارة في الشرق الأوسط، مع تداعيات على اللوجستيات والتأمين.',
     category: 'business reaction',
     country: 'UAE',
     shocks: [
@@ -208,9 +208,9 @@ export const gccScenarios: GCCScenario[] = [
   {
     id: 'aviation_crisis',
     title: 'GCC Aviation Crisis',
-    titleAr: 'Ø£Ø²ÙØ© Ø§ÙØ·ÙØ±Ø§Ù Ø§ÙØ®ÙÙØ¬Ù',
+    titleAr: 'أزمة الطيران الخليجي',
     description: 'Fuel price spike combined with reduced travel demand creates compounding pressure on GCC aviation sector.',
-    descriptionAr: 'Ø§Ø±ØªÙØ§Ø¹ Ø­Ø§Ø¯ ÙÙ Ø£Ø³Ø¹Ø§Ø± Ø§ÙÙÙÙØ¯ ÙØ¹ Ø§ÙØ®ÙØ§Ø¶ Ø§ÙØ·ÙØ¨ Ø¹ÙÙ Ø§ÙØ³ÙØ± ÙØ®ÙÙ Ø¶ØºØ·ÙØ§ ÙØ±ÙØ¨ÙØ§ Ø¹ÙÙ ÙØ·Ø§Ø¹ Ø§ÙØ·ÙØ±Ø§Ù Ø§ÙØ®ÙÙØ¬Ù.',
+    descriptionAr: 'ارتفاع حاد في أسعار الوقود مع انخفاض الطلب على السفر يخلق ضغطاً مركباً على قطاع الطيران الخليجي.',
     category: 'economy',
     country: 'GCC',
     shocks: [
@@ -221,9 +221,9 @@ export const gccScenarios: GCCScenario[] = [
   {
     id: 'insurance_shock',
     title: 'Regional Insurance Crisis',
-    titleAr: 'Ø£Ø²ÙØ© Ø§ÙØªØ£ÙÙÙ Ø§ÙØ¥ÙÙÙÙÙØ©',
+    titleAr: 'أزمة التأمين الإقليمية',
     description: 'Reinsurance withdrawal from GCC markets following catastrophic loss event, raising premiums across all sectors.',
-    descriptionAr: 'Ø§ÙØ³Ø­Ø§Ø¨ Ø¥Ø¹Ø§Ø¯Ø© Ø§ÙØªØ£ÙÙÙ ÙÙ Ø£Ø³ÙØ§Ù Ø§ÙØ®ÙÙØ¬ Ø¨Ø¹Ø¯ Ø­Ø¯Ø« Ø®Ø³Ø§Ø¦Ø± ÙØ§Ø±Ø«ÙØ©Ø ÙÙØ§ ÙØ±ÙØ¹ Ø§ÙØ£ÙØ³Ø§Ø· ÙÙ Ø¬ÙÙØ¹ Ø§ÙÙØ·Ø§Ø¹Ø§Øª.',
+    descriptionAr: 'انسحاب إعادة التأمين من أسواق الخليج بعد حدث خسائر كارثية، مما يرفع الأقساط في جميع القطاعات.',
     category: 'economy',
     country: 'GCC',
     shocks: [
