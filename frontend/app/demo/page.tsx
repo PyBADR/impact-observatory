@@ -1218,6 +1218,14 @@ function DemoPageContent() {
                   <span className="text-[10px] font-mono text-amber-400">[P10: ${monteCarlo.p10Loss.toFixed(1)}B — P90: ${monteCarlo.p90Loss.toFixed(1)}B]</span>
                 </>
               )}
+              {decision && (
+                <>
+                  <span className="text-[10px] text-ds-text-dim">|</span>
+                  <span className="text-[10px] font-mono text-ds-text-dim">DPS: <span style={{ color: decision.decisionPressureScore > 0.6 ? '#ef4444' : decision.decisionPressureScore > 0.35 ? '#f59e0b' : '#22c55e' }}>{(decision.decisionPressureScore * 100).toFixed(0)}%</span></span>
+                  <span className="text-[10px] text-ds-text-dim">|</span>
+                  <span className="text-[10px] font-mono" style={{ color: decision.urgencyLevel === 'flash' ? '#ef4444' : decision.urgencyLevel === 'immediate' ? '#f59e0b' : '#22c55e' }}>⚡{decision.urgencyLevel.replace('_', ' ')}</span>
+                </>
+              )}
             </>
           )}
         </div>

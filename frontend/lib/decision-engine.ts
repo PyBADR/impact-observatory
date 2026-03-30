@@ -452,9 +452,9 @@ function generateWhyActions(
   topActions: RecommendedAction[],
   me: number,
 ): { en: string; ar: string } {
-  const domains = [...new Set(topActions.slice(0, 5).map(a => a.domain))]
-  const domainsEn = domains.map(d => d.replace('_', ' ')).join(', ')
-  const domainsAr = domains.map(d => DOMAIN_AR[d]).join('، ')
+  const domains: ActionDomain[] = Array.from(new Set(topActions.slice(0, 5).map(a => a.domain)))
+  const domainsEn = domains.map((d: ActionDomain) => d.replace('_', ' ')).join(', ')
+  const domainsAr = domains.map((d: ActionDomain) => DOMAIN_AR[d]).join('، ')
 
   const en = `Decision pressure score (${(dps * 100).toFixed(0)}%) and ${shockClass} shock classification indicate ` +
     `concentrated risk requiring multi-domain response across ${domainsEn}. ` +
