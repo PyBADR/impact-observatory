@@ -78,6 +78,15 @@ const UI: Record<string, { en: string; ar: string }> = {
   runs: { en: 'runs', ar: 'تشغيل' },
   mean: { en: 'Mean', ar: 'المتوسط' },
   variance: { en: 'Variance', ar: 'التباين' },
+  briefing: { en: 'Briefing', ar: 'الموجز' },
+  scenarioControl: { en: 'Scenario Control', ar: 'التحكم بالسيناريو' },
+  intelligence: { en: 'Intelligence', ar: 'الاستخبارات' },
+  systemStatus: { en: 'System Status', ar: 'حالة النظام' },
+  lossExposure: { en: 'Loss Exposure', ar: 'التعرض للخسائر' },
+  deterministic: { en: 'Deterministic', ar: 'حتمي' },
+  causalBrief: { en: 'Causal Brief', ar: 'الموجز السببي' },
+  graphStats: { en: 'Graph', ar: 'الرسم البياني' },
+  layerLegend: { en: 'Layers', ar: 'الطبقات' },
 }
 
 const LAYER_LABELS: Record<string, { en: string; ar: string }> = {
@@ -618,9 +627,17 @@ function DemoPageContent() {
               <span className="text-[10px] text-ds-text-dim">|</span>
               <span className="text-[10px] font-mono text-ds-text-dim">{ui('confidence', lang)}: <span className="text-emerald-400">{(propagation.confidence * 100).toFixed(0)}%</span></span>
               <span className="text-[10px] text-ds-text-dim">|</span>
+              <span className="text-[10px] font-mono text-ds-text-dim">{ui('energy', lang)}: <span className="text-cyan-400">{propagation.systemEnergy.toFixed(3)}</span></span>
+              <span className="text-[10px] text-ds-text-dim">|</span>
               <span className="text-[10px] font-mono text-ds-text-dim">{ui('spread', lang)}: <span className="text-cyan-400">{lang === 'ar' ? propagation.spreadLevelAr : propagation.spreadLevel}</span></span>
               <span className="text-[10px] text-ds-text-dim">|</span>
-              <span className="text-[10px] font-mono text-ds-text-dim">{ui('depth', lang)}: <span className="text-purple-400">{propagation.propagationDepth}</span></span>
+              <span className="text-[10px] font-mono text-ds-text-dim">{ui('totalLoss', lang)}: <span className="text-red-400">${propagation.totalLoss.toFixed(1)}B</span></span>
+              {monteCarlo && (
+                <>
+                  <span className="text-[10px] text-ds-text-dim">|</span>
+                  <span className="text-[10px] font-mono text-amber-400">[P10: ${monteCarlo.p10Loss.toFixed(1)}B — P90: ${monteCarlo.p90Loss.toFixed(1)}B]</span>
+                </>
+              )}
             </>
           )}
         </div>
@@ -637,96 +654,136 @@ function DemoPageContent() {
 
       {/* ── MAIN 3-COLUMN LAYOUT ── */}
       <div className="flex-1 flex overflow-hidden">
-        {/* ═══ LEFT ═══ */}
-        <div className="w-[270px] bg-ds-surface border-e border-ds-border overflow-y-auto flex-shrink-0">
+        {/* ═══ LEFT — INTELLIGENCE RAIL ═══ */}
+        <div className="w-[310px] bg-ds-surface border-e border-ds-border overflow-y-auto flex-shrink-0">
           <div className="p-4 space-y-4">
-            <div>
-              <h3 className="text-[10px] uppercase tracking-[0.15em] text-ds-text-dim font-semibold mb-2 flex items-center gap-2">
-                <Radio size={10} /> {ui('selectScenario', lang)}
+            {/* Causal Brief (Hero) */}
+            <div className="ds-card rounded-xl p-3">
+              <h3 className="text-[10px] uppercase tracking-[0.15em] text-cyan-400 font-bold mb-2 flex items-center gap-2">
+                <FileText size={12} /> {ui('causalBrief', lang)}
               </h3>
-              <select
-                value={scenarioId}
-                onChange={(e) => { setScenarioId(e.target.value); handleReset() }}
-                className="ds-select text-[12px] w-full"
-                dir={lang === 'ar' ? 'rtl' : 'ltr'}
-              >
-                <option value="">{ui('selectScenario', lang)}</option>
-                {gccScenarios.map(s => (
-                  <option key={s.id} value={s.id}>{lang === 'ar' ? s.titleAr : s.title}</option>
-                ))}
-              </select>
+              {propagation ? (
+                <p className="text-[12px] text-ds-text-muted leading-relaxed">{propagation.explanation}</p>
+              ) : (
+                <p className="text-[11px] text-ds-text-dim">{ui('runToSee', lang)}</p>
+              )}
             </div>
 
-            {scenario && (
-              <div className="space-y-3">
-                <p className="text-[12px] text-ds-text-muted leading-relaxed">
-                  {lang === 'ar' ? scenario.descriptionAr : scenario.description}
-                </p>
-                <div>
-                  <span className="text-[10px] text-ds-text-dim font-semibold uppercase tracking-wider">{ui('shockNodes', lang)}</span>
-                  {scenario.shocks.map(s => {
-                    const node = gccNodes.find(n => n.id === s.nodeId)
-                    return (
-                      <div key={s.nodeId} className="flex items-center justify-between mt-1 px-2 py-1.5 bg-ds-bg-alt rounded-md text-[11px]">
-                        <span style={{ color: LAYER_COLORS[node?.layer || 'geography'] }}>{lang === 'ar' ? (node?.labelAr || node?.label) : node?.label}</span>
-                        <span className="text-red-400 font-mono font-semibold">{(s.impact * severityMod * 100).toFixed(0)}%</span>
-                      </div>
-                    )
-                  })}
-                </div>
-                <div>
-                  <div className="flex justify-between text-[10px] text-ds-text-dim mb-1">
-                    <span>{ui('severity', lang)}</span>
-                    <span className="font-mono">{(severityMod * 100).toFixed(0)}%</span>
-                  </div>
-                  <input type="range" min="0.1" max="1.5" step="0.05" value={severityMod} onChange={(e) => setSeverityMod(parseFloat(e.target.value))} className="w-full accent-cyan-500" />
-                </div>
-                <button onClick={handleRun} disabled={isRunning} className="w-full ds-btn-primary disabled:opacity-40 disabled:cursor-not-allowed">
-                  {isRunning ? <><Loader2 className="w-4 h-4 animate-spin" /> {ui('processing', lang)}</> : <><Zap className="w-4 h-4" /> {ui('runSim', lang)}</>}
-                </button>
-              </div>
-            )}
-
-            <AnimatePresence>
-              {isRunning && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
-                  <div className="pt-3 border-t border-ds-border space-y-2">
-                    <h3 className="text-[10px] uppercase tracking-[0.15em] text-ds-text-dim font-semibold flex items-center gap-2">
-                      <Activity size={10} className="text-cyan-400" /> {ui('pipeline', lang)}
-                    </h3>
-                    {PIPELINE.map((step, idx) => (
-                      <motion.div key={idx} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.05 }} className="flex items-center gap-2">
-                        {idx < processingStep ? <CheckCircle2 className="w-3 h-3 text-emerald-500 flex-shrink-0" /> :
-                         idx === processingStep ? <Loader2 className="w-3 h-3 text-cyan-400 animate-spin flex-shrink-0" /> :
-                         <Circle className="w-3 h-3 text-ds-text-dim flex-shrink-0" />}
-                        <span className={`text-[11px] font-mono ${idx < processingStep ? 'text-ds-text-muted line-through' : idx === processingStep ? 'text-cyan-400' : 'text-ds-text-dim'}`}>
-                          {lang === 'ar' ? step.ar : step.en}
-                        </span>
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <div className="border-t border-ds-border" />
-
-            <div>
-              <h3 className="text-[10px] uppercase tracking-[0.15em] text-ds-text-dim font-semibold mb-2 flex items-center gap-2">
-                <Shield size={10} /> {ui('presets', lang)}
+            {/* Loss Exposure — Deterministic + Probabilistic */}
+            <div className="ds-card rounded-xl p-3">
+              <h3 className="text-[10px] uppercase tracking-[0.15em] text-red-400 font-bold mb-2 flex items-center gap-2">
+                <TrendingUp size={12} /> {ui('lossExposure', lang)}
               </h3>
-              <div className="space-y-1.5">
-                {gccScenarios.map(s => (
-                  <button
-                    key={s.id}
-                    onClick={() => { setScenarioId(s.id); handleReset() }}
-                    className={`w-full text-start px-3 py-2.5 rounded-lg border transition-all text-[12px] ${
-                      scenarioId === s.id ? 'bg-cyan-500/10 border-cyan-500/25' : 'bg-ds-bg-alt border-ds-border hover:border-ds-border-hover'
-                    }`}
-                  >
-                    <div className="font-medium text-ds-text">{lang === 'ar' ? s.titleAr : s.title}</div>
-                    <div className="text-[10px] text-ds-text-dim mt-0.5 font-mono">{lang === 'ar' ? s.countryAr : s.country} · {lang === 'ar' ? s.categoryAr : s.category}</div>
-                  </button>
+              {propagation ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-ds-text-dim">{ui('deterministic', lang)}</span>
+                    <span className="font-mono text-red-400 font-semibold">${propagation.totalLoss.toFixed(1)}B</span>
+                  </div>
+                  {monteCarlo && (
+                    <>
+                      <div className="border-t border-ds-border pt-1">
+                        <div className="text-[10px] text-ds-text-dim font-mono mb-1">{ui('monteCarlo', lang)}: {monteCarlo.runs} {ui('runs', lang)}</div>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-emerald-400">{ui('p10', lang)}</span>
+                        <span className="font-mono text-ds-text">${monteCarlo.p10Loss.toFixed(1)}B</span>
+                      </div>
+                      <div className="relative h-3 bg-ds-bg-alt rounded-full overflow-hidden">
+                        <div className="absolute h-full bg-emerald-500/30 rounded-full" style={{ left: `${(monteCarlo.p10Loss / monteCarlo.p90Loss) * 100 * 0.5}%`, right: `${100 - (monteCarlo.p90Loss / monteCarlo.p90Loss) * 100 * 0.9}%` }} />
+                        <div className="absolute h-full w-0.5 bg-amber-400" style={{ left: `${(monteCarlo.p50Loss / monteCarlo.p90Loss) * 90}%` }} />
+                      </div>
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-amber-400">{ui('p50', lang)}</span>
+                        <span className="font-mono text-ds-text">${monteCarlo.p50Loss.toFixed(1)}B</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-red-400">{ui('p90', lang)}</span>
+                        <span className="font-mono text-ds-text">${monteCarlo.p90Loss.toFixed(1)}B</span>
+                      </div>
+                      <div className="border-t border-ds-border pt-1 mt-1">
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="text-ds-text-dim">{ui('mean', lang)}</span>
+                          <span className="font-mono text-ds-text-muted">${monteCarlo.meanLoss.toFixed(2)}B</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="text-ds-text-dim">{ui('variance', lang)}</span>
+                          <span className="font-mono text-ds-text-muted">{monteCarlo.variance.toFixed(3)}</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <p className="text-[11px] text-ds-text-dim">{ui('runToSee', lang)}</p>
+              )}
+            </div>
+
+            {/* Top Drivers */}
+            <div className="ds-card rounded-xl p-3">
+              <h3 className="text-[10px] uppercase tracking-[0.15em] text-amber-400 font-bold mb-2 flex items-center gap-2">
+                <BarChart3 size={12} /> {ui('topDrivers', lang)}
+              </h3>
+              {propagation ? (
+                <div className="space-y-2">
+                  {propagation.topDrivers.slice(0, 8).map((driver, i) => (
+                    <div key={driver.nodeId} className="flex items-center gap-2 cursor-pointer hover:bg-ds-bg-alt rounded px-1 py-0.5 transition-colors" onClick={() => setSelectedNode(driver.nodeId)}>
+                      <span className="text-[10px] text-ds-text-dim w-4 text-center">{i + 1}</span>
+                      <div className="flex-1">
+                        <div className="text-[11px] text-ds-text font-medium">{driver.label}</div>
+                        <div className="h-2 bg-ds-bg-alt rounded-full mt-0.5">
+                          <div className="h-2 rounded-full transition-all" style={{ width: `${driver.impact * 100}%`, backgroundColor: LAYER_COLORS[driver.layer] }} />
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-mono font-semibold" style={{ color: LAYER_COLORS[driver.layer] }}>{(driver.impact * 100).toFixed(0)}%</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[11px] text-ds-text-dim">{ui('runToSee', lang)}</p>
+              )}
+            </div>
+
+            {/* Sector Impact */}
+            <div className="ds-card rounded-xl p-3">
+              <h3 className="text-[10px] uppercase tracking-[0.15em] text-emerald-400 font-bold mb-2 flex items-center gap-2">
+                <Activity size={12} /> {ui('sectorImpact', lang)}
+              </h3>
+              {propagation ? (
+                <div>{propagation.affectedSectors.map(s => <SectorBar key={s.sector} sector={s.sector} avgImpact={s.avgImpact} color={s.color} lang={lang} />)}</div>
+              ) : (
+                <p className="text-[11px] text-ds-text-dim">{ui('runToSee', lang)}</p>
+              )}
+            </div>
+
+            {/* Impact Chain */}
+            <div className="ds-card rounded-xl p-3">
+              <h3 className="text-[10px] uppercase tracking-[0.15em] text-purple-400 font-bold mb-2 flex items-center gap-2">
+                <List size={12} /> {ui('impactChain', lang)}
+              </h3>
+              {propagation && chains.length > 0 ? (
+                <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                  {chains.slice(0, 10).map((chain, i) => (
+                    <div key={i} className="text-[11px] font-mono text-ds-text-muted px-2 py-1 bg-ds-bg-alt rounded">{chain}</div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[11px] text-ds-text-dim">{ui('runToSee', lang)}</p>
+              )}
+            </div>
+
+            {/* Layer Legend */}
+            <div className="ds-card rounded-xl p-3">
+              <h3 className="text-[10px] uppercase tracking-[0.15em] text-ds-text-dim font-bold mb-2 flex items-center gap-2">
+                <Target size={12} /> {ui('layerLegend', lang)}
+              </h3>
+              <div className="space-y-1">
+                {Object.entries(LAYER_COLORS).map(([layer, color]) => (
+                  <div key={layer} className="flex items-center gap-2 text-[11px]">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
+                    <span className="text-ds-text-muted">{lang === 'ar' ? (LAYER_LABELS[layer]?.ar || layer) : (LAYER_LABELS[layer]?.en || layer)}</span>
+                    <span className="ms-auto text-[10px] font-mono text-ds-text-dim">{gccNodes.filter(n => n.layer === layer).length}</span>
+                  </div>
                 ))}
               </div>
             </div>
@@ -804,9 +861,56 @@ function DemoPageContent() {
           )}
         </div>
 
-        {/* ═══ RIGHT ═══ */}
-        <div className="w-[320px] bg-ds-surface border-s border-ds-border overflow-y-auto flex-shrink-0">
+        {/* ═══ RIGHT — SCENARIO CONTROL RAIL ═══ */}
+        <div className="w-[260px] bg-ds-surface border-s border-ds-border overflow-y-auto flex-shrink-0">
           <div className="p-4 space-y-4">
+            <div>
+              <h3 className="text-[10px] uppercase tracking-[0.15em] text-ds-text-dim font-semibold mb-2 flex items-center gap-2">
+                <Radio size={10} /> {ui('selectScenario', lang)}
+              </h3>
+              <select
+                value={scenarioId}
+                onChange={(e) => { setScenarioId(e.target.value); handleReset() }}
+                className="ds-select text-[12px] w-full"
+                dir={lang === 'ar' ? 'rtl' : 'ltr'}
+              >
+                <option value="">{ui('selectScenario', lang)}</option>
+                {gccScenarios.map(s => (
+                  <option key={s.id} value={s.id}>{lang === 'ar' ? s.titleAr : s.title}</option>
+                ))}
+              </select>
+            </div>
+
+            {scenario && (
+              <div className="space-y-3">
+                <p className="text-[12px] text-ds-text-muted leading-relaxed">
+                  {lang === 'ar' ? scenario.descriptionAr : scenario.description}
+                </p>
+                <div>
+                  <span className="text-[10px] text-ds-text-dim font-semibold uppercase tracking-wider">{ui('shockNodes', lang)}</span>
+                  {scenario.shocks.map(s => {
+                    const node = gccNodes.find(n => n.id === s.nodeId)
+                    return (
+                      <div key={s.nodeId} className="flex items-center justify-between mt-1 px-2 py-1.5 bg-ds-bg-alt rounded-md text-[11px]">
+                        <span style={{ color: LAYER_COLORS[node?.layer || 'geography'] }}>{lang === 'ar' ? (node?.labelAr || node?.label) : node?.label}</span>
+                        <span className="text-red-400 font-mono font-semibold">{(s.impact * severityMod * 100).toFixed(0)}%</span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div>
+                  <div className="flex justify-between text-[10px] text-ds-text-dim mb-1">
+                    <span>{ui('severity', lang)}</span>
+                    <span className="font-mono">{(severityMod * 100).toFixed(0)}%</span>
+                  </div>
+                  <input type="range" min="0.1" max="1.5" step="0.05" value={severityMod} onChange={(e) => setSeverityMod(parseFloat(e.target.value))} className="w-full accent-cyan-500" />
+                </div>
+                <button onClick={handleRun} disabled={isRunning} className="w-full ds-btn-primary disabled:opacity-40 disabled:cursor-not-allowed">
+                  {isRunning ? <><Loader2 className="w-4 h-4 animate-spin" /> {ui('processing', lang)}</> : <><Zap className="w-4 h-4" /> {ui('runSim', lang)}</>}
+                </button>
+              </div>
+            )}
+
             {propagation && (
               <div className="flex gap-2">
                 <button onClick={handleRun} className="flex-1 ds-btn-primary text-[12px]"><Play className="w-3 h-3" /> {ui('rerun', lang)}</button>
@@ -814,109 +918,48 @@ function DemoPageContent() {
               </div>
             )}
 
-            {/* Impact Chain */}
-            <div className="ds-card rounded-xl p-3">
-              <h3 className="text-[10px] uppercase tracking-[0.15em] text-cyan-400 font-bold mb-2 flex items-center gap-2">
-                <List size={12} /> {ui('impactChain', lang)}
-              </h3>
-              {propagation && chains.length > 0 ? (
-                <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                  {chains.slice(0, 8).map((chain, i) => (
-                    <div key={i} className="text-[11px] font-mono text-ds-text-muted px-2 py-1 bg-ds-bg-alt rounded">{chain}</div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-[11px] text-ds-text-dim">{ui('runToSee', lang)}</p>
+            <AnimatePresence>
+              {isRunning && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+                  <div className="pt-3 border-t border-ds-border space-y-2">
+                    <h3 className="text-[10px] uppercase tracking-[0.15em] text-ds-text-dim font-semibold flex items-center gap-2">
+                      <Activity size={10} className="text-cyan-400" /> {ui('pipeline', lang)}
+                    </h3>
+                    {PIPELINE.map((step, idx) => (
+                      <motion.div key={idx} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.05 }} className="flex items-center gap-2">
+                        {idx < processingStep ? <CheckCircle2 className="w-3 h-3 text-emerald-500 flex-shrink-0" /> :
+                         idx === processingStep ? <Loader2 className="w-3 h-3 text-cyan-400 animate-spin flex-shrink-0" /> :
+                         <Circle className="w-3 h-3 text-ds-text-dim flex-shrink-0" />}
+                        <span className={`text-[11px] font-mono ${idx < processingStep ? 'text-ds-text-muted line-through' : idx === processingStep ? 'text-cyan-400' : 'text-ds-text-dim'}`}>
+                          {lang === 'ar' ? step.ar : step.en}
+                        </span>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
               )}
-            </div>
+            </AnimatePresence>
 
-            {/* Top Drivers */}
-            <div className="ds-card rounded-xl p-3">
-              <h3 className="text-[10px] uppercase tracking-[0.15em] text-amber-400 font-bold mb-2 flex items-center gap-2">
-                <BarChart3 size={12} /> {ui('topDrivers', lang)}
-              </h3>
-              {propagation ? (
-                <div className="space-y-2">
-                  {propagation.topDrivers.slice(0, 8).map((driver, i) => (
-                    <div key={driver.nodeId} className="flex items-center gap-2 cursor-pointer hover:bg-ds-bg-alt rounded px-1 py-0.5 transition-colors" onClick={() => setSelectedNode(driver.nodeId)}>
-                      <span className="text-[10px] text-ds-text-dim w-4 text-center">{i + 1}</span>
-                      <div className="flex-1">
-                        <div className="text-[11px] text-ds-text font-medium">{driver.label}</div>
-                        <div className="h-2 bg-ds-bg-alt rounded-full mt-0.5">
-                          <div className="h-2 rounded-full transition-all" style={{ width: `${driver.impact * 100}%`, backgroundColor: LAYER_COLORS[driver.layer] }} />
-                        </div>
-                      </div>
-                      <span className="text-[10px] font-mono font-semibold" style={{ color: LAYER_COLORS[driver.layer] }}>{(driver.impact * 100).toFixed(0)}%</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-[11px] text-ds-text-dim">{ui('runToSee', lang)}</p>
-              )}
-            </div>
+            <div className="border-t border-ds-border" />
 
-            {/* Sector Impact */}
-            <div className="ds-card rounded-xl p-3">
-              <h3 className="text-[10px] uppercase tracking-[0.15em] text-emerald-400 font-bold mb-2 flex items-center gap-2">
-                <Activity size={12} /> {ui('sectorImpact', lang)}
+            <div>
+              <h3 className="text-[10px] uppercase tracking-[0.15em] text-ds-text-dim font-semibold mb-2 flex items-center gap-2">
+                <Shield size={10} /> {ui('presets', lang)}
               </h3>
-              {propagation ? (
-                <div>{propagation.affectedSectors.map(s => <SectorBar key={s.sector} sector={s.sector} avgImpact={s.avgImpact} color={s.color} lang={lang} />)}</div>
-              ) : (
-                <p className="text-[11px] text-ds-text-dim">{ui('runToSee', lang)}</p>
-              )}
-            </div>
-
-            {/* Monte Carlo / Probabilistic Panel */}
-            <div className="ds-card rounded-xl p-3">
-              <h3 className="text-[10px] uppercase tracking-[0.15em] text-rose-400 font-bold mb-2 flex items-center gap-2">
-                <TrendingUp size={12} /> {ui('probabilistic', lang)}
-              </h3>
-              {monteCarlo ? (
-                <div className="space-y-2">
-                  <div className="text-[10px] text-ds-text-dim font-mono mb-1">{ui('monteCarlo', lang)}: {monteCarlo.runs} {ui('runs', lang)}</div>
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-emerald-400">{ui('p10', lang)}</span>
-                    <span className="font-mono text-ds-text">${monteCarlo.p10Loss.toFixed(1)}B</span>
-                  </div>
-                  <div className="relative h-3 bg-ds-bg-alt rounded-full overflow-hidden">
-                    <div className="absolute h-full bg-emerald-500/30 rounded-full" style={{ left: `${(monteCarlo.p10Loss / monteCarlo.p90Loss) * 100 * 0.5}%`, right: `${100 - (monteCarlo.p90Loss / monteCarlo.p90Loss) * 100 * 0.9}%` }} />
-                    <div className="absolute h-full w-0.5 bg-amber-400" style={{ left: `${(monteCarlo.p50Loss / monteCarlo.p90Loss) * 90}%` }} />
-                  </div>
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-amber-400">{ui('p50', lang)}</span>
-                    <span className="font-mono text-ds-text">${monteCarlo.p50Loss.toFixed(1)}B</span>
-                  </div>
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-red-400">{ui('p90', lang)}</span>
-                    <span className="font-mono text-ds-text">${monteCarlo.p90Loss.toFixed(1)}B</span>
-                  </div>
-                  <div className="border-t border-ds-border pt-1 mt-1">
-                    <div className="flex items-center justify-between text-[10px]">
-                      <span className="text-ds-text-dim">{ui('mean', lang)}</span>
-                      <span className="font-mono text-ds-text-muted">${monteCarlo.meanLoss.toFixed(2)}B</span>
-                    </div>
-                    <div className="flex items-center justify-between text-[10px]">
-                      <span className="text-ds-text-dim">{ui('variance', lang)}</span>
-                      <span className="font-mono text-ds-text-muted">{monteCarlo.variance.toFixed(3)}</span>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-[11px] text-ds-text-dim">{ui('runToSee', lang)}</p>
-              )}
-            </div>
-
-            {/* Explanation */}
-            <div className="ds-card rounded-xl p-3">
-              <h3 className="text-[10px] uppercase tracking-[0.15em] text-purple-400 font-bold mb-2 flex items-center gap-2">
-                <FileText size={12} /> {ui('explanation', lang)}
-              </h3>
-              {propagation ? (
-                <p className="text-[12px] text-ds-text-muted leading-relaxed">{propagation.explanation}</p>
-              ) : (
-                <p className="text-[11px] text-ds-text-dim">{ui('runToSee', lang)}</p>
-              )}
+              <div className="space-y-1.5">
+                {gccScenarios.map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => { setScenarioId(s.id); handleReset() }}
+                    className={`w-full text-start px-3 py-2.5 rounded-lg border transition-all text-[12px] ${
+                      scenarioId === s.id ? 'bg-cyan-500/10 border-cyan-500/25' : 'bg-ds-bg-alt border-ds-border hover:border-ds-border-hover'
+                    }`}
+                  >
+                    <div className="font-medium text-ds-text">{lang === 'ar' ? s.titleAr : s.title}</div>
+                    <div className="text-[10px] text-ds-text-dim mt-0.5 font-mono">{s.country} · {s.category}</div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -940,7 +983,7 @@ function DemoPageContent() {
             </>
           )}
         </div>
-        <span className="text-ds-text-dim">Deevo Sim v3.0 | deevo-sim.vercel.app</span>
+        <span className="text-ds-text-dim">Deevo Sim v4.0 · GCC Regional Command Center</span>
       </div>
     </div>
   )
