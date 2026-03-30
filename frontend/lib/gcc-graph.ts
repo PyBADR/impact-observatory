@@ -390,8 +390,8 @@ export const gccEdges: GCCEdge[] = [
   // ═══════════════════════════════════
   // SENTIMENT → STABILITY → MARKET
   // ═══════════════════════════════════
-  { id: 'e136', source: 'soc_media',    target: 'soc_sentiment', weight: 0.70, polarity: 1, label: 'shapes sentiment', labelAr: 'يشكّل المشاعر' },
-  { id: 'e137', source: 'soc_social',   target: 'soc_sentiment', weight: 0.65, polarity: 1, label: 'amplifies', labelAr: 'يضخّم' },
+  { id: 'e148', source: 'soc_media',    target: 'soc_sentiment', weight: 0.70, polarity: 1, label: 'shapes sentiment', labelAr: 'يشكّل المشاعر' },
+  { id: 'e149', source: 'soc_social',   target: 'soc_sentiment', weight: 0.65, polarity: 1, label: 'amplifies', labelAr: 'يضخّم' },
   { id: 'e138', source: 'soc_sentiment',target: 'soc_stability', weight: 0.75, polarity: 1, label: 'affects stability', labelAr: 'يؤثر على الاستقرار' },
   { id: 'e139', source: 'soc_stability',target: 'fin_tadawul',   weight: 0.50, polarity: 1, label: 'market confidence', labelAr: 'ثقة السوق' },
   { id: 'e140', source: 'eco_gdp',      target: 'soc_stability', weight: 0.55, polarity: 1, label: 'prosperity signal', labelAr: 'إشارة الرخاء' },

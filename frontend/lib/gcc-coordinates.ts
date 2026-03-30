@@ -95,6 +95,9 @@ export const nodeCoordinates: Record<string, GeoCoordinate> = {
   soc_food_d:   { lat: 25.3000, lng: 51.5000 },  // Food Demand, Qatar
   soc_housing:  { lat: 24.8000, lng: 46.8000 },  // Housing & Cost of Living, Riyadh
   soc_employment:{ lat: 24.7500, lng: 46.7500 }, // Employment, Riyadh
+  soc_sentiment: { lat: 24.8000, lng: 46.7500 }, // Public Sentiment, Riyadh
+  soc_stability: { lat: 24.6500, lng: 46.7100 }, // Public Stability, Riyadh
+  eco_logistics: { lat: 25.0100, lng: 55.0800 }, // Logistics Hub, Jebel Ali
 }
 
 /** Shipping routes for globe arc rendering */
