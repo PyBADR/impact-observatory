@@ -177,6 +177,14 @@ export const gccEdges: GCCEdge[] = [
   { id: 'e51', source: 'eco_aramco',   target: 'fin_tadawul',   weight: 0.75, polarity: 1, label: 'market cap', labelAr: 'القيمة السوقية' },
   { id: 'e52', source: 'fin_tadawul',  target: 'fin_sama',      weight: 0.45, polarity: 1, label: 'market signal', labelAr: 'إشارة السوق' },
   { id: 'e53', source: 'eco_gdp',      target: 'fin_tadawul',   weight: 0.60, polarity: 1, label: 'economic health', labelAr: 'الصحة الاقتصادية' },
+
+  // —— Connect Qatar, Oman, Bahrain (eliminate disconnected nodes) ——
+  { id: 'e54', source: 'geo_qa',      target: 'inf_doh',       weight: 0.80, polarity: 1, label: 'operates', labelAr: 'يشغّل' },
+  { id: 'e55', source: 'geo_qa',      target: 'inf_doha_p',    weight: 0.75, polarity: 1, label: 'operates', labelAr: 'يشغّل' },
+  { id: 'e56', source: 'geo_om',      target: 'eco_shipping',  weight: 0.55, polarity: 1, label: 'Strait access', labelAr: 'الوصول للمضيق' },
+  { id: 'e57', source: 'geo_om',      target: 'geo_hormuz',    weight: 0.70, polarity: 1, label: 'controls strait', labelAr: 'يتحكم بالمضيق' },
+  { id: 'e58', source: 'geo_bh',      target: 'fin_insurers',  weight: 0.45, polarity: 1, label: 'insurance hub', labelAr: 'مركز تأمين' },
+  { id: 'e59', source: 'geo_bh',      target: 'eco_oil',       weight: 0.40, polarity: 1, label: 'oil production', labelAr: 'إنتاج النفط' },
 ]
 
 /* ════════════════════════════════════════════════
