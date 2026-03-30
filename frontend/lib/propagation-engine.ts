@@ -1,19 +1,23 @@
 /* ═══════════════════════════════════════════════════════════════
-   Propagation Engine — Causal Impact Computation v3.0
+   Propagation Engine — Discrete Dynamic Graph v4.0
    ═══════════════════════════════════════════════════════════════
    Computes cascading impacts through the GCC Reality Graph.
 
-   Mathematical Model:
-   1. impact_i(t+1) = Σ(w_ji × polarity_ji × impact_j(t)) × sensitivity_i - damping_i × impact_i(t)
-   2. Severity scaling: effective_impact = impact × severity
-   3. Energy: E_total = Σ impact_i²
-   4. Normalization: normalized_i = impact_i / max(all node impacts)
+   Mathematical Model (enforced):
+   1. x_i(t+1) = s_i × Σ(w_ji × p_ji × x_j(t)) - d_i × x_i(t)
+      + shock_i (external forcing for shock nodes)
+   2. Severity scaling: x_i_eff = severity × x_i
+   3. System energy: E_sys = Σ x_i(t)²
+   4. Normalized intensity: I_i = x_i / max_k |x_k|
+   5. Sector aggregation: S_k = avg(x_i) for nodes in sector k
+   6. Confidence: C = 1 / (1 + variance)
+   7. Propagation depth: D = max iteration with new affected nodes
 
    Validity Conditions:
-   - Propagation depth > 2
-   - Impacts bounded [-1, 1]
+   - D > 2
+   - |x_i| ≤ 1 (bounded)
    - No disconnected critical nodes
-   - Explanation chain matches propagation path
+   - Explanation chain = actual propagation path
    ═══════════════════════════════════════════════════════════════ */
 
 import type { GCCNode, GCCEdge, GCCLayer } from './gcc-graph'
@@ -163,7 +167,7 @@ export function runPropagation(
   iterationSnapshots.push({ iteration: 0, impacts: snap0, energy: energy0, deltaEnergy: 0 })
 
   // ── CORE MATHEMATICAL LOOP ──
-  // Formula: I_i(t+1) = clamp( Σ_j(w_ji × p_ji × I_j(t)) × s_i - damping_i × I_i(t) )
+  // Formula: x_i(t+1) = clamp( s_i × Σ_j(w_ji × p_ji × x_j(t)) - d_i × x_i(t) )
   for (let iter = 0; iter < maxIterations; iter++) {
     const newImpacts = new Map<string, number>()
     let anyChange = false
@@ -199,22 +203,21 @@ export function runPropagation(
         }
       }
 
-      // I_i(t+1) = Σ(w_ji × p_ji × I_j(t)) × s_i - damping_i × I_i(t)
-      // Uses per-node damping_factor (falls back to global decayRate if absent)
+      // x_i(t+1) = s_i × Σ(w_ji × p_ji × x_j(t)) - d_i × x_i(t)
+      // Pure discrete dynamical replacement (not accumulation)
       const propagated = weightedSum * node.sensitivity
       const nodeDamping = (node as any).damping_factor ?? decayRate
       const decayed = nodeDamping * currentImpact
-      let newImpact = currentImpact + propagated - decayed
+      let newImpact = propagated - decayed
 
       // Clamp to [-1, 1]
       newImpact = Math.max(-1, Math.min(1, newImpact))
 
-      // Check for shocks (keep them pinned on iter 0)
-      const isShockNode = shocks.some(s => s.nodeId === node.id)
-      if (isShockNode && iter === 0) {
-        // On first iteration, shock nodes keep their initial value + propagation
-        const shockVal = shocks.find(s => s.nodeId === node.id)!.impact
-        newImpact = Math.max(-1, Math.min(1, shockVal + propagated - decayed))
+      // Shock nodes: add shock signal as external forcing term
+      const shockEntry = shocks.find(s => s.nodeId === node.id)
+      if (shockEntry) {
+        // x_i(t+1) = s_i × Σ(w_ji × x_j(t)) - d_i × x_i(t) + shock_i
+        newImpact = Math.max(-1, Math.min(1, newImpact + shockEntry.impact))
       }
 
       newImpacts.set(node.id, newImpact)

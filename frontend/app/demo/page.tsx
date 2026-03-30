@@ -138,6 +138,9 @@ interface MonteCarloResult {
   confidenceBand: [number, number]
   runs: number
   distribution: number[]
+  confidenceMC: number        // C = 1 / (1 + variance)
+  bestCase: number
+  worstCase: number
 }
 
 function runMonteCarlo(
@@ -172,6 +175,10 @@ function runMonteCarlo(
   const p90 = losses[Math.floor(losses.length * 0.9)]
   const variance = losses.reduce((acc, v) => acc + (v - mean) ** 2, 0) / losses.length
 
+  // C = 1 / (1 + variance) — normalized variance for confidence
+  const normalizedVariance = variance / (mean * mean + 1)
+  const confidenceMC = 1 / (1 + normalizedVariance)
+
   return {
     meanLoss: mean,
     medianLoss: median,
@@ -182,6 +189,9 @@ function runMonteCarlo(
     confidenceBand: [p10, p90],
     runs,
     distribution: losses,
+    confidenceMC,
+    bestCase: losses[0],
+    worstCase: losses[losses.length - 1],
   }
 }
 
