@@ -13,7 +13,6 @@ import dynamic from 'next/dynamic'
 import GraphPanel from '@/components/graph/GraphPanel'
 import { gccNodes, gccEdges, gccScenarios } from '@/lib/gcc-graph'
 import { runPropagation, formatPropagationChain, type PropagationResult, type NodeExplanation } from '@/lib/propagation-engine'
-import { nodeCoordinates } from '@/lib/gcc-coordinates'
 import { setLanguage, getLanguage, type Language } from '@/lib/i18n'
 
 const GlobeGL = dynamic(() => import('react-globe.gl'), { ssr: false })
@@ -213,11 +212,9 @@ function GlobeView({
 
   const pointsData = useMemo(() => {
     return gccNodes.map(node => {
-      const coords = nodeCoordinates[node.id]
-      if (!coords) return null
       const impact = Math.abs(activeImpacts.get(node.id) || 0)
       return {
-        id: node.id, lat: coords.lat, lng: coords.lng,
+        id: node.id, lat: node.lat, lng: node.lng,
         label: lang === 'ar' ? (node.labelAr || node.label) : node.label, layer: node.layer,
         impact,
         color: LAYER_COLORS[node.layer] || '#64748b',
@@ -232,14 +229,13 @@ function GlobeView({
     // Filter chain steps up to current timeline iteration
     const filteredChain = propagation.propagationChain.filter(s => s.iteration <= timelineIteration)
     for (const step of filteredChain) {
-      const fromCoords = nodeCoordinates[step.from]
-      const toCoords = nodeCoordinates[step.to]
-      if (!fromCoords || !toCoords) continue
       const fromNode = gccNodes.find(n => n.id === step.from)
+      const toNode = gccNodes.find(n => n.id === step.to)
+      if (!fromNode || !toNode) continue
       const isNegative = step.polarity < 0
       arcs.push({
-        startLat: fromCoords.lat, startLng: fromCoords.lng,
-        endLat: toCoords.lat, endLng: toCoords.lng,
+        startLat: fromNode.lat, startLng: fromNode.lng,
+        endLat: toNode.lat, endLng: toNode.lng,
         color: isNegative ? '#ef4444' : (LAYER_COLORS[fromNode?.layer || 'geography'] || '#22d3ee'),
         stroke: Math.abs(step.impact) * 3,
       })
@@ -532,11 +528,10 @@ function DemoPageContent() {
   const graphNodes = useMemo(() => {
     return gccNodes.map(n => {
       const impact = Math.abs(activeImpacts.get(n.id) || 0)
-      const coords = nodeCoordinates[n.id]
       const nodeLabel = lang === 'ar' ? (n.labelAr || n.label) : n.label
       return {
         id: n.id, type: 'default',
-        position: { x: (coords?.lng || 50) * 30 - 1200, y: (coords?.lat || 25) * -30 + 900 },
+        position: { x: n.lng * 30 - 1200, y: n.lat * -30 + 900 },
         data: { label: nodeLabel, type: n.layer, weight: impact },
         style: {
           background: impact > 0.05 ? LAYER_COLORS[n.layer] : '#1e293b',
