@@ -1,12 +1,11 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Play,
   RotateCcw,
-  Settings,
   Zap,
   Globe,
   ArrowLeft,
@@ -17,78 +16,90 @@ import {
   Activity,
   Radio,
   Shield,
+  BarChart3,
+  Languages,
+  Network,
 } from 'lucide-react'
 
 import GraphPanel from '@/components/graph/GraphPanel'
+import GlobePanel from '@/components/globe/GlobePanel'
 import TimelinePanel from '@/components/simulation/TimelinePanel'
 import ReportPanel from '@/components/report/ReportPanel'
 import ChatPanel from '@/components/chat/ChatPanel'
-import {
-  mockScenarios,
-  mockGraphNodes,
-  mockGraphEdges,
-  mockSimulationSteps,
-  mockReport,
-  mockChatMessages,
-} from '@/lib/mock-data'
-import {
-  checkBackendHealth,
-  runScenario,
-  fetchTrustStatus,
-  type ScenarioResult,
-  type TrustStatus,
-} from '@/lib/api/demo'
+import { ImpactChainPanel, TopDriversPanel, SectorImpactPanel, ExplanationPanel } from '@/components/panels/PropagationPanels'
+
+import { gccNodes, gccEdges, gccScenarios, gccNodesToGraphNodes, gccEdgesToGraphEdges } from '@/lib/gcc-graph'
+import { runPropagation, type PropagationResult } from '@/lib/propagation-engine'
+import { mockSimulationSteps, mockChatMessages } from '@/lib/mock-data'
+import { setLanguage, getLanguage, label, type Language } from '@/lib/i18n'
 
 /* ──────────────────────────────────────────────
-   Processing pipeline steps
+   Processing pipeline steps (bilingual)
    ────────────────────────────────────────────── */
 const processingSteps = [
-  { label: 'Parsing scenario input' },
-  { label: 'Extracting entities' },
-  { label: 'Building relationship graph' },
-  { label: 'Generating agent personas' },
-  { label: 'Running simulation engine' },
-  { label: 'Compiling intelligence brief' },
+  { en: 'Parsing scenario input', ar: 'تحليل مدخلات السيناريو' },
+  { en: 'Extracting entities', ar: 'استخراج الكيانات' },
+  { en: 'Building causal graph', ar: 'بناء الرسم البياني السببي' },
+  { en: 'Running propagation engine', ar: 'تشغيل محرك الانتشار' },
+  { en: 'Computing sector impacts', ar: 'حساب تأثيرات القطاعات' },
+  { en: 'Generating intelligence brief', ar: 'إنشاء الموجز الاستخباراتي' },
 ]
 
+/* ──────────────────────────────────────────────
+   View mode type
+   ────────────────────────────────────────────── */
+type ViewMode = 'graph' | 'globe'
+
 export default function DemoPage() {
+  // ── Language ──
+  const [lang, setLang] = useState<Language>('ar')
+
+  useEffect(() => {
+    setLanguage(lang)
+  }, [lang])
+
+  const toggleLang = useCallback(() => {
+    setLang(prev => prev === 'ar' ? 'en' : 'ar')
+  }, [])
+
   // ── State ──
-  const [selectedScenario, setSelectedScenario] = useState(mockScenarios[0])
-  const [scenarioTitle, setScenarioTitle] = useState(mockScenarios[0].title)
-  const [scenarioText, setScenarioText] = useState(mockScenarios[0].scenario)
-  const [country, setCountry] = useState(mockScenarios[0].country)
-  const [category, setCategory] = useState(mockScenarios[0].category)
+  const [selectedScenarioId, setSelectedScenarioId] = useState(gccScenarios[0].id)
   const [isRunning, setIsRunning] = useState(false)
   const [hasResults, setHasResults] = useState(false)
-  const [currentStep, setCurrentStep] = useState(0)
   const [processingStep, setProcessingStep] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
   const [runId, setRunId] = useState('—')
   const [runTimestamp, setRunTimestamp] = useState('—')
+  const [viewMode, setViewMode] = useState<ViewMode>('graph')
+  const [currentStep, setCurrentStep] = useState(0)
 
-  // ── Live backend state ──
-  const [backendOnline, setBackendOnline] = useState<boolean | null>(null)
-  const [liveResult, setLiveResult] = useState<ScenarioResult | null>(null)
-  const [trustStatus, setTrustStatus] = useState<TrustStatus | null>(null)
-  const [dataSource, setDataSource] = useState<'live' | 'mock'>('mock')
+  // ── Propagation result ──
+  const [propagationResult, setPropagationResult] = useState<PropagationResult | null>(null)
 
-  // ── Backend connection: only attempt if NEXT_PUBLIC_API_URL is configured ──
-  const apiConfigured = typeof window !== 'undefined'
-    && !!process.env.NEXT_PUBLIC_API_URL
-    && !process.env.NEXT_PUBLIC_API_URL.includes('localhost')
+  const selectedScenario = useMemo(
+    () => gccScenarios.find(s => s.id === selectedScenarioId) ?? gccScenarios[0],
+    [selectedScenarioId]
+  )
 
-  useEffect(() => {
-    if (!apiConfigured) {
-      setBackendOnline(false)
-      return
-    }
-    checkBackendHealth().then(online => {
-      setBackendOnline(online)
-      if (online) {
-        fetchTrustStatus().then(setTrustStatus).catch(() => {})
-      }
-    })
-  }, [apiConfigured])
+  // ── Graph data from propagation ──
+  const graphNodes = useMemo(() => {
+    const base = gccNodesToGraphNodes(gccNodes)
+    if (!propagationResult) return base
+    return base.map(n => ({
+      ...n,
+      weight: Math.max(n.weight, Math.abs(propagationResult.nodeImpacts.get(n.id) ?? 0)),
+    }))
+  }, [propagationResult])
+
+  const graphEdges = useMemo(() => gccEdgesToGraphEdges(gccEdges), [])
+
+  // ── System energy for normalized impacts ──
+  const systemEnergy = useMemo(() => {
+    if (!propagationResult) return 1
+    let total = 0
+    for (const v of propagationResult.nodeImpacts.values()) total += Math.abs(v)
+    return Math.max(total, 1)
+  }, [propagationResult])
 
   // ── Mobile detection ──
   useEffect(() => {
@@ -98,7 +109,7 @@ export default function DemoPage() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // ── Simulation processing ──
+  // ── Simulation processing animation ──
   useEffect(() => {
     if (!isRunning) return
     const interval = setInterval(() => {
@@ -106,30 +117,30 @@ export default function DemoPage() {
         if (prev < processingSteps.length - 1) return prev + 1
         return prev
       })
-    }, 700)
+    }, 600)
     return () => clearInterval(interval)
   }, [isRunning])
 
   useEffect(() => {
     if (processingStep === processingSteps.length - 1 && isRunning) {
       const timeout = setTimeout(() => {
+        // Run REAL propagation engine
+        const result = runPropagation(gccNodes, gccEdges, selectedScenario.shocks)
+        setPropagationResult(result)
         setIsRunning(false)
         setHasResults(true)
         setCurrentStep(0)
-      }, 600)
+      }, 400)
       return () => clearTimeout(timeout)
     }
-  }, [processingStep, isRunning])
+  }, [processingStep, isRunning, selectedScenario])
 
   // ── Handlers ──
-  const handleScenarioSelect = (scenario: typeof mockScenarios[0]) => {
-    setSelectedScenario(scenario)
-    setScenarioTitle(scenario.title)
-    setScenarioText(scenario.scenario)
-    setCountry(scenario.country)
-    setCategory(scenario.category)
+  const handleScenarioSelect = (scenarioId: string) => {
+    setSelectedScenarioId(scenarioId)
     setHasResults(false)
     setCurrentStep(0)
+    setPropagationResult(null)
   }
 
   const handleReset = () => {
@@ -139,46 +150,24 @@ export default function DemoPage() {
     setIsRunning(false)
     setRunId('—')
     setRunTimestamp('—')
+    setPropagationResult(null)
   }
 
-  const handleRunSimulation = async () => {
+  const handleRunSimulation = () => {
     setIsRunning(true)
     setProcessingStep(0)
     setHasResults(false)
-    setLiveResult(null)
+    setPropagationResult(null)
     setRunId(`SIM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`)
     setRunTimestamp(new Date().toLocaleTimeString('en-US', { hour12: false }))
-
-    // Try live backend if available
-    if (backendOnline) {
-      try {
-        const scenarioMap: Record<string, string> = {
-          economy: 'hormuz_closure',
-          'public sentiment': 'banking_shock',
-          'business reaction': 'port_disruption',
-          technology: 'airport_disruption',
-          policy: 'sanctions_escalation',
-        }
-        const scenarioType = scenarioMap[category] ?? 'hormuz_closure'
-        const result = await runScenario(scenarioType, 'sovereign_treasury', 0.8, 72)
-        setLiveResult(result)
-        setDataSource('live')
-        // Also refresh trust status
-        fetchTrustStatus().then(setTrustStatus).catch(() => {})
-      } catch {
-        setDataSource('mock')
-      }
-    } else {
-      setDataSource('mock')
-    }
   }
 
   // ── System status ──
   const systemStatus = useMemo(() => {
-    if (isRunning) return { label: 'PROCESSING', color: 'bg-ds-accent', pulse: true }
-    if (hasResults) return { label: 'COMPLETE', color: 'bg-ds-success', pulse: false }
-    return { label: 'READY', color: 'bg-ds-text-dim', pulse: false }
-  }, [isRunning, hasResults])
+    if (isRunning) return { label: lang === 'ar' ? 'جارٍ المعالجة' : 'PROCESSING', color: 'bg-ds-accent', pulse: true }
+    if (hasResults) return { label: lang === 'ar' ? 'مكتمل' : 'COMPLETE', color: 'bg-ds-success', pulse: false }
+    return { label: lang === 'ar' ? 'جاهز' : 'READY', color: 'bg-ds-text-dim', pulse: false }
+  }, [isRunning, hasResults, lang])
 
   // ── Mobile fallback ──
   if (isMobile) {
@@ -188,13 +177,13 @@ export default function DemoPage() {
           <div className="w-14 h-14 rounded-full bg-ds-surface-raised border border-ds-border flex items-center justify-center mx-auto mb-5">
             <Globe className="w-6 h-6 text-ds-text-muted" />
           </div>
-          <h2 className="text-h3 mb-3">Desktop Required</h2>
+          <h2 className="text-h3 mb-3">{lang === 'ar' ? 'مطلوب سطح المكتب' : 'Desktop Required'}</h2>
           <p className="text-caption text-ds-text-muted mb-8 leading-relaxed">
-            The Control Room requires a desktop viewport for the full intelligence experience.
+            {lang === 'ar' ? 'غرفة التحكم تتطلب شاشة سطح المكتب للتجربة الكاملة.' : 'The Control Room requires a desktop viewport for the full intelligence experience.'}
           </p>
           <Link href="/" className="ds-btn-primary">
             <ArrowLeft className="w-4 h-4" />
-            Back to Home
+            {lang === 'ar' ? 'العودة' : 'Back to Home'}
           </Link>
         </div>
       </div>
@@ -205,22 +194,21 @@ export default function DemoPage() {
      MAIN SYSTEM INTERFACE
      ══════════════════════════════════════════════ */
   return (
-    <div className="h-screen w-full bg-ds-bg flex flex-col overflow-hidden">
+    <div className="h-screen w-full bg-ds-bg flex flex-col overflow-hidden" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
 
       {/* ── TOP BAR — System status bar ── */}
       <div className="h-11 border-b border-ds-border bg-ds-surface/80 backdrop-blur-xl flex-shrink-0 flex items-center justify-between px-5">
         {/* Left: Nav + breadcrumb */}
         <div className="flex items-center gap-3 min-w-0">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-ds-text-muted hover:text-ds-text transition-colors"
-          >
+          <Link href="/" className="flex items-center gap-2 text-ds-text-muted hover:text-ds-text transition-colors">
             <ArrowLeft className="w-3.5 h-3.5" />
           </Link>
           <div className="w-px h-5 bg-ds-border" />
           <span className="text-micro font-semibold text-ds-text tracking-tight">DEEVO SIM</span>
           <span className="text-micro text-ds-text-dim font-mono">/</span>
-          <span className="text-micro text-ds-text-muted font-mono">Control Room</span>
+          <span className="text-micro text-ds-text-muted font-mono">
+            {lang === 'ar' ? 'غرفة التحكم' : 'Control Room'}
+          </span>
         </div>
 
         {/* Center: System status */}
@@ -243,25 +231,48 @@ export default function DemoPage() {
           )}
         </div>
 
-        {/* Right: Mode indicator + Scenario meta */}
+        {/* Right: Language toggle + Mode + Status */}
         <div className="flex items-center gap-3 min-w-0">
-          {backendOnline ? (
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span className="text-nano font-mono text-emerald-400 tracking-wider">LIVE</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-ds-accent/10 border border-ds-accent/20">
-              <div className="w-1.5 h-1.5 rounded-full bg-ds-accent" />
-              <span className="text-nano font-mono text-ds-accent tracking-wider">DEMO</span>
+          {/* Language toggle */}
+          <button
+            onClick={toggleLang}
+            className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-ds-card border border-ds-border hover:border-ds-border-hover transition-all"
+          >
+            <Languages size={10} className="text-ds-text-muted" />
+            <span className="text-nano font-mono text-ds-text-muted">{lang === 'ar' ? 'EN' : 'عربي'}</span>
+          </button>
+
+          {/* View toggle */}
+          {hasResults && (
+            <div className="flex items-center rounded-full bg-ds-card border border-ds-border overflow-hidden">
+              <button
+                onClick={() => setViewMode('graph')}
+                className={`flex items-center gap-1 px-2 py-0.5 text-nano font-mono transition-colors ${viewMode === 'graph' ? 'bg-ds-accent/15 text-ds-accent' : 'text-ds-text-dim hover:text-ds-text-muted'}`}
+              >
+                <Network size={10} />
+                {lang === 'ar' ? 'رسم' : 'Graph'}
+              </button>
+              <button
+                onClick={() => setViewMode('globe')}
+                className={`flex items-center gap-1 px-2 py-0.5 text-nano font-mono transition-colors ${viewMode === 'globe' ? 'bg-ds-accent/15 text-ds-accent' : 'text-ds-text-dim hover:text-ds-text-muted'}`}
+              >
+                <Globe size={10} />
+                {lang === 'ar' ? 'كرة' : 'Globe'}
+              </button>
             </div>
           )}
+
+          {/* Engine status */}
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span className="text-nano font-mono text-emerald-400 tracking-wider">
+              {lang === 'ar' ? 'محرك حي' : 'ENGINE LIVE'}
+            </span>
+          </div>
+
           <span className="text-micro text-ds-text-muted truncate max-w-[200px] font-mono">
-            {scenarioTitle}
+            {lang === 'ar' ? selectedScenario.titleAr : selectedScenario.title}
           </span>
-          <button className="p-1.5 hover:bg-ds-card rounded-md transition-colors text-ds-text-dim hover:text-ds-text">
-            <Settings className="w-3.5 h-3.5" />
-          </button>
         </div>
       </div>
 
@@ -269,54 +280,31 @@ export default function DemoPage() {
       <div className="flex-1 flex overflow-hidden">
 
         {/* ═══ LEFT SIDEBAR — Controls ═══ */}
-        <div className="w-[280px] bg-ds-surface border-r border-ds-border overflow-y-auto flex flex-col">
+        <div className="w-[280px] bg-ds-surface border-r border-ds-border overflow-y-auto flex flex-col" style={{ borderRight: lang === 'ar' ? 'none' : undefined, borderLeft: lang === 'ar' ? '1px solid var(--ds-border)' : undefined }}>
           <div className="p-5 space-y-5 flex flex-col">
 
             {/* Scenario Input */}
             <div>
               <h3 className="text-nano uppercase tracking-[0.15em] text-ds-text-dim font-semibold mb-3 flex items-center gap-2">
                 <Radio size={10} />
-                Scenario Input
+                {lang === 'ar' ? 'إدخال السيناريو' : 'Scenario Input'}
               </h3>
               <div className="space-y-3">
-                <input
-                  type="text"
-                  value={scenarioTitle}
-                  onChange={(e) => setScenarioTitle(e.target.value)}
-                  placeholder="Scenario title"
-                  className="ds-input text-micro"
-                />
-                <textarea
-                  value={scenarioText}
-                  onChange={(e) => setScenarioText(e.target.value)}
-                  placeholder="Describe the scenario..."
-                  dir="auto"
-                  className="ds-input min-h-[100px] resize-none text-micro"
-                />
-                <select
-                  value={country}
-                  onChange={(e) => setCountry(e.target.value)}
-                  className="ds-select text-micro"
-                >
-                  <option value="Saudi Arabia">Saudi Arabia</option>
-                  <option value="Kuwait">Kuwait</option>
-                  <option value="UAE">UAE</option>
-                  <option value="Bahrain">Bahrain</option>
-                  <option value="Oman">Oman</option>
-                  <option value="Qatar">Qatar</option>
-                  <option value="GCC">GCC</option>
-                </select>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="ds-select text-micro"
-                >
-                  <option value="economy">Economy</option>
-                  <option value="public sentiment">Public Sentiment</option>
-                  <option value="business reaction">Business Reaction</option>
-                  <option value="technology">Technology</option>
-                  <option value="policy">Policy</option>
-                </select>
+                <div className="ds-card rounded-ds-lg p-3 border border-ds-accent/20">
+                  <div className="text-micro font-medium text-ds-text mb-1">
+                    {lang === 'ar' ? selectedScenario.titleAr : selectedScenario.title}
+                  </div>
+                  <p className="text-[10px] text-ds-text-muted leading-relaxed" dir="auto">
+                    {lang === 'ar' ? selectedScenario.descriptionAr : selectedScenario.description}
+                  </p>
+                  <div className="flex items-center gap-2 mt-2 text-[9px] font-mono text-ds-text-dim">
+                    <span>{selectedScenario.country}</span>
+                    <span>·</span>
+                    <span>{selectedScenario.category}</span>
+                    <span>·</span>
+                    <span>{selectedScenario.shocks.length} {lang === 'ar' ? 'صدمات' : 'shocks'}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -329,12 +317,12 @@ export default function DemoPage() {
               {isRunning ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Processing...
+                  {lang === 'ar' ? 'جارٍ المعالجة...' : 'Processing...'}
                 </>
               ) : (
                 <>
                   <Zap className="w-4 h-4" />
-                  Run Simulation
+                  {lang === 'ar' ? 'تشغيل المحاكاة' : 'Run Simulation'}
                 </>
               )}
             </button>
@@ -351,13 +339,13 @@ export default function DemoPage() {
                   <div className="pt-4 border-t border-ds-border space-y-3">
                     <h3 className="text-nano uppercase tracking-[0.15em] text-ds-text-dim font-semibold flex items-center gap-2">
                       <Activity size={10} className="text-ds-accent" />
-                      Pipeline
+                      {lang === 'ar' ? 'خط الأنابيب' : 'Pipeline'}
                     </h3>
                     <div className="space-y-2.5">
                       {processingSteps.map((step, idx) => (
                         <motion.div
                           key={idx}
-                          initial={{ opacity: 0, x: -8 }}
+                          initial={{ opacity: 0, x: lang === 'ar' ? 8 : -8 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: idx * 0.05 }}
                           className="flex items-center gap-2.5"
@@ -376,7 +364,7 @@ export default function DemoPage() {
                                 ? 'text-ds-accent'
                                 : 'text-ds-text-dim'
                           }`}>
-                            {step.label}
+                            {lang === 'ar' ? step.ar : step.en}
                           </span>
                         </motion.div>
                       ))}
@@ -389,29 +377,32 @@ export default function DemoPage() {
             {/* Divider */}
             <div className="ds-divider" />
 
-            {/* Preset Scenarios */}
+            {/* GCC Scenario Library */}
             <div>
               <h3 className="text-nano uppercase tracking-[0.15em] text-ds-text-dim font-semibold mb-3 flex items-center gap-2">
                 <Shield size={10} />
-                Presets
+                {lang === 'ar' ? 'مكتبة السيناريوهات' : 'GCC Scenarios'}
               </h3>
               <div className="space-y-2">
-                {mockScenarios.slice(0, 3).map((scenario) => (
+                {gccScenarios.map((scenario) => (
                   <button
                     key={scenario.id}
-                    onClick={() => handleScenarioSelect(scenario)}
+                    onClick={() => handleScenarioSelect(scenario.id)}
                     className={`w-full text-left px-3.5 py-3 rounded-ds-lg border transition-all duration-200 ${
-                      selectedScenario.id === scenario.id
+                      selectedScenarioId === scenario.id
                         ? 'bg-ds-accent/8 border-ds-accent/25'
                         : 'bg-ds-bg-alt border-ds-border hover:border-ds-border-hover hover:bg-ds-card/40'
                     }`}
+                    dir={lang === 'ar' ? 'rtl' : 'ltr'}
                   >
                     <div className="text-micro font-medium text-ds-text truncate">
-                      {scenario.title}
+                      {lang === 'ar' ? scenario.titleAr : scenario.title}
                     </div>
                     <div className="flex items-center gap-1.5 mt-1.5 text-[10px] text-ds-text-dim font-mono">
                       <Globe className="w-3 h-3" />
                       {scenario.country}
+                      <span>·</span>
+                      <span>{scenario.shocks.length} {lang === 'ar' ? 'صدمات' : 'shocks'}</span>
                     </div>
                   </button>
                 ))}
@@ -420,9 +411,9 @@ export default function DemoPage() {
           </div>
         </div>
 
-        {/* ═══ CENTER — Graph + Timeline (primary focus) ═══ */}
+        {/* ═══ CENTER — Graph/Globe + Timeline ═══ */}
         <div className="flex-1 bg-ds-bg overflow-y-auto flex flex-col p-4 gap-4">
-          {/* Graph Panel — dominant visual weight */}
+          {/* Graph/Globe Panel — dominant visual weight */}
           <div className="flex-1 min-h-[420px]">
             {!hasResults && !isRunning && (
               <div className="h-full ds-card rounded-ds-xl flex items-center justify-center relative overflow-hidden">
@@ -432,9 +423,14 @@ export default function DemoPage() {
                     <Circle className="w-5 h-5 text-ds-text-dim" />
                   </div>
                   <p className="text-caption text-ds-text-dim">
-                    Run a simulation to generate the entity graph
+                    {lang === 'ar' ? 'قم بتشغيل المحاكاة لتوليد الرسم البياني' : 'Run a simulation to generate the causal graph'}
                   </p>
-                  <p className="text-nano text-ds-text-dim mt-1 font-mono">AWAITING INPUT</p>
+                  <p className="text-nano text-ds-text-dim mt-1 font-mono">
+                    {lang === 'ar' ? 'في انتظار الإدخال' : 'AWAITING INPUT'}
+                  </p>
+                  <p className="text-[9px] text-ds-text-dim mt-3 font-mono">
+                    {gccNodes.length} {lang === 'ar' ? 'كيان' : 'entities'} · {gccEdges.length} {lang === 'ar' ? 'علاقة' : 'edges'} · 5 {lang === 'ar' ? 'طبقات' : 'layers'}
+                  </p>
                 </div>
               </div>
             )}
@@ -444,14 +440,24 @@ export default function DemoPage() {
                 <div className="relative text-center">
                   <Loader2 className="w-10 h-10 mx-auto mb-3 text-ds-accent animate-spin" />
                   <p className="text-caption text-ds-text-muted">
-                    Generating entity graph...
+                    {lang === 'ar' ? 'جارٍ حساب الانتشار السببي...' : 'Computing causal propagation...'}
                   </p>
-                  <p className="text-nano text-ds-accent font-mono mt-1">SIGNAL PROPAGATION ACTIVE</p>
+                  <p className="text-nano text-ds-accent font-mono mt-1">
+                    {lang === 'ar' ? 'الانتشار نشط' : 'PROPAGATION ACTIVE'}
+                  </p>
                 </div>
               </div>
             )}
-            {hasResults && (
-              <GraphPanel initialNodes={mockGraphNodes} initialEdges={mockGraphEdges} />
+            {hasResults && viewMode === 'graph' && (
+              <GraphPanel initialNodes={graphNodes} initialEdges={graphEdges} />
+            )}
+            {hasResults && viewMode === 'globe' && propagationResult && (
+              <GlobePanel
+                nodes={gccNodes}
+                edges={gccEdges}
+                nodeImpacts={propagationResult.nodeImpacts}
+                systemEnergy={systemEnergy}
+              />
             )}
           </div>
 
@@ -459,13 +465,17 @@ export default function DemoPage() {
           <div className="flex-shrink-0">
             {!hasResults && !isRunning && (
               <div className="ds-card rounded-ds-xl p-5 text-center">
-                <p className="text-caption text-ds-text-dim font-mono">TIMELINE · AWAITING SIMULATION</p>
+                <p className="text-caption text-ds-text-dim font-mono">
+                  {lang === 'ar' ? 'الجدول الزمني · في انتظار المحاكاة' : 'TIMELINE · AWAITING SIMULATION'}
+                </p>
               </div>
             )}
             {isRunning && (
               <div className="ds-card rounded-ds-xl p-5 flex items-center justify-center gap-3">
                 <Loader2 className="w-4 h-4 text-ds-accent animate-spin" />
-                <span className="text-caption text-ds-text-muted font-mono">Building temporal model...</span>
+                <span className="text-caption text-ds-text-muted font-mono">
+                  {lang === 'ar' ? 'بناء النموذج الزمني...' : 'Building temporal model...'}
+                </span>
               </div>
             )}
             {hasResults && (
@@ -478,88 +488,43 @@ export default function DemoPage() {
           </div>
         </div>
 
-        {/* ═══ RIGHT SIDEBAR — Intelligence Brief + Analyst ═══ */}
-        <div className="w-[360px] bg-ds-surface border-l border-ds-border overflow-y-auto flex flex-col">
+        {/* ═══ RIGHT SIDEBAR — Intelligence + Propagation Panels ═══ */}
+        <div className="w-[360px] bg-ds-surface border-l border-ds-border overflow-y-auto flex flex-col" style={{ borderLeft: lang === 'ar' ? 'none' : undefined, borderRight: lang === 'ar' ? '1px solid var(--ds-border)' : undefined }}>
           <div className="p-4 space-y-4 flex flex-col h-full">
 
             {/* Action buttons */}
             {hasResults && (
               <div className="flex gap-2 flex-shrink-0">
-                <button
-                  onClick={handleRunSimulation}
-                  className="flex-1 ds-btn-primary text-micro"
-                >
+                <button onClick={handleRunSimulation} className="flex-1 ds-btn-primary text-micro">
                   <Play className="w-3.5 h-3.5" />
-                  Rerun
+                  {lang === 'ar' ? 'إعادة' : 'Rerun'}
                 </button>
-                <button
-                  onClick={handleReset}
-                  className="flex-1 ds-btn-secondary text-micro"
-                >
+                <button onClick={handleReset} className="flex-1 ds-btn-secondary text-micro">
                   <RotateCcw className="w-3.5 h-3.5" />
-                  Reset
+                  {lang === 'ar' ? 'إعادة تعيين' : 'Reset'}
                 </button>
               </div>
             )}
 
-            {/* Live Engine Metrics (when backend data available) */}
-            {hasResults && liveResult && (
-              <div className="flex-shrink-0 ds-card rounded-ds-lg p-3 space-y-2 border border-ds-accent/20">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <span className="text-nano font-mono uppercase tracking-widest text-ds-accent">Live Engine Output</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
-                  <div>
-                    <span className="text-ds-text-dim">Total Loss</span>
-                    <div className="text-ds-text font-semibold">${(liveResult.totalLoss / 1e9).toFixed(2)}B</div>
-                  </div>
-                  <div>
-                    <span className="text-ds-text-dim">Credibility</span>
-                    <div className="text-emerald-400 font-semibold">{liveResult.costCredibility}</div>
-                  </div>
-                  <div>
-                    <span className="text-ds-text-dim">Calibration</span>
-                    <div className="text-ds-text font-semibold">{liveResult.calibrationScore}</div>
-                  </div>
-                  <div>
-                    <span className="text-ds-text-dim">Trust Level</span>
-                    <div className="text-ds-accent font-semibold">{liveResult.overallTrustLevel}</div>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-ds-text-dim">Deployment</span>
-                    <div className="text-ds-text font-semibold">{liveResult.deploymentSuitability}</div>
-                  </div>
-                </div>
-                {liveResult.drivers.length > 0 && (
-                  <div className="pt-2 border-t border-ds-border">
-                    <span className="text-[10px] text-ds-text-dim font-mono">DRIVERS</span>
-                    <div className="text-[11px] text-ds-text-muted mt-1">{liveResult.drivers.join(' · ')}</div>
-                  </div>
-                )}
-              </div>
+            {/* Propagation Results — REAL engine output */}
+            {hasResults && propagationResult && (
+              <>
+                <ExplanationPanel
+                  explanation={propagationResult.explanation}
+                  confidence={propagationResult.confidence}
+                  totalLoss={propagationResult.totalLoss}
+                  spreadLevel={propagationResult.spreadLevel}
+                />
+                <ImpactChainPanel chain={propagationResult.propagationChain} />
+                <TopDriversPanel drivers={propagationResult.topDrivers} />
+                <SectorImpactPanel sectors={propagationResult.affectedSectors} />
+              </>
             )}
 
-            {/* Trust Status (when backend available) */}
-            {trustStatus && (
-              <div className="flex-shrink-0 ds-card rounded-ds-lg p-3 space-y-1 text-[11px] font-mono">
-                <span className="text-nano text-ds-text-dim uppercase tracking-widest">System Trust</span>
-                <div className="flex justify-between"><span className="text-ds-text-dim">Cost Credibility</span><span className="text-emerald-400">{trustStatus.costCredibility}</span></div>
-                <div className="flex justify-between"><span className="text-ds-text-dim">Calibration</span><span className="text-ds-text">{trustStatus.calibrationScore}</span></div>
-                <div className="flex justify-between"><span className="text-ds-text-dim">References</span><span className="text-ds-text">{trustStatus.fileReferences}/{trustStatus.totalReferences}</span></div>
-                <div className="flex justify-between"><span className="text-ds-text-dim">Fields</span><span className="text-ds-text">{trustStatus.supportedFields}S/{trustStatus.weakFields}W/{trustStatus.unsupportedFields}U</span></div>
-              </div>
+            {/* Report */}
+            {!hasResults && (
+              <ReportPanel report={null} />
             )}
-
-            {/* Report / Intelligence Brief */}
-            <div className="flex-shrink-0">
-              {!hasResults && (
-                <ReportPanel report={null} />
-              )}
-              {hasResults && (
-                <ReportPanel report={mockReport} />
-              )}
-            </div>
 
             {/* Analyst / Chat */}
             <div className="flex-1 min-h-0 flex flex-col">
@@ -571,7 +536,9 @@ export default function DemoPage() {
                         {
                           id: '1',
                           role: 'assistant' as const,
-                          content: 'Run a simulation to activate the analyst interface.',
+                          content: lang === 'ar'
+                            ? 'قم بتشغيل المحاكاة لتفعيل واجهة المحلل.'
+                            : 'Run a simulation to activate the analyst interface.',
                         },
                       ]
                 }

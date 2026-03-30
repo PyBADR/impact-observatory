@@ -66,7 +66,7 @@ export const gccNodes: GCCNode[] = [
   { id: 'eco_oil',     label: 'Oil Export',       layer: 'economy', type: 'Topic',         weight: 0.96, sensitivity: 0.7 },
   { id: 'eco_aramco',  label: 'Aramco',           layer: 'economy', type: 'Organization',  weight: 0.95, sensitivity: 0.5 },
   { id: 'eco_adnoc',   label: 'ADNOC',            layer: 'economy', type: 'Organization',  weight: 0.88, sensitivity: 0.5 },
-  { id: 'eco_kpc',     label: 'KPC',              layer: 'economy', type: 'Organization',  weight: 0.78, sensitivity: 0.55 },', type: 'Organization',  weight: 0.78, sensitivity: 0.55 },
+  { id: 'eco_kpc',     label: 'KPC',              layer: 'economy', type: 'Organization',  weight: 0.78, sensitivity: 0.55 },
   { id: 'eco_shipping',label: 'Shipping & Logistics', layer: 'economy', type: 'Topic',     weight: 0.85, sensitivity: 0.65 },
   { id: 'eco_aviation',label: 'Aviation Sector',  layer: 'economy', type: 'Topic',         weight: 0.82, sensitivity: 0.6 },
   { id: 'eco_fuel',    label: 'Fuel Cost',        layer: 'economy', type: 'Topic',         weight: 0.88, sensitivity: 0.7 },

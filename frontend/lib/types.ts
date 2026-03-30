@@ -2,6 +2,12 @@
    Deevo Sim â Core Type Definitions
    âââââââââââââââââââââââââââââââââââââââââââââââ */
 
+/** Bilingual text pair */
+export interface BilingualText {
+  en: string
+  ar: string
+}
+
 /** Scenario seed input */
 export interface Scenario {
   id: string
