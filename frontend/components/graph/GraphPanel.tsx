@@ -368,7 +368,7 @@ export default function GraphPanel({ initialNodes, initialEdges, onNodeClick }: 
       >
         <svg
           ref={svgRef}
-          viewBox="0 0 850 550"
+          viewBox="0 0 850 650"
           className="w-full h-full"
           style={{
             transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,

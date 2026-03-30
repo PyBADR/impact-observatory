@@ -57,8 +57,6 @@ export const nodeCoordinates: Record<string, GeoCoordinate> = {
   soc_social:   { lat: 24.7200, lng: 46.6800 },  // Riyadh
   soc_travel_d: { lat: 25.2500, lng: 55.3500 },  // Dubai
   soc_ticket:   { lat: 25.2532, lng: 55.3600 },  // Dubai airport area
-  soc_sentiment:{ lat: 24.8000, lng: 46.7500 },  // Riyadh
-  soc_stability:{ lat: 24.6500, lng: 46.7100 },  // Riyadh
 
   // — Additional Airports —
   inf_jed:      { lat: 21.6796, lng: 39.1565 },  // King Abdulaziz Airport
@@ -73,10 +71,30 @@ export const nodeCoordinates: Record<string, GeoCoordinate> = {
   inf_shuwaikh: { lat: 29.3500, lng: 47.9200 },  // Shuwaikh Port, Kuwait
   inf_sohar:    { lat: 24.3400, lng: 56.7100 },  // Sohar Port, Oman
 
-  // — Additional Sectors —
-  eco_telecom:  { lat: 24.7400, lng: 46.6600 },  // Riyadh
-  eco_food:     { lat: 25.0500, lng: 55.1900 },  // Dubai
-  eco_logistics:{ lat: 25.0100, lng: 55.0800 },  // Jebel Ali zone
+  // — Telecom & Ministries (Infrastructure layer) —
+  inf_telecom:  { lat: 24.7100, lng: 54.0000 },  // GCC Telecom hub
+  gov_transport:{ lat: 24.6800, lng: 46.7200 },  // Min. of Transport, Riyadh
+  gov_water:    { lat: 24.6900, lng: 46.7300 },  // Min. of Water & Elec., Riyadh
+
+  // — Additional Economy Sectors & Ministries —
+  eco_telecom:  { lat: 24.7000, lng: 54.1000 },  // Telecom Sector
+  eco_food:     { lat: 25.0500, lng: 51.0000 },  // Food Security
+  gov_energy:   { lat: 24.7000, lng: 46.7000 },  // Min. of Energy, Riyadh
+  gov_tourism:  { lat: 24.7500, lng: 46.7100 },  // Min. of Tourism, Riyadh
+
+  // — Additional Central Banks & Banking —
+  fin_qa_cb:    { lat: 25.2867, lng: 51.5333 },  // Qatar Central Bank, Doha
+  fin_om_cb:    { lat: 23.5900, lng: 58.3800 },  // Oman Central Bank, Muscat
+  fin_bh_cb:    { lat: 26.2200, lng: 50.5900 },  // Bahrain Central Bank, Manama
+  fin_banking:  { lat: 24.7200, lng: 46.6900 },  // Commercial Banks, Riyadh
+  gov_finance:  { lat: 24.6850, lng: 46.6800 },  // Min. of Finance, Riyadh
+
+  // — Additional Society Nodes —
+  soc_expats:   { lat: 25.2000, lng: 55.2700 },  // Expatriate Workers, Dubai
+  soc_hajj:     { lat: 21.4225, lng: 39.8262 },  // Hajj & Umrah, Makkah
+  soc_food_d:   { lat: 25.3000, lng: 51.5000 },  // Food Demand, Qatar
+  soc_housing:  { lat: 24.8000, lng: 46.8000 },  // Housing & Cost of Living, Riyadh
+  soc_employment:{ lat: 24.7500, lng: 46.7500 }, // Employment, Riyadh
 }
 
 /** Shipping routes for globe arc rendering */

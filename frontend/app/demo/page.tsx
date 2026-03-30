@@ -619,8 +619,8 @@ function DemoPageContent() {
   }, [propagation, timelineIteration])
 
   // Pre-compute layer-stratified positions: nodes grouped by layer band, spread horizontally
+  // Sub-row logic: layers with >10 nodes split into 2 staggered rows (±20px y offset)
   const layerNodePositions = useMemo(() => {
-    const layerOrder: Array<keyof typeof layerMeta> = ['geography', 'infrastructure', 'economy', 'finance', 'society']
     const layerIndices = new Map<string, number>()
     const layerCounts = new Map<string, number>()
     for (const n of gccNodes) {
@@ -634,8 +634,19 @@ function DemoPageContent() {
       const meta = layerMeta[n.layer]
       const total = layerCounts.get(n.layer) || 1
       const idx = layerIndices.get(n.id) || 0
-      const spacing = canvasW / (total + 1)
-      positions.set(n.id, { x: spacing * (idx + 1), y: meta.yBase })
+
+      if (total > 10) {
+        // Split into 2 sub-rows: even indices on row 0 (up), odd on row 1 (down)
+        const subRow = idx % 2
+        const subIdx = Math.floor(idx / 2)
+        const subTotal = Math.ceil(total / 2)
+        const spacing = canvasW / (subTotal + 1)
+        const yOffset = subRow === 0 ? -20 : 20
+        positions.set(n.id, { x: spacing * (subIdx + 1), y: meta.yBase + yOffset })
+      } else {
+        const spacing = canvasW / (total + 1)
+        positions.set(n.id, { x: spacing * (idx + 1), y: meta.yBase })
+      }
     }
     return positions
   }, [])

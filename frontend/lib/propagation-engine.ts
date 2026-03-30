@@ -90,12 +90,19 @@ export interface Driver {
 }
 
 /* ── Sector economic base values ($B) for loss estimation ── */
+/* GCC combined GDP ~$2.1T (2024 est.)
+   Layer weights reflect real sectoral contribution:
+   - Geography: 0 (spatial layer, no direct GDP)
+   - Infrastructure: $210B (ports, airports, utilities, telecom — ~10% GDP)
+   - Economy: $950B (oil $540B + non-oil $410B — ~45% GDP)
+   - Finance: $380B (banking, insurance, capital markets — ~18% GDP)
+   - Society: $160B (consumer services, tourism demand, employment — ~8% GDP) */
 const SECTOR_GDP_BASE: Record<GCCLayer, number> = {
   geography: 0,
-  infrastructure: 85,
-  economy: 420,
-  finance: 180,
-  society: 95,
+  infrastructure: 210,
+  economy: 950,
+  finance: 380,
+  society: 160,
 }
 
 /* ── Layer labels ── */
