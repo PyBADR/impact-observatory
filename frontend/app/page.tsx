@@ -80,8 +80,9 @@ export default function HomePage() {
   ]
 
   const demos = [
-    { num: '01', title: { en: 'Hormuz Strait Closure', ar: 'إغلاق مضيق هرمز' }, desc: { en: 'Simulating oil transit disruption cascading through infrastructure, economy, and finance layers.', ar: 'محاكاة تعطل عبور النفط المتسلسل عبر طبقات البنية التحتية والاقتصاد والمالية.' } },
-    { num: '02', title: { en: 'GCC Aviation Crisis', ar: 'أزمة الطيران الخليجي' }, desc: { en: 'Tracking how fuel price spikes compound with reduced travel demand across airports and society.', ar: 'تتبع كيف تتضاعف ارتفاعات أسعار الوقود مع انخفاض الطلب على السفر عبر المطارات والمجتمع.' } },
+    { num: '01', title: { en: 'Hormuz Strait Closure', ar: 'إغلاق مضيق هرمز' }, desc: { en: 'Full cascade: oil transit → shipping costs → insurance repricing → aviation fuel → tourism collapse → GDP loss.', ar: 'سلسلة كاملة: عبور النفط ← تكاليف الشحن ← إعادة تسعير التأمين ← وقود الطيران ← انهيار السياحة ← خسارة الناتج المحلي.' } },
+    { num: '02', title: { en: 'GCC Airspace Restriction', ar: 'تقييد المجال الجوي الخليجي' }, desc: { en: '40% of East-West air traffic rerouted. 6 airlines face margin collapse while 9 airports lose transit revenue.', ar: '40% من حركة الطيران بين الشرق والغرب تُعاد توجيهها. 6 شركات طيران تواجه انهيار هوامش و9 مطارات تفقد إيرادات العبور.' } },
+    { num: '03', title: { en: 'Gulf Food Security Shock', ar: 'صدمة الأمن الغذائي الخليجي' }, desc: { en: 'GCC imports 85% of calories. Shipping disruption depletes food buffers within 40 days, triggering social instability.', ar: 'دول الخليج تستورد 85% من السعرات. تعطل الشحن يستنفد المخزون الغذائي خلال 40 يوماً ويُطلق عدم استقرار اجتماعي.' } },
   ]
 
   return (

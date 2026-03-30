@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import GraphPanel from '@/components/graph/GraphPanel'
-import { gccNodes, gccEdges, gccScenarios, layerMeta } from '@/lib/gcc-graph'
+import { gccNodes, gccEdges, gccScenarios, layerMeta, SCENARIO_GROUPS, type ScenarioGroup } from '@/lib/gcc-graph'
 import { runPropagation, formatPropagationChain, computeSectorFinancials, computeHormuzChain, computeAviationChain, type PropagationResult, type NodeExplanation, type SectorFinancials, type HormuzChainResult, type AviationChainResult } from '@/lib/propagation-engine'
 import { setLanguage, getLanguage, type Language } from '@/lib/i18n'
 import { shippingRoutes, aviationRoutes, nodeCoordinates } from '@/lib/gcc-coordinates'
@@ -94,7 +94,7 @@ const UI: Record<string, { en: string; ar: string }> = {
   hormuzLabel: { en: 'Strait of Hormuz', ar: 'مضيق هرمز' },
   live: { en: 'LIVE', ar: 'مباشر' },
   delta: { en: 'Change', ar: 'التغيير' },
-  version: { en: 'v4.0', ar: 'v4.0' },
+  version: { en: 'v6.0', ar: 'v6.0' },
   causalBrief: { en: 'Causal Brief', ar: 'الموجز السببي' },
   lossExposure: { en: 'Loss Exposure', ar: 'التعرض للخسائر' },
   layerLegend: { en: 'Layer Legend', ar: 'دليل الطبقات' },
@@ -119,6 +119,19 @@ const LAYER_LABELS: Record<string, { en: string; ar: string }> = {
   finance: { en: 'Finance', ar: 'المالية' },
   society: { en: 'Society', ar: 'المجتمع' },
 }
+
+/* ── Scientific Globe Modes ── */
+const GLOBE_MODES: { id: string; label: string; labelAr: string; icon: string; filter: string }[] = [
+  { id: 'normal',   label: 'Normal',   labelAr: 'عادي',           icon: '🌍', filter: 'none' },
+  { id: 'crt',      label: 'CRT',      labelAr: 'شاشة CRT',      icon: '📺', filter: 'contrast(1.3) saturate(0.3) sepia(0.15) brightness(0.85)' },
+  { id: 'eo',       label: 'EO',       labelAr: 'رصد كهروبصري',   icon: '🛰️', filter: 'contrast(1.5) saturate(0) brightness(1.2)' },
+  { id: 'flir',     label: 'FLIR',     labelAr: 'حراري FLIR',    icon: '🔥', filter: 'contrast(1.4) saturate(0.2) hue-rotate(180deg) brightness(0.9)' },
+  { id: 'nvg',      label: 'NVG',      labelAr: 'رؤية ليلية',     icon: '🌙', filter: 'contrast(1.2) saturate(0.5) hue-rotate(90deg) brightness(0.7)' },
+  { id: 'weather',  label: 'Weather',  labelAr: 'طقس',            icon: '🌦️', filter: 'contrast(0.9) saturate(1.4) brightness(1.1)' },
+  { id: 'shipping', label: 'Shipping', labelAr: 'ممرات بحرية',    icon: '🚢', filter: 'contrast(1.1) saturate(0.6) brightness(0.9) hue-rotate(200deg)' },
+  { id: 'flights',  label: 'Flights',  labelAr: 'مسارات جوية',    icon: '✈️', filter: 'contrast(1.1) saturate(0.4) brightness(0.95) hue-rotate(270deg)' },
+  { id: 'satellite',label: 'Satellite',labelAr: 'قمر صناعي',      icon: '🛰️', filter: 'contrast(1.6) saturate(0.1) brightness(1.3) grayscale(0.3)' },
+]
 
 const PIPELINE = [
   { en: 'Parsing scenario input', ar: 'تحليل مدخلات السيناريو' },
@@ -214,13 +227,14 @@ function runMonteCarlo(
    GLOBE VIEW — Operational Geospatial Intelligence
    ══════════════════════════════════════════════ */
 function GlobeView({
-  propagation, selectedNode, onSelectNode, lang, timelineIteration,
+  propagation, selectedNode, onSelectNode, lang, timelineIteration, globeMode = 'normal',
 }: {
   propagation: PropagationResult | null
   selectedNode: string | null
   onSelectNode: (id: string | null) => void
   lang: Language
   timelineIteration: number
+  globeMode?: string
 }) {
   const globeRef = useRef<any>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -313,8 +327,17 @@ function GlobeView({
   }, [])
 
   const allArcs = useMemo(() => {
+    // Route-specific modes: emphasize relevant arcs, dim others
+    if (globeMode === 'shipping') {
+      const boostedShipping = shippingArcs.map(a => ({ ...a, stroke: a.stroke * 3, color: '#0ea5e9' }))
+      return [...boostedShipping, ...propagationArcs]
+    }
+    if (globeMode === 'flights') {
+      const boostedAviation = aviationArcs.map(a => ({ ...a, stroke: a.stroke * 3, color: '#a78bfa' }))
+      return [...boostedAviation, ...propagationArcs]
+    }
     return [...shippingArcs, ...aviationArcs, ...propagationArcs]
-  }, [shippingArcs, aviationArcs, propagationArcs])
+  }, [shippingArcs, aviationArcs, propagationArcs, globeMode])
 
   const ringsData = useMemo(() => {
     const hormuz = nodeCoordinates['geo_hormuz']
@@ -341,8 +364,10 @@ function GlobeView({
     }
   }, [])
 
+  const activeFilter = GLOBE_MODES.find(m => m.id === globeMode)?.filter || 'none'
+
   return (
-    <div ref={containerRef} className="w-full h-full bg-[#06060a] rounded-xl overflow-hidden relative">
+    <div ref={containerRef} className="w-full h-full bg-[#06060a] rounded-xl overflow-hidden relative" style={{ filter: activeFilter }}>
       <GlobeGL
         ref={globeRef}
         globeImageUrl="//unpkg.com/three-globe/example/img/earth-dark.jpg"
@@ -555,6 +580,7 @@ function DemoPageContent() {
   const [isMobile, setIsMobile] = useState(false)
   const [timelineIteration, setTimelineIteration] = useState(0)
   const [analysisMode, setAnalysisMode] = useState<'deterministic' | 'probabilistic'>('deterministic')
+  const [globeMode, setGlobeMode] = useState<string>('normal')
 
   useEffect(() => {
     setLanguage(lang)
@@ -1175,6 +1201,25 @@ function DemoPageContent() {
             <button onClick={() => setViewMode('globe')} className={`px-4 py-1.5 text-[12px] font-semibold rounded-e-md border border-ds-border transition-colors ${viewMode === 'globe' ? 'bg-cyan-500 text-ds-bg border-cyan-500' : 'bg-ds-card text-ds-text-muted'}`}>
               <GlobeIcon className="w-3 h-3 inline me-1" />{ui('globeView', lang)}
             </button>
+            {viewMode === 'globe' && (
+              <div className="ms-3 flex items-center gap-1">
+                {GLOBE_MODES.map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => setGlobeMode(m.id as any)}
+                    title={lang === 'ar' ? m.labelAr : m.label}
+                    className={`px-2 py-1 text-[10px] rounded border transition-all ${
+                      globeMode === m.id
+                        ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400'
+                        : 'bg-ds-bg-alt border-ds-border text-ds-text-dim hover:border-ds-border-hover'
+                    }`}
+                  >
+                    <span className="me-0.5">{m.icon}</span>
+                    <span className="font-mono">{m.id === 'normal' ? (lang === 'ar' ? m.labelAr : m.label) : m.id.toUpperCase()}</span>
+                  </button>
+                ))}
+              </div>
+            )}
             {propagation && (
               <div className="ms-auto flex items-center gap-3 text-[10px] font-mono text-ds-text-dim">
                 <span>{ui('totalLoss', lang)}: <span className="text-red-400 font-semibold">${propagation.totalLoss.toFixed(1)}B</span></span>
@@ -1216,7 +1261,7 @@ function DemoPageContent() {
             )}
             {propagation && !isRunning && viewMode === 'globe' && (
               <div className="h-full p-2 relative">
-                <GlobeView propagation={propagation} selectedNode={selectedNode} onSelectNode={setSelectedNode} lang={lang} timelineIteration={timelineIteration} />
+                <GlobeView propagation={propagation} selectedNode={selectedNode} onSelectNode={setSelectedNode} lang={lang} timelineIteration={timelineIteration} globeMode={globeMode} />
                 <AnimatePresence>
                   {selectedNodeExpl && (
                     <NodeDetailPanel nodeExpl={selectedNodeExpl} lang={lang} onClose={() => setSelectedNode(null)} />
@@ -1251,9 +1296,18 @@ function DemoPageContent() {
                 dir={lang === 'ar' ? 'rtl' : 'ltr'}
               >
                 <option value="">{ui('selectScenario', lang)}</option>
-                {gccScenarios.map(s => (
-                  <option key={s.id} value={s.id}>{lang === 'ar' ? s.titleAr : s.title}</option>
-                ))}
+                {(Object.keys(SCENARIO_GROUPS) as ScenarioGroup[]).map(groupKey => {
+                  const group = SCENARIO_GROUPS[groupKey]
+                  const groupScenarios = gccScenarios.filter(s => s.group === groupKey)
+                  if (groupScenarios.length === 0) return null
+                  return (
+                    <optgroup key={groupKey} label={`${group.icon} ${lang === 'ar' ? group.labelAr : group.label}`}>
+                      {groupScenarios.map(s => (
+                        <option key={s.id} value={s.id}>{lang === 'ar' ? s.titleAr : s.title}</option>
+                      ))}
+                    </optgroup>
+                  )
+                })}
               </select>
             </div>
 
@@ -1263,12 +1317,49 @@ function DemoPageContent() {
                   <h3 className="text-[10px] uppercase tracking-[0.15em] text-ds-text-dim font-semibold mb-2 flex items-center gap-2">
                     <Info size={10} /> {ui('scenarioMeta', lang)}
                   </h3>
+                  {scenario.group && (
+                    <div className="text-[10px] text-cyan-400 font-semibold mb-1.5 flex items-center gap-1">
+                      <span>{SCENARIO_GROUPS[scenario.group]?.icon}</span>
+                      <span>{lang === 'ar' ? SCENARIO_GROUPS[scenario.group]?.labelAr : SCENARIO_GROUPS[scenario.group]?.label}</span>
+                    </div>
+                  )}
                   <p className="text-[12px] text-ds-text-muted leading-relaxed mb-2">
                     {lang === 'ar' ? scenario.descriptionAr : scenario.description}
                   </p>
-                  <div className="text-[10px] text-ds-text-dim font-mono">
-                    {lang === 'ar' ? scenario.countryAr : scenario.country} · {lang === 'ar' ? scenario.categoryAr : scenario.category}
+                  {scenario.thesis && (
+                    <div className="text-[11px] text-amber-400/80 italic leading-relaxed mb-2 border-s-2 border-amber-500/30 ps-2">
+                      {lang === 'ar' ? scenario.thesisAr : scenario.thesis}
+                    </div>
+                  )}
+                  <div className="text-[10px] text-ds-text-dim font-mono mb-1.5">
+                    {(lang === 'ar' && scenario.countryAr) ? scenario.countryAr : scenario.country} · {(lang === 'ar' && scenario.categoryAr) ? scenario.categoryAr : scenario.category}
                   </div>
+                  {scenario.sectors && scenario.sectors.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {(scenario.sectorsAr && lang === 'ar' ? scenario.sectorsAr : scenario.sectors).map((sec, i) => (
+                        <span key={i} className="text-[9px] px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">{sec}</span>
+                      ))}
+                    </div>
+                  )}
+                  {scenario.timeHorizon && (
+                    <div className="flex items-center gap-1.5 mt-2 text-[10px] text-ds-text-dim">
+                      <span className="text-purple-400">⏱</span>
+                      <span className="font-mono">{lang === 'ar' ? scenario.timeHorizonAr : scenario.timeHorizon}</span>
+                    </div>
+                  )}
+                  {scenario.simulationType && (
+                    <div className="flex items-center gap-1.5 mt-1 text-[10px] text-ds-text-dim">
+                      <span className="text-emerald-400">◉</span>
+                      <span className="font-mono">{scenario.simulationType}</span>
+                    </div>
+                  )}
+                  {scenario.formulaTags && scenario.formulaTags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {scenario.formulaTags.map((tag, i) => (
+                        <span key={i} className="text-[8px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400/80 border border-amber-500/15 font-mono">{tag}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -1394,24 +1485,40 @@ function DemoPageContent() {
               </div>
             </div>
 
-            {/* Scenario Presets */}
+            {/* Scenario Presets — Grouped */}
             <div>
               <h3 className="text-[10px] uppercase tracking-[0.15em] text-ds-text-dim font-semibold mb-2 flex items-center gap-2">
                 <Shield size={10} /> {ui('presets', lang)}
               </h3>
-              <div className="space-y-1.5">
-                {gccScenarios.map(s => (
-                  <button
-                    key={s.id}
-                    onClick={() => { setScenarioId(s.id); handleReset() }}
-                    className={`w-full text-start px-3 py-2 rounded-lg border transition-all text-[11px] ${
-                      scenarioId === s.id ? 'bg-cyan-500/10 border-cyan-500/25' : 'bg-ds-bg-alt border-ds-border hover:border-ds-border-hover'
-                    }`}
-                  >
-                    <div className="font-medium text-ds-text">{lang === 'ar' ? s.titleAr : s.title}</div>
-                    <div className="text-[10px] text-ds-text-dim mt-0.5 font-mono">{lang === 'ar' ? s.countryAr : s.country} · {lang === 'ar' ? s.categoryAr : s.category}</div>
-                  </button>
-                ))}
+              <div className="space-y-3">
+                {(Object.keys(SCENARIO_GROUPS) as ScenarioGroup[]).map(groupKey => {
+                  const group = SCENARIO_GROUPS[groupKey]
+                  const groupScenarios = gccScenarios.filter(s => s.group === groupKey)
+                  if (groupScenarios.length === 0) return null
+                  return (
+                    <div key={groupKey}>
+                      <div className="text-[9px] uppercase tracking-[0.15em] text-ds-text-dim font-semibold mb-1 flex items-center gap-1.5 px-1">
+                        <span>{group.icon}</span>
+                        <span>{lang === 'ar' ? group.labelAr : group.label}</span>
+                        <span className="text-ds-text-dim/50">({groupScenarios.length})</span>
+                      </div>
+                      <div className="space-y-1">
+                        {groupScenarios.map(s => (
+                          <button
+                            key={s.id}
+                            onClick={() => { setScenarioId(s.id); handleReset() }}
+                            className={`w-full text-start px-3 py-2 rounded-lg border transition-all text-[11px] ${
+                              scenarioId === s.id ? 'bg-cyan-500/10 border-cyan-500/25' : 'bg-ds-bg-alt border-ds-border hover:border-ds-border-hover'
+                            }`}
+                          >
+                            <div className="font-medium text-ds-text">{lang === 'ar' ? s.titleAr : s.title}</div>
+                            <div className="text-[10px] text-ds-text-dim mt-0.5 font-mono">{lang === 'ar' ? s.countryAr : s.country} · {lang === 'ar' ? s.categoryAr : s.category}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>
@@ -1436,7 +1543,7 @@ function DemoPageContent() {
             </>
           )}
         </div>
-        <span className="text-ds-text-dim">{ui('title', lang)} v4.0 · GCC Regional Command Center</span>
+        <span className="text-ds-text-dim">{ui('title', lang)} {ui('version', lang)} · GCC Regional Command Center</span>
       </div>
     </div>
   )
