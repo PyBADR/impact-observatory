@@ -17,6 +17,7 @@ import { runPropagation, formatPropagationChain, computeSectorFinancials, type P
 import { getScenarioEngine, type ScenarioEngineResult, type ScenarioEngine } from '@/lib/scenario-engines'
 import { setLanguage, getLanguage, type Language } from '@/lib/i18n'
 import { shippingRoutes, aviationRoutes, nodeCoordinates } from '@/lib/gcc-coordinates'
+import { computeDecision, type DecisionResult, type ScientistState } from '@/lib/decision-engine'
 
 const GlobeGL = dynamic(() => import('react-globe.gl'), { ssr: false })
 
@@ -254,7 +255,7 @@ const AVIATION_NODE_IDS = ['eco_aviation', 'eco_av_stress', 'eco_saudia', 'eco_e
 
 function GlobeView({
   propagation, selectedNode, onSelectNode, lang, timelineIteration, globeMode = 'normal',
-  scientist, scenarioId,
+  scientist, scenarioId, decision,
 }: {
   propagation: PropagationResult | null
   selectedNode: string | null
@@ -264,6 +265,7 @@ function GlobeView({
   globeMode?: string
   scientist?: { energy: number; confidence: number; shockClass: string; shockClassAr: string; stage: string; stageAr: string } | null
   scenarioId?: string
+  decision?: DecisionResult | null
 }) {
   const globeRef = useRef<any>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -499,6 +501,20 @@ function GlobeView({
             </span>
           </div>
           <div className="text-ds-text-dim text-[8px]">{lang === 'ar' ? scientist.stageAr : scientist.stage}</div>
+          {decision && (
+            <>
+              <div className="border-t border-ds-border mt-1 pt-1" />
+              <div className="flex items-center gap-2">
+                <span style={{ color: decision.urgencyLevel === 'flash' ? '#ef4444' : decision.urgencyLevel === 'immediate' ? '#f59e0b' : '#22c55e' }} className="font-bold text-[8px]">
+                  {lang === 'ar' ? decision.urgencyLevelAr : `⚡ ${decision.urgencyLevel.replace('_', ' ')}`}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 text-[8px]">
+                <span className="text-ds-text-dim">ME:</span>
+                <span className="text-emerald-400 font-bold">{(decision.mitigationEffectiveness * 100).toFixed(0)}%</span>
+              </div>
+            </>
+          )}
         </div>
       )}
       {/* GCC Region Intelligence */}
@@ -1113,7 +1129,11 @@ function DemoPageContent() {
       ? geoNodes.reduce((sum, n) => sum + Math.abs(propagation.nodeImpacts.get(n.id) || 0), 0) / geoNodes.length
       : 0
     const stage = propagation.propagationDepth <= 2 ? 'initial' : propagation.propagationDepth <= 4 ? 'cascading' : 'saturated'
-    const shockClass = severityMod >= 0.8 ? 'critical' : severityMod >= 0.5 ? 'severe' : severityMod >= 0.3 ? 'moderate' : 'low'
+    // State-derived shock classification — uses observed system behavior, NOT input severity
+    const sectorSpread = propagation.affectedSectors.length
+    const shockClass = (energy > 8 && propagation.propagationDepth > 4 && sectorSpread >= 4) ? 'critical'
+      : (energy > 4 || (propagation.propagationDepth > 3 && sectorSpread >= 3) || propagation.totalLoss > 30) ? 'severe'
+      : (energy > 1.5 || sectorSpread >= 2) ? 'moderate' : 'low'
     return {
       energy, confidence, uncertainty,
       dominantSector,
@@ -1128,6 +1148,25 @@ function DemoPageContent() {
       totalExposure: engineResult?.totalExposure ?? propagation.totalLoss,
     }
   }, [propagation, scenario, severityMod, engineResult])
+
+  // ═══ DECISION INTELLIGENCE LAYER ═══
+  // Produces recommended actions, urgency, confidence, mitigation plan from runtime state
+  const decision = useMemo<DecisionResult | null>(() => {
+    if (!propagation || !scientist) return null
+    const scientistState: ScientistState = {
+      energy: scientist.energy,
+      confidence: scientist.confidence,
+      uncertainty: scientist.uncertainty,
+      regionalStress: scientist.regionalStress,
+      shockClass: scientist.shockClass,
+      stage: scientist.stage,
+      propagationDepth: scientist.propagationDepth,
+      totalExposure: scientist.totalExposure,
+      dominantSector: scientist.dominantSector,
+    }
+    const sid = scenario?.engineId || scenario?.id || scenarioId || ''
+    return computeDecision(propagation, engineResult, scientistState, sid)
+  }, [propagation, scientist, engineResult, scenario, scenarioId])
 
   if (isMobile) {
     return (
@@ -1530,6 +1569,139 @@ function DemoPageContent() {
             {/* ═══ SYNTHETIC SOCIETY LAYER ═══ */}
             <SyntheticSocietyPanel impacts={activeImpacts} lang={lang} />
 
+            {/* ═══ DECISION INTELLIGENCE PANEL ═══ */}
+            {decision && (
+              <div className="ds-card rounded-xl p-3 border border-amber-500/30 bg-gradient-to-b from-amber-500/5 to-transparent">
+                <h3 className="text-[10px] uppercase tracking-[0.15em] text-amber-400 font-bold mb-2 flex items-center gap-2">
+                  <Shield size={12} /> {lang === 'ar' ? 'محرك القرار' : 'Decision Intelligence'}
+                </h3>
+
+                {/* Decision Pressure + Urgency + Confidence */}
+                <div className="grid grid-cols-3 gap-1.5 mb-2">
+                  <div className="bg-ds-bg-alt rounded px-2 py-1.5 text-center">
+                    <div className="text-[8px] text-ds-text-dim">{lang === 'ar' ? 'ضغط القرار' : 'DPS'}</div>
+                    <div className="text-[13px] font-mono font-bold" style={{ color: decision.decisionPressureScore > 0.6 ? '#ef4444' : decision.decisionPressureScore > 0.35 ? '#f59e0b' : '#22c55e' }}>
+                      {(decision.decisionPressureScore * 100).toFixed(0)}%
+                    </div>
+                  </div>
+                  <div className="bg-ds-bg-alt rounded px-2 py-1.5 text-center">
+                    <div className="text-[8px] text-ds-text-dim">{lang === 'ar' ? 'الاستعجال' : 'Urgency'}</div>
+                    <div className="text-[11px] font-mono font-bold" style={{
+                      color: decision.urgencyLevel === 'flash' ? '#ef4444' : decision.urgencyLevel === 'immediate' ? '#f59e0b' : '#22c55e'
+                    }}>
+                      {lang === 'ar' ? decision.urgencyLevelAr : decision.urgencyLevel.replace('_', ' ')}
+                    </div>
+                  </div>
+                  <div className="bg-ds-bg-alt rounded px-2 py-1.5 text-center">
+                    <div className="text-[8px] text-ds-text-dim">{lang === 'ar' ? 'ثقة القرار' : 'DC'}</div>
+                    <div className="text-[13px] font-mono font-bold" style={{ color: decision.decisionConfidence > 0.7 ? '#22c55e' : decision.decisionConfidence > 0.4 ? '#f59e0b' : '#ef4444' }}>
+                      {(decision.decisionConfidence * 100).toFixed(0)}%
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mitigation Effectiveness Bar */}
+                <div className="bg-ds-bg-alt rounded px-2 py-1.5 mb-2">
+                  <div className="flex items-center justify-between text-[10px] mb-1">
+                    <span className="text-ds-text-dim">{lang === 'ar' ? 'فعالية التخفيف' : 'Mitigation Effectiveness'}</span>
+                    <span className="font-mono font-bold text-emerald-400">{(decision.mitigationEffectiveness * 100).toFixed(0)}%</span>
+                  </div>
+                  <div className="w-full bg-ds-bg rounded-full h-1.5">
+                    <div className="h-1.5 rounded-full bg-emerald-500 transition-all" style={{ width: `${Math.min(decision.mitigationEffectiveness * 100, 100)}%` }} />
+                  </div>
+                  <div className="flex justify-between text-[9px] mt-1">
+                    <span className="text-red-400 font-mono">${decision.expectedLossBefore.toFixed(1)}B →</span>
+                    <span className="text-emerald-400 font-mono">${decision.expectedLossAfter.toFixed(1)}B</span>
+                  </div>
+                </div>
+
+                {/* Decision Summary */}
+                <div className="bg-ds-bg-alt rounded px-2 py-1.5 mb-2">
+                  <div className="text-[9px] text-ds-text-muted leading-relaxed">
+                    {lang === 'ar' ? decision.decisionSummaryAr : decision.decisionSummary}
+                  </div>
+                </div>
+
+                {/* Immediate Actions (0–6h) */}
+                {decision.immediateActions.length > 0 && (
+                  <div className="mb-2">
+                    <h4 className="text-[9px] font-bold text-red-400 mb-1 flex items-center gap-1">
+                      <Zap size={10} /> {lang === 'ar' ? 'إجراءات فورية (٠–٦ ساعات)' : 'Immediate Actions (0–6h)'}
+                    </h4>
+                    <div className="space-y-1">
+                      {decision.immediateActions.slice(0, 4).map((a) => (
+                        <div key={a.id} className="bg-ds-bg-alt rounded px-2 py-1.5 border-s-2" style={{ borderColor: a.urgency === 'flash' ? '#ef4444' : '#f59e0b' }}>
+                          <div className="flex items-start justify-between gap-1">
+                            <span className="text-[10px] text-ds-text leading-snug flex-1">{lang === 'ar' ? a.actionAr : a.action}</span>
+                            <span className="text-[8px] font-mono px-1 py-0.5 rounded" style={{
+                              backgroundColor: a.urgency === 'flash' ? '#ef444420' : '#f59e0b20',
+                              color: a.urgency === 'flash' ? '#ef4444' : '#f59e0b',
+                            }}>{lang === 'ar' ? a.urgencyAr : a.urgency}</span>
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5 text-[8px]">
+                            <span className="text-ds-text-dim">{lang === 'ar' ? a.domainAr : a.domain}</span>
+                            <span className="text-ds-text-dim">·</span>
+                            <span className="text-emerald-400 font-mono">-{(a.expectedReduction * 100).toFixed(0)}%</span>
+                            <span className="text-ds-text-dim">·</span>
+                            <span className="text-ds-text-dim">{lang === 'ar' ? a.costAr : a.cost}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Short-Term Actions (24–72h) */}
+                {decision.shortTermActions.length > 0 && (
+                  <div className="mb-2">
+                    <h4 className="text-[9px] font-bold text-blue-400 mb-1 flex items-center gap-1">
+                      <Target size={10} /> {lang === 'ar' ? 'إجراءات قصيرة المدى (٢٤–٧٢ ساعة)' : 'Short-Term Actions (24–72h)'}
+                    </h4>
+                    <div className="space-y-1">
+                      {decision.shortTermActions.slice(0, 4).map((a) => (
+                        <div key={a.id} className="bg-ds-bg-alt rounded px-2 py-1.5 border-s-2 border-blue-500/40">
+                          <div className="text-[10px] text-ds-text leading-snug">{lang === 'ar' ? a.actionAr : a.action}</div>
+                          <div className="flex items-center gap-2 mt-0.5 text-[8px]">
+                            <span className="text-ds-text-dim">{lang === 'ar' ? a.domainAr : a.domain}</span>
+                            <span className="text-ds-text-dim">·</span>
+                            <span className="text-emerald-400 font-mono">-{(a.expectedReduction * 100).toFixed(0)}%</span>
+                            <span className="text-ds-text-dim">·</span>
+                            <span className="text-ds-text-dim">{lang === 'ar' ? a.costAr : a.cost}</span>
+                          </div>
+                          <div className="text-[8px] text-ds-text-dim mt-0.5 italic">{lang === 'ar' ? a.tradeoffAr : a.tradeoff}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Resource Priorities */}
+                {decision.resourcePriorities.length > 0 && (
+                  <div className="mb-2">
+                    <h4 className="text-[9px] font-bold text-purple-400 mb-1">{lang === 'ar' ? 'أولويات الموارد' : 'Resource Priorities'}</h4>
+                    <div className="space-y-0.5">
+                      {decision.resourcePriorities.map((r, i) => (
+                        <div key={i} className="flex items-center justify-between text-[9px]">
+                          <span className="text-ds-text-muted">{lang === 'ar' ? r.resourceAr : r.resource}</span>
+                          <span className="font-mono font-bold" style={{ color: r.priority > 0.8 ? '#ef4444' : r.priority > 0.6 ? '#f59e0b' : '#22c55e' }}>
+                            {(r.priority * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Why These Actions */}
+                <div className="bg-ds-bg-alt rounded px-2 py-1.5">
+                  <h4 className="text-[8px] font-bold text-ds-text-dim mb-0.5">{lang === 'ar' ? 'لماذا هذه الإجراءات' : 'Why These Actions'}</h4>
+                  <div className="text-[8px] text-ds-text-dim leading-relaxed">
+                    {lang === 'ar' ? decision.whyTheseActionsAr : decision.whyTheseActions}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Uncertainty Drivers — visible in probabilistic mode */}
             {analysisMode === 'probabilistic' && (
               <div className="ds-card rounded-xl p-3">
@@ -1650,7 +1822,7 @@ function DemoPageContent() {
             )}
             {propagation && !isRunning && viewMode === 'globe' && (
               <div className="h-full p-2 relative">
-                <GlobeView propagation={propagation} selectedNode={selectedNode} onSelectNode={setSelectedNode} lang={lang} timelineIteration={timelineIteration} globeMode={globeMode} scientist={scientist} scenarioId={scenarioId} />
+                <GlobeView propagation={propagation} selectedNode={selectedNode} onSelectNode={setSelectedNode} lang={lang} timelineIteration={timelineIteration} globeMode={globeMode} scientist={scientist} scenarioId={scenarioId} decision={decision} />
                 <AnimatePresence>
                   {selectedNodeExpl && (
                     <NodeDetailPanel nodeExpl={selectedNodeExpl} lang={lang} onClose={() => setSelectedNode(null)} />
