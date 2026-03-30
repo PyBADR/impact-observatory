@@ -75,7 +75,7 @@ export default function HomePage() {
 
   const stats = [
     { value: '68', label: { en: 'Graph Nodes', ar: 'عقدة بيانية' } },
-    { value: '145', label: { en: 'Causal Edges', ar: 'رابط سببي' } },
+    { value: '149', label: { en: 'Causal Edges', ar: 'رابط سببي' } },
     { value: '5', label: { en: 'System Layers', ar: 'طبقات النظام' } },
   ]
 
