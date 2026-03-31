@@ -1,12 +1,5 @@
 {
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "${NEXT_PUBLIC_API_URL}/api/:path*"
-    },
-    {
-      "source": "/health",
-      "destination": "${NEXT_PUBLIC_API_URL}/health"
-    }
-  ]
+  "framework": "nextjs",
+  "buildCommand": "cd frontend && npm run build",
+  "outputDirectory": "frontend/.next"
 }

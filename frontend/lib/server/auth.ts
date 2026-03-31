@@ -23,8 +23,10 @@ export type Role = 'admin' | 'analyst' | 'viewer' | 'api_service'
 function getValidApiKeys(): Map<string, { tenantId: string; userId: string; role: Role; workspace: string }> {
   const keys = new Map<string, { tenantId: string; userId: string; role: Role; workspace: string }>()
 
-  // Master key from env
-  const masterKey = process.env.DVO7_API_KEY || 'dvo7_pilot_key_2026'
+  // Master key from env — set DVO7_API_KEY in Vercel dashboard for production
+  // Pilot fallback only active when DVO7_TIER !== 'prod'
+  const tier = process.env.DVO7_TIER || 'pilot'
+  const masterKey = process.env.DVO7_API_KEY || (tier !== 'prod' ? 'dvo7_pilot_key_2026' : '')
   keys.set(masterKey, {
     tenantId: 'dvo7_default',
     userId: 'admin@deevo.ai',

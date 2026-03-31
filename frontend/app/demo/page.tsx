@@ -94,9 +94,9 @@ const UI: Record<string, { en: string; ar: string }> = {
   shippingLanes: { en: 'Shipping Lanes', ar: 'الممرات البحرية' },
   airCorridors: { en: 'Air Corridors', ar: 'الممرات الجوية' },
   hormuzLabel: { en: 'Strait of Hormuz', ar: 'مضيق هرمز' },
-  live: { en: 'LIVE', ar: 'مباشر' },
+  live: { en: 'PILOT', ar: 'تجريبي' },
   delta: { en: 'Change', ar: 'التغيير' },
-  version: { en: 'v6.0', ar: 'v6.0' },
+  version: { en: 'v7.0-pilot', ar: 'v7.0-pilot' },
   causalBrief: { en: 'Causal Brief', ar: 'الموجز السببي' },
   lossExposure: { en: 'Loss Exposure', ar: 'التعرض للخسائر' },
   layerLegend: { en: 'Layer Legend', ar: 'دليل الطبقات' },
@@ -293,7 +293,7 @@ function GlobeView({
   // Normalized intensity: I_i = x_i / max_k |x_k|
   const maxImpact = useMemo(() => {
     let max = 0.001
-    for (const val of activeImpacts.values()) {
+    for (const val of Array.from(activeImpacts.values())) {
       const abs = Math.abs(val)
       if (abs > max) max = abs
     }
@@ -814,6 +814,7 @@ function DemoPageContent() {
   const [timelineIteration, setTimelineIteration] = useState(0)
   const [analysisMode, setAnalysisMode] = useState<'deterministic' | 'probabilistic'>('deterministic')
   const [globeMode, setGlobeMode] = useState<string>('normal')
+  const [runMeta, setRunMeta] = useState<{ runId: string; traceId: string; mode: 'api' | 'client' } | null>(null)
 
   useEffect(() => {
     setLanguage(lang)
@@ -842,22 +843,67 @@ function DemoPageContent() {
 
   useEffect(() => {
     if (processingStep === PIPELINE.length - 1 && isRunning) {
-      const timeout = setTimeout(() => {
-        if (scenario) {
-          const modShocks = scenario.shocks.map(s => ({
-            ...s, impact: Math.min(1, s.impact * severityMod),
-          }))
+      const timeout = setTimeout(async () => {
+        if (!scenario) { setIsRunning(false); return }
+
+        const useApi = process.env.NEXT_PUBLIC_USE_API === 'true'
+
+        if (useApi) {
+          // ── API-first execution: call backend, persist run, get trace_id ──
+          try {
+            const res = await fetch('/api/run-scenario', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-DVO7-API-Key': 'dvo7_pilot_key_2026' },
+              body: JSON.stringify({ scenarioId: scenario.id, severity: severityMod, analysisMode }),
+            })
+            if (!res.ok) throw new Error(`API ${res.status}`)
+            const data = await res.json()
+
+            // Reconstruct PropagationResult from API response
+            const nodeImpacts = new Map<string, number>(Object.entries(data.nodeImpacts))
+            const apiPropagation: PropagationResult = {
+              nodeImpacts,
+              propagationChain: data.explanationChain || [],
+              affectedSectors: data.sectorImpacts || [],
+              topDrivers: [],
+              totalLoss: data.metrics.totalLoss,
+              confidence: data.metrics.confidence,
+              explanation: '',
+              spreadLevel: data.metrics.spreadLevel as any,
+              spreadLevelAr: '',
+              systemEnergy: data.metrics.systemEnergy,
+              iterationSnapshots: [],
+              nodeExplanations: new Map(),
+              propagationDepth: data.metrics.propagationDepth,
+            }
+            setPropagation(apiPropagation)
+            setTimelineIteration(0)
+            setRunMeta({ runId: data.runId, traceId: data.traceId, mode: 'api' })
+          } catch {
+            // Fall back to client-side on API failure
+            const modShocks = scenario.shocks.map(s => ({ ...s, impact: Math.min(1, s.impact * severityMod) }))
+            const result = runPropagation(gccNodes, gccEdges, modShocks, 6, lang, 0.05)
+            setPropagation(result)
+            setTimelineIteration(result.iterationSnapshots.length - 1)
+            const mc = runMonteCarlo(gccNodes, gccEdges, modShocks, severityMod, 500, lang)
+            setMonteCarlo(mc)
+            setRunMeta({ runId: '', traceId: '', mode: 'client' })
+          }
+        } else {
+          // ── Client-side execution (original behavior) ──
+          const modShocks = scenario.shocks.map(s => ({ ...s, impact: Math.min(1, s.impact * severityMod) }))
           const result = runPropagation(gccNodes, gccEdges, modShocks, 6, lang, 0.05)
           setPropagation(result)
           setTimelineIteration(result.iterationSnapshots.length - 1)
           const mc = runMonteCarlo(gccNodes, gccEdges, modShocks, severityMod, 500, lang)
           setMonteCarlo(mc)
+          setRunMeta({ runId: '', traceId: '', mode: 'client' })
         }
         setIsRunning(false)
       }, 400)
       return () => clearTimeout(timeout)
     }
-  }, [processingStep, isRunning, scenario, severityMod, lang])
+  }, [processingStep, isRunning, scenario, severityMod, lang, analysisMode])
 
   // Auto-set severity slider and analysis mode from scenario defaults
   useEffect(() => {
@@ -932,7 +978,7 @@ function DemoPageContent() {
   // Normalized intensity for graph: I_i = |x_i| / max_k |x_k|
   const maxGraphImpact = useMemo(() => {
     let max = 0.001
-    for (const val of activeImpacts.values()) {
+    for (const val of Array.from(activeImpacts.values())) {
       const abs = Math.abs(val)
       if (abs > max) max = abs
     }
@@ -1200,6 +1246,12 @@ function DemoPageContent() {
             <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: statusColor }} />
             <span className="text-[10px] font-mono uppercase tracking-[0.15em]" style={{ color: statusColor }}>{statusText}</span>
           </div>
+          {runMeta && (
+            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded" style={{
+              backgroundColor: runMeta.mode === 'api' ? '#22c55e15' : '#f59e0b15',
+              color: runMeta.mode === 'api' ? '#22c55e' : '#f59e0b',
+            }}>{runMeta.mode === 'api' ? '● API' : '● CLIENT'}{runMeta.traceId ? ` · ${runMeta.traceId.slice(-8)}` : ''}</span>
+          )}
           {propagation && (
             <>
               <span className="text-[10px] text-ds-text-dim">|</span>
