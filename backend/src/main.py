@@ -32,22 +32,27 @@ from src.services.state import init_state
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    import asyncio
+
     # Startup
     init_state()
 
-    # Optional: connect to databases if available
+    # Optional: connect to databases if available (with 5s timeout each)
     try:
         from src.db.neo4j import init_neo4j
-        await init_neo4j()
-    except Exception:
-        pass  # Neo4j optional for standalone mode
+        await asyncio.wait_for(init_neo4j(), timeout=5.0)
+        print("✅ Neo4j connected")
+    except Exception as e:
+        print(f"⚠️ Neo4j skipped: {e}")
 
     try:
         from src.db.redis import init_redis
-        await init_redis()
-    except Exception:
-        pass  # Redis optional for standalone mode
+        await asyncio.wait_for(init_redis(), timeout=5.0)
+        print("✅ Redis connected")
+    except Exception as e:
+        print(f"⚠️ Redis skipped: {e}")
 
+    print("🚀 Impact Observatory ready")
     yield
 
     # Shutdown
