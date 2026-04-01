@@ -6,75 +6,59 @@ services:
   # =============================================================================
   postgres:
     image: postgis/postgis:16-3.4-alpine
-    container_name: dc7-postgres
+    container_name: io-postgres
     environment:
-      POSTGRES_DB: decision_core
-      POSTGRES_USER: dc7
-      POSTGRES_PASSWORD: dc7_pilot_2026
+      POSTGRES_DB: impact_observatory
+      POSTGRES_USER: observatory_admin
+      POSTGRES_PASSWORD: io_pilot_2026
       POSTGRES_INITDB_ARGS: -c shared_buffers=256MB -c max_connections=200
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./backend/migrations:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dc7 -d decision_core"]
+      test: ["CMD-SHELL", "pg_isready -U observatory_admin -d impact_observatory"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 20s
     networks:
-      - dc7-network
+      - io-network
     restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
   # =============================================================================
   # Neo4j Graph Database
   # =============================================================================
   neo4j:
     image: neo4j:5-community
-    container_name: dc7-neo4j
+    container_name: io-neo4j
     environment:
-      NEO4J_AUTH: neo4j/dc7_graph_2026
+      NEO4J_AUTH: neo4j/io_graph_2026
       NEO4J_PLUGINS: '["apoc"]'
       NEO4J_dbms_memory_heap_initial__size: 512m
       NEO4J_dbms_memory_heap_max__size: 1024m
       NEO4J_dbms_security_procedures_unrestricted: apoc.*
     ports:
-      - "7474:7474"  # HTTP
-      - "7687:7687"  # Bolt
+      - "7474:7474"
+      - "7687:7687"
     volumes:
       - neo4j_data:/var/lib/neo4j/data
-      - neo4j_logs:/var/lib/neo4j/logs
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "cypher-shell -u neo4j -p dc7_graph_2026 'RETURN 1' || exit 1",
-        ]
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p io_graph_2026 'RETURN 1' || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
     networks:
-      - dc7-network
+      - io-network
     restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
   # =============================================================================
-  # Redis Cache and Task Queue
+  # Redis Cache
   # =============================================================================
   redis:
     image: redis:7-alpine
-    container_name: dc7-redis
+    container_name: io-redis
     command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
     ports:
       - "6379:6379"
@@ -85,41 +69,30 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
     networks:
-      - dc7-network
+      - io-network
     restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
   # =============================================================================
-  # FastAPI Backend Service
+  # Impact Observatory Backend (FastAPI)
   # =============================================================================
   backend:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile.backend
-    container_name: dc7-backend
+    container_name: io-backend
     environment:
-      DC7_ENVIRONMENT: ${DC7_ENVIRONMENT:-development}
-      DC7_DEBUG: ${DC7_DEBUG:-false}
-      DC7_LOG_LEVEL: ${DC7_LOG_LEVEL:-INFO}
-      DC7_POSTGRES_HOST: postgres
-      DC7_POSTGRES_PORT: 5432
-      DC7_POSTGRES_DB: decision_core
-      DC7_POSTGRES_USER: dc7
-      DC7_POSTGRES_PASSWORD: dc7_pilot_2026
-      DC7_NEO4J_URI: bolt://neo4j:7687
-      DC7_NEO4J_USER: neo4j
-      DC7_NEO4J_PASSWORD: dc7_graph_2026
-      DC7_REDIS_URL: redis://redis:6379/0
-      DC7_API_PREFIX: /api/v1
-      DC7_ALLOWED_ORIGINS: ${DC7_ALLOWED_ORIGINS:-http://localhost:3000}
-      DC7_ACLED_API_KEY: ${DC7_ACLED_API_KEY}
-      DC7_ACLED_API_EMAIL: ${DC7_ACLED_API_EMAIL}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: impact_observatory
+      POSTGRES_USER: observatory_admin
+      POSTGRES_PASSWORD: io_pilot_2026
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: io_graph_2026
+      REDIS_URL: redis://redis:6379/0
+      CORS_ORIGINS: http://localhost:3000
+      LOG_LEVEL: info
     ports:
       - "8000:8000"
     depends_on:
@@ -129,106 +102,38 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./backend:/app
     networks:
-      - dc7-network
+      - io-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 20s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
 
   # =============================================================================
-  # React Frontend Service
+  # Impact Observatory Frontend (Next.js)
   # =============================================================================
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.frontend
-      args:
-        REACT_APP_API_BASE_URL: ${REACT_APP_API_BASE_URL:-http://localhost:8000}
-    container_name: dc7-frontend
+    container_name: io-frontend
     environment:
-      REACT_APP_API_BASE_URL: ${REACT_APP_API_BASE_URL:-http://localhost:8000}
-      REACT_APP_ENVIRONMENT: ${DC7_ENVIRONMENT:-development}
+      NEXT_PUBLIC_API_URL: http://backend:8000
     ports:
       - "3000:3000"
     depends_on:
       - backend
     networks:
-      - dc7-network
+      - io-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
-  # =============================================================================
-  # Ollama Local LLM Service (Optional)
-  # Run with: docker-compose --profile local up
-  # =============================================================================
-  ollama:
-    image: ollama/ollama:latest
-    container_name: dc7-ollama
-    profiles:
-      - local
-    environment:
-      OLLAMA_MODELS: /models
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_models:/root/.ollama
-    networks:
-      - dc7-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
-        max-file: "2"
-
-# =============================================================================
-# Docker Network
-# =============================================================================
 networks:
-  dc7-network:
+  io-network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.28.0.0/16
 
-# =============================================================================
-# Docker Volumes
-# =============================================================================
 volumes:
   pgdata:
-    driver: local
   neo4j_data:
-    driver: local
-  neo4j_logs:
-    driver: local
   redis_data:
-    driver: local
-  ollama_models:
-    driver: local
