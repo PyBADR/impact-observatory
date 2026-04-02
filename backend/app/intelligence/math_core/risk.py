@@ -1,6 +1,6 @@
 """Risk scoring with GCC asset class weights."""
 import numpy as np
-from ..engines.gcc_constants import GCC_ASSET_WEIGHTS, BASES
+from ..engines.gcc_constants import GCC_ASSET_WEIGHTS
 
 
 def compute_risk_score(asset_class: str, factors: list[float]) -> float:

@@ -5,9 +5,8 @@ Implements 17 scenario engines + generic fallback for disruption modeling
 """
 
 from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Optional, Any
-import math
-from .gcc_constants import BASES, SECTOR_GDP_BASE, HORMUZ_MULTIPLIERS
+from typing import Dict, List, Any
+from .gcc_constants import BASES
 
 
 # ============================================================================

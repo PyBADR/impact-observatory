@@ -16,11 +16,10 @@ Contract: every scenario run must produce a DecisionResult with
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, asdict
 from typing import Dict, List, Optional, Any, Literal
-import math
 
-from .gcc_constants import DPS_WEIGHTS, DPS_NORMALIZATION, APS_COST_MULTIPLIER, DECISION_LIMITS
+from .gcc_constants import APS_COST_MULTIPLIER, DECISION_LIMITS
 from .propagation_engine import PropagationResult, SectorImpact
 
 

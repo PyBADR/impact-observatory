@@ -14,7 +14,7 @@ import hashlib
 import json
 from datetime import datetime
 from dataclasses import dataclass, asdict
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from enum import Enum
 
 from app.services.normalization import NormalizationService, PipelineMetrics
@@ -24,7 +24,7 @@ from app.services.scoring_service import ScoringService, ScoringResult
 from app.services.physics_service import PhysicsService, PhysicsUpdateResult
 from app.services.insurance_service import InsuranceService, InsuranceResult
 from app.services.enrichment import EnrichmentService, EnrichmentResult
-from app.services.pipeline_status import PipelineStatusTracker, StepStatus
+from app.services.pipeline_status import PipelineStatusTracker
 
 logger = logging.getLogger(__name__)
 

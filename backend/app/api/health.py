@@ -7,7 +7,7 @@ import logging
 from datetime import datetime
 
 from fastapi import APIRouter
-from app.api.models import HealthResponse, VersionResponse
+from app.api.models import HealthResponse
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

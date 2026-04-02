@@ -1,7 +1,6 @@
 """Claims Surge: Surge = base_claims * (1 + cat_factor)^severity
 Computes surged claims with peak timing and reserve requirements.
 """
-import numpy as np
 
 # Default sector-to-catastrophe factor mapping
 SECTOR_CAT_FACTORS = {

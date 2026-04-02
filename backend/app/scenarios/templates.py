@@ -7,7 +7,7 @@ for modeling critical disruption events in GCC infrastructure.
 
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
 
 

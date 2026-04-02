@@ -21,8 +21,7 @@ Post-pipeline:
 import time
 import uuid
 import logging
-from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional
 
 from ..domain.models.scenario import Scenario
 from ..domain.models.entity import Entity
@@ -47,7 +46,6 @@ from ..services.regulatory.engine import compute_regulatory_state
 from ..services.business_impact.engine import compute_business_impact
 from ..services.time_engine.engine import compute_temporal_simulation
 
-from ..core.constants import PIPELINE_STAGES, MODEL_VERSION
 
 # Optional imports for physics/propagation (graceful degradation)
 try:
@@ -57,7 +55,7 @@ except ImportError:
     PHYSICS_AVAILABLE = False
 
 try:
-    from ..intelligence.engines import run_propagation
+    from ..intelligence.engines import run_propagation  # noqa: F401
     PROPAGATION_AVAILABLE = True
 except ImportError:
     PROPAGATION_AVAILABLE = False

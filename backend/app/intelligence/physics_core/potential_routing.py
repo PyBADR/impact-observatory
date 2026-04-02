@@ -1,6 +1,6 @@
 """Dijkstra-based alternative route analysis."""
 import heapq
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple
 
 
 def dijkstra(graph: Dict[str, List[Tuple[str, float]]], start: str, end: str) -> dict:

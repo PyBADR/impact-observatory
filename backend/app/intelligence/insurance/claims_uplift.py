@@ -13,7 +13,6 @@ Where:
 
 from dataclasses import dataclass
 from typing import Dict
-import numpy as np
 
 from .gcc_insurance_config import GCCInsuranceConfig, GCC_INSURANCE_CONFIG
 

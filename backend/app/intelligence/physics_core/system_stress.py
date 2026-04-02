@@ -1,5 +1,4 @@
 """System stress tensor combining shockwave + pressure + diffusion."""
-import numpy as np
 
 
 def compute_system_stress(shockwave_energy: float, system_pressure: float, diffusion_rate: float, time_hours: float) -> dict:

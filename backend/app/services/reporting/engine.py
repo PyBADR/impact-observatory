@@ -7,9 +7,9 @@ Produces JSON report documents in three modes:
 """
 
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Dict, Any
 
-from app.schemas.observatory import ObservatoryOutput, LABELS
+from app.schemas.observatory import ObservatoryOutput
 
 
 def generate_executive_report(output: ObservatoryOutput) -> Dict[str, Any]:

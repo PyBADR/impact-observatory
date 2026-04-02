@@ -1,6 +1,5 @@
 """Exposure scoring: E = SUM(value * impact * prob)"""
-import numpy as np
-from ..engines.gcc_constants import BASES, SECTOR_GDP_BASE
+from ..engines.gcc_constants import SECTOR_GDP_BASE
 
 
 def compute_exposure_score(node_values: dict[str, float], node_impacts: dict[str, float], node_probs: dict[str, float] = None) -> float:

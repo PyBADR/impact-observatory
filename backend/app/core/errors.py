@@ -4,7 +4,7 @@ Structured error envelope and standard error codes.
 """
 
 from datetime import datetime, timezone
-from typing import Any, List, Optional
+from typing import List, Optional
 import uuid
 
 

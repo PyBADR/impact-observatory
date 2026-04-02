@@ -39,14 +39,14 @@ Requirements:
 - Linear interpolation in percentile function (exact TS match)
 """
 
-from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Optional, Any, Tuple
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Any
 import numpy as np
 from numpy.random import Generator, default_rng
 from collections import defaultdict
 import math
 
-from .propagation_engine import run_propagation, PropagationResult
+from .propagation_engine import run_propagation
 from .gcc_constants import MONTE_CARLO, SECTOR_GDP_BASE, LAYER_LABELS, LAYER_COLORS
 
 

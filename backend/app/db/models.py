@@ -6,25 +6,19 @@ Uses SQLAlchemy 2.0 style with async support and PostGIS geometry.
 from datetime import datetime
 from typing import Optional
 from uuid import uuid4
-import json
 
 from sqlalchemy import (
-    Column,
     String,
     Integer,
     Float,
-    Boolean,
     DateTime,
     Text,
-    JSON,
     ARRAY,
     ForeignKey,
     Index,
-    UniqueConstraint,
-    func,
 )
-from sqlalchemy.orm import declarative_base, mapped_column, relationship, Mapped
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ENUM
+from sqlalchemy.orm import declarative_base, mapped_column, Mapped
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from geoalchemy2 import Geometry
 
 Base = declarative_base()

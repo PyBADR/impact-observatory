@@ -4,14 +4,14 @@ Orchestrates complete scenario analysis workflow
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 from datetime import datetime
 import uuid
 
 from app.scenarios.templates import (
-    ScenarioTemplate, SCENARIO_TEMPLATES, get_template, get_templates_by_disruption_type
+    ScenarioTemplate, get_template
 )
-from app.scenarios.baseline import BaselineSnapshot, BaselineCaptureRequest, BaselineCaptureResult
+from app.scenarios.baseline import BaselineSnapshot
 from app.scenarios.shock import ShockEvent, ShockInjector
 from app.scenarios.simulator import ScenarioSimulator, ScenarioSimulationResult
 from app.scenarios.delta import DeltaCalculator, NodeDeltaAnalysis, DeltaMetrics

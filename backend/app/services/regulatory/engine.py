@@ -11,7 +11,7 @@ from ...domain.models.banking_stress import BankingStress
 from ...domain.models.insurance_stress import InsuranceStress
 from ...domain.models.fintech_stress import FintechStress
 from ...domain.models.regulatory_state import RegulatoryState
-from ...core.constants import LCR_MIN, NSFR_MIN, CAR_MIN, SOLVENCY_MIN
+from ...core.constants import LCR_MIN, CAR_MIN, SOLVENCY_MIN
 
 
 def compute_regulatory_state(

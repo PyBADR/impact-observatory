@@ -17,7 +17,6 @@ Where:
 from __future__ import annotations
 
 import math
-from typing import Optional
 
 from app.intelligence.math_core.gcc_weights import (
     ASSET_CLASS_WEIGHTS,

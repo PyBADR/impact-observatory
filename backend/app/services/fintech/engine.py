@@ -34,14 +34,12 @@ def compute_fintech_stress(
         List of v4 FintechStress with breach_flags
     """
     now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-    impact_map = {fi.entity_id: fi for fi in financial_impacts}
     results: List[FintechStress] = []
 
     for entity in fintech_entities:
         if entity.entity_type != "fintech":
             continue
 
-        fi = impact_map.get(entity.entity_id)
         shock = scenario.shock_intensity
 
         # Transaction failure rate

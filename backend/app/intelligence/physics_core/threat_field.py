@@ -1,5 +1,4 @@
 """Geospatial threat field for deck.gl visualization."""
-import numpy as np
 from typing import List, Dict, Any
 
 

@@ -12,7 +12,6 @@ integrates the preserved intelligence engines (propagation, physics, graph) with
 new sector-specific services (financial, banking, insurance, fintech, decision).
 """
 
-import time
 from datetime import datetime
 from typing import List
 
@@ -24,7 +23,7 @@ from ..schemas.observatory import (
     LABELS,
     FLOW_STAGES,
 )
-from ..orchestration.pipeline import run_observatory_pipeline, PipelineResult
+from ..orchestration.pipeline import run_observatory_pipeline
 
 
 # Router configuration

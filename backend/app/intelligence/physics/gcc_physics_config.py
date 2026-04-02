@@ -17,7 +17,7 @@ Architecture:
 All values are type-hinted and documented with physics interpretations.
 """
 
-from typing import Dict, Tuple
+from typing import Dict
 
 
 # ============================================================================

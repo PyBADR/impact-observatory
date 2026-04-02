@@ -1,7 +1,6 @@
 """Portfolio Exposure: PE = SUM(policy_value * zone_factor * cat_loading)
 Computes total portfolio exposure weighted by geographic zone and catastrophe type.
 """
-import numpy as np
 
 GCC_ZONE_FACTORS = {
     "hormuz": 1.8,

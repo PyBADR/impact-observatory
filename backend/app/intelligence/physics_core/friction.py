@@ -1,5 +1,4 @@
 """Friction model for route delay and cost."""
-import numpy as np
 
 
 def compute_friction(base_cost: float, congestion: float, risk_factor: float, distance_km: float) -> dict:

@@ -26,8 +26,8 @@ Validity Conditions:
 - Explanation chain = actual propagation path
 """
 
-from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Optional, Tuple, Any
+from dataclasses import dataclass, field
+from typing import Dict, List, Tuple, Any
 import numpy as np
 from collections import defaultdict
 

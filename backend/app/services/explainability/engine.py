@@ -3,7 +3,6 @@ Impact Observatory | مرصد الأثر — Explainability Engine (v4 §3.12)
 Generates ExplanationPack with equations, drivers, stage traces, and action explanations.
 """
 
-import uuid
 from datetime import datetime, timezone
 from typing import List, Optional
 
