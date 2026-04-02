@@ -96,10 +96,14 @@ def enforce_permission(role: Role | str, permission: str) -> None:
 def get_role_from_request(request: Request) -> Role:
     """Extract role from request headers.
 
-    Priority: X-IO-Role header > default to viewer.
-    In production, this would be derived from JWT claims.
+    Priority: X-IO-Role header > default.
+    When no header is present: default to 'analyst' (allows run creation).
+    In production with JWT, this would be derived from token claims.
     """
-    role_header = request.headers.get("X-IO-Role", "viewer")
+    role_header = request.headers.get("X-IO-Role")
+    if role_header is None:
+        # No explicit role header → default to analyst for dev/preview
+        return Role.ANALYST
     try:
         return Role(role_header.lower())
     except ValueError:

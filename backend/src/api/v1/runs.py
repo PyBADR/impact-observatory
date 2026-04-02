@@ -19,13 +19,14 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 
 from src.schemas.scenario import ScenarioCreate
 from src.services.run_orchestrator import execute_run
 from src.services.scenario_service import get_run
 from src.services import reporting_service, audit_service
 from src.i18n.labels import get_all_labels
+from src.core.rbac import enforce_permission, get_role_from_request
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/runs", tags=["runs"])
@@ -35,12 +36,14 @@ _results: dict[str, dict] = {}
 
 
 @router.post("", status_code=201)
-async def create_run(body: ScenarioCreate):
-    """Execute a full scenario run through all 12 services.
+async def create_run(body: ScenarioCreate, request: Request):
+    """Execute a full scenario run through all 15 services.
 
     Returns: complete run result with headline, financial, banking,
-    insurance, fintech, decisions, explanation.
+    insurance, fintech, decisions, explanation, business impact,
+    timeline, and regulatory state.
     """
+    enforce_permission(get_role_from_request(request), "run:create")
     try:
         result = execute_run(body)
         _results[result["run_id"]] = result
@@ -53,8 +56,9 @@ async def create_run(body: ScenarioCreate):
 
 
 @router.get("/{run_id}")
-async def get_run_result(run_id: str):
+async def get_run_result(run_id: str, request: Request):
     """Get full result for a completed run."""
+    enforce_permission(get_role_from_request(request), "run:read")
     result = _results.get(run_id)
     if not result:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
@@ -62,8 +66,9 @@ async def get_run_result(run_id: str):
 
 
 @router.get("/{run_id}/financial")
-async def get_run_financial(run_id: str):
+async def get_run_financial(run_id: str, request: Request):
     """Get financial impacts for a run."""
+    enforce_permission(get_role_from_request(request), "run:financial")
     result = _results.get(run_id)
     if not result:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
@@ -75,8 +80,9 @@ async def get_run_financial(run_id: str):
 
 
 @router.get("/{run_id}/banking")
-async def get_run_banking(run_id: str):
+async def get_run_banking(run_id: str, request: Request):
     """Get banking stress for a run."""
+    enforce_permission(get_role_from_request(request), "run:banking")
     result = _results.get(run_id)
     if not result:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
@@ -84,8 +90,9 @@ async def get_run_banking(run_id: str):
 
 
 @router.get("/{run_id}/insurance")
-async def get_run_insurance(run_id: str):
+async def get_run_insurance(run_id: str, request: Request):
     """Get insurance stress for a run."""
+    enforce_permission(get_role_from_request(request), "run:insurance")
     result = _results.get(run_id)
     if not result:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
@@ -93,8 +100,9 @@ async def get_run_insurance(run_id: str):
 
 
 @router.get("/{run_id}/fintech")
-async def get_run_fintech(run_id: str):
+async def get_run_fintech(run_id: str, request: Request):
     """Get fintech stress for a run."""
+    enforce_permission(get_role_from_request(request), "run:fintech")
     result = _results.get(run_id)
     if not result:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
@@ -102,8 +110,9 @@ async def get_run_fintech(run_id: str):
 
 
 @router.get("/{run_id}/decision")
-async def get_run_decision(run_id: str):
+async def get_run_decision(run_id: str, request: Request):
     """Get decision plan for a run (top 3 actions)."""
+    enforce_permission(get_role_from_request(request), "run:decision")
     result = _results.get(run_id)
     if not result:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
@@ -111,8 +120,9 @@ async def get_run_decision(run_id: str):
 
 
 @router.get("/{run_id}/explanation")
-async def get_run_explanation(run_id: str):
+async def get_run_explanation(run_id: str, request: Request):
     """Get explanation pack for a run."""
+    enforce_permission(get_role_from_request(request), "run:explanation")
     result = _results.get(run_id)
     if not result:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
@@ -123,6 +133,7 @@ async def get_run_explanation(run_id: str):
 async def get_run_report(
     run_id: str,
     mode: str,
+    request: Request,
     lang: str = Query("en", pattern=r"^(en|ar)$"),
 ):
     """Get a formatted report for a run.
@@ -130,6 +141,8 @@ async def get_run_report(
     Modes: executive, analyst, regulatory
     Languages: en, ar
     """
+    report_perm = f"report:{mode}" if mode in ("executive", "analyst", "regulatory") else "report:executive"
+    enforce_permission(get_role_from_request(request), report_perm)
     result = _results.get(run_id)
     if not result:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
@@ -173,24 +186,27 @@ async def get_run_report(
 
 
 @router.get("/{run_id}/business-impact")
-async def get_business_impact(run_id: str):
+async def get_business_impact(run_id: str, request: Request):
     """Business impact summary with loss trajectory."""
+    enforce_permission(get_role_from_request(request), "run:business_impact")
     if run_id not in _results:
         raise HTTPException(status_code=404, detail="Run not found")
     return _results[run_id].get("business_impact", {})
 
 
 @router.get("/{run_id}/timeline")
-async def get_timeline(run_id: str):
+async def get_timeline(run_id: str, request: Request):
     """Timestep-by-timestep temporal simulation."""
+    enforce_permission(get_role_from_request(request), "run:timeline")
     if run_id not in _results:
         raise HTTPException(status_code=404, detail="Run not found")
     return _results[run_id].get("timeline", {})
 
 
 @router.get("/{run_id}/regulatory-timeline")
-async def get_regulatory_timeline(run_id: str):
+async def get_regulatory_timeline(run_id: str, request: Request):
     """Regulatory breach events over time."""
+    enforce_permission(get_role_from_request(request), "run:regulatory")
     if run_id not in _results:
         raise HTTPException(status_code=404, detail="Run not found")
     bi = _results[run_id].get("business_impact", {})
@@ -198,8 +214,9 @@ async def get_regulatory_timeline(run_id: str):
 
 
 @router.get("/{run_id}/executive-explanation")
-async def get_executive_explanation(run_id: str):
+async def get_executive_explanation(run_id: str, request: Request):
     """Executive-level business explanation."""
+    enforce_permission(get_role_from_request(request), "run:read")
     if run_id not in _results:
         raise HTTPException(status_code=404, detail="Run not found")
     explanation = _results[run_id].get("explanation", {})
@@ -221,12 +238,13 @@ async def get_executive_explanation(run_id: str):
 
 
 @router.post("/{run_id}/actions/{action_id}/approve", status_code=200)
-async def approve_action(run_id: str, action_id: str):
+async def approve_action(run_id: str, action_id: str, request: Request):
     """Human-in-the-loop: approve a decision action for execution.
 
     This is the ONLY way an action can move from PENDING_REVIEW to APPROVED.
     No action executes without explicit human approval.
     """
+    enforce_permission(get_role_from_request(request), "action:approve")
     result = _results.get(run_id)
     if not result:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
@@ -271,11 +289,12 @@ async def approve_action(run_id: str, action_id: str):
 
 
 @router.post("/{run_id}/actions/{action_id}/reject", status_code=200)
-async def reject_action(run_id: str, action_id: str):
+async def reject_action(run_id: str, action_id: str, request: Request):
     """Human-in-the-loop: reject a decision action.
 
     Rejected actions are recorded in the audit trail but not executed.
     """
+    enforce_permission(get_role_from_request(request), "action:reject")
     result = _results.get(run_id)
     if not result:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
@@ -309,14 +328,16 @@ async def reject_action(run_id: str, action_id: str):
 
 
 @router.get("/audit/log")
-async def get_audit_log(run_id: str | None = Query(None), limit: int = Query(100, ge=1, le=1000)):
+async def get_audit_log(request: Request, run_id: str | None = Query(None), limit: int = Query(100, ge=1, le=1000)):
     """Get audit trail entries."""
+    enforce_permission(get_role_from_request(request), "audit:read")
     return audit_service.get_audit_log(run_id=run_id, limit=limit)
 
 
 @router.get("/audit/stats")
-async def get_audit_stats():
+async def get_audit_stats(request: Request):
     """Get aggregate audit statistics."""
+    enforce_permission(get_role_from_request(request), "audit:stats")
     return audit_service.get_audit_stats()
 
 

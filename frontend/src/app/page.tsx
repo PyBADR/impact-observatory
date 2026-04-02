@@ -421,7 +421,7 @@ export default function HomePage() {
               {isAr ? "جاري تحليل السيناريو..." : "Analyzing scenario..."}
             </p>
             <p className="text-io-secondary text-sm">
-              {isAr ? "12 محرك تحليلي يعمل الآن" : "Running 12 analysis engines"}
+              {isAr ? "15 محرك تحليلي يعمل الآن" : "Running 15 analysis engines"}
             </p>
           </div>
         </div>
