@@ -14,10 +14,13 @@ import BankingDetailPanel from "@/features/banking/BankingDetailPanel";
 import InsuranceDetailPanel from "@/features/insurance/InsuranceDetailPanel";
 import FintechDetailPanel from "@/features/fintech/FintechDetailPanel";
 import DecisionDetailPanel from "@/features/decisions/DecisionDetailPanel";
-import type { RunResult, Language, ViewMode } from "@/types/observatory";
+import BusinessImpactPanel from "@/features/business-impact/BusinessImpactPanel";
+import RegulatoryTimelinePanel from "@/features/regulatory/RegulatoryTimelinePanel";
+import TimelinePanel from "@/features/timeline/TimelinePanel";
+import type { RunResult, Language, ViewMode, BusinessImpact, TimelineResult, RegulatoryState, RegulatoryBreachEvent } from "@/types/observatory";
 
 type AppView = "landing" | "scenarios" | "results";
-type DetailView = "dashboard" | "banking" | "insurance" | "fintech" | "decisions";
+type DetailView = "dashboard" | "banking" | "insurance" | "fintech" | "decisions" | "business-impact" | "regulatory" | "timeline";
 
 // ── Scenarios ────────────────────────────────────────────────────────
 
@@ -40,7 +43,7 @@ const CAPABILITIES = {
     { title: "Banking Stress Analysis", desc: "Basel III-aligned liquidity, credit, and FX stress testing across 6 major GCC institutions. Time-to-liquidity-breach countdown.", icon: "🏦" },
     { title: "Insurance Stress Modeling", desc: "IFRS-17 compliant claims surge modeling across 8 insurance lines. Combined ratio tracking with reinsurance trigger detection.", icon: "📋" },
     { title: "Fintech & Payment Disruption", desc: "Payment volume impact, settlement delays, API availability monitoring across 7 GCC payment platforms.", icon: "💳" },
-    { title: "Decision Intelligence", desc: "Priority = Value + Urgency + RegulatoryRisk. Top 3 actionable decisions with cost-benefit analysis and owner assignment.", icon: "🎯" },
+    { title: "Decision Intelligence", desc: "Priority = 0.25×Urgency + 0.30×Value + 0.20×RegRisk + 0.15×Feasibility + 0.10×TimeEffect. Top 3 ranked actions.", icon: "🎯" },
     { title: "Bilingual Explainability", desc: "20-step causal chain explaining how events propagate through the GCC financial system. Arabic and English narratives.", icon: "🔗" },
   ],
   ar: [
@@ -104,8 +107,8 @@ export default function HomePage() {
   };
 
   const detailLabels: Record<Language, Record<DetailView, string>> = {
-    en: { dashboard: "Dashboard", banking: "Banking Stress", insurance: "Insurance Stress", fintech: "Fintech Stress", decisions: "Decision Actions" },
-    ar: { dashboard: "لوحة المعلومات", banking: "ضغط القطاع البنكي", insurance: "ضغط التأمين", fintech: "ضغط الفنتك", decisions: "إجراءات القرار" },
+    en: { dashboard: "Dashboard", banking: "Banking", insurance: "Insurance", fintech: "Fintech", decisions: "Decisions", "business-impact": "Business Impact", regulatory: "Regulatory", timeline: "Timeline" },
+    ar: { dashboard: "لوحة المعلومات", banking: "البنوك", insurance: "التأمين", fintech: "الفنتك", decisions: "القرارات", "business-impact": "أثر الأعمال", regulatory: "التنظيمي", timeline: "الجدول الزمني" },
   };
 
   // ── Top Navigation (always visible) ──
@@ -209,7 +212,7 @@ export default function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { value: "31", label: isAr ? "كيان خليجي" : "GCC Entities", sub: isAr ? "طاقة · بحري · طيران · مالي" : "Energy · Maritime · Aviation · Finance" },
-              { value: "12", label: isAr ? "خدمة تحليلية" : "Analysis Services", sub: isAr ? "سيناريو → قرار" : "Scenario → Decision" },
+              { value: "15", label: isAr ? "خدمة تحليلية" : "Analysis Services", sub: isAr ? "سيناريو → قرار → أثر" : "Scenario → Decision → Impact" },
               { value: "$2.1T", label: isAr ? "ناتج محلي مغطى" : "GDP Coverage", sub: isAr ? "دول الخليج الست" : "Six GCC nations" },
               { value: "<2s", label: isAr ? "وقت التحليل" : "Analysis Time", sub: isAr ? "من الحدث إلى القرار" : "Event to decision" },
             ].map((m) => (
@@ -393,7 +396,7 @@ export default function HomePage() {
       {/* Detail Navigation Tabs */}
       {result && (
         <div className="bg-io-surface border-b border-io-border px-6 lg:px-10 py-0 flex items-center gap-1 overflow-x-auto">
-          {(["dashboard", "banking", "insurance", "fintech", "decisions"] as DetailView[]).map((view) => (
+          {(["dashboard", "banking", "insurance", "fintech", "decisions", "business-impact", "regulatory", "timeline"] as DetailView[]).map((view) => (
             <button
               key={view}
               onClick={() => setDetailView(view)}
@@ -458,6 +461,28 @@ export default function HomePage() {
 
       {result && detailView === "decisions" && (
         <div className="max-w-6xl mx-auto p-6"><DecisionDetailPanel decisions={result.decisions} explanation={result.explanation} lang={lang} /></div>
+      )}
+
+      {result && detailView === "business-impact" && (
+        <div className="max-w-6xl mx-auto p-6">
+          <BusinessImpactPanel data={(result as unknown as Record<string, unknown>).business_impact as BusinessImpact | undefined} lang={lang} />
+        </div>
+      )}
+
+      {result && detailView === "regulatory" && (
+        <div className="max-w-6xl mx-auto p-6">
+          <RegulatoryTimelinePanel
+            breachEvents={((result as unknown as Record<string, unknown>).business_impact as BusinessImpact | undefined)?.regulatory_breach_events || []}
+            regulatoryState={(result as unknown as Record<string, unknown>).regulatory_state as RegulatoryState | undefined}
+            lang={lang}
+          />
+        </div>
+      )}
+
+      {result && detailView === "timeline" && (
+        <div className="max-w-6xl mx-auto p-6">
+          <TimelinePanel data={(result as unknown as Record<string, unknown>).timeline as TimelineResult | undefined} lang={lang} />
+        </div>
       )}
 
       {/* Back button */}

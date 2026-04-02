@@ -27,6 +27,9 @@ from src.services import (
     explainability_service,
     reporting_service,
     audit_service,
+    business_impact_service,
+    timeline_service,
+    regulatory_service,
 )
 
 logger = logging.getLogger(__name__)
@@ -240,7 +243,14 @@ def execute_run(params: ScenarioCreate) -> dict:
     }))
 
     # ── Assemble full result ──────────────────────────────────────
-    return {
+    financial_list = [i.model_dump() for i in financial_impacts]
+    banking_dict = banking.model_dump()
+    insurance_dict = insurance.model_dump()
+    fintech_dict = fintech.model_dump()
+    decisions_dict = decision_plan.model_dump()
+    explanation_dict = explanation.model_dump()
+
+    result = {
         "schema_version": "v1",
         "run_id": run_id,
         "status": "completed",
@@ -253,15 +263,68 @@ def execute_run(params: ScenarioCreate) -> dict:
             "severity": severity,
             "horizon_hours": horizon_hours,
         },
+        # Canonical keys
         "headline": headline,
-        "financial": [i.model_dump() for i in financial_impacts],
-        "banking": banking.model_dump(),
-        "insurance": insurance.model_dump(),
-        "fintech": fintech.model_dump(),
-        "decisions": decision_plan.model_dump(),
-        "explanation": explanation.model_dump(),
+        "financial": financial_list,
+        "banking": banking_dict,
+        "insurance": insurance_dict,
+        "fintech": fintech_dict,
+        "decisions": decisions_dict,
+        "explanation": explanation_dict,
         "executive_report": executive_report,
-        "flow_states": [f.model_dump() for f in flow_states[:10]],  # top 10 for summary
-        "propagation": propagation_results[:15],  # top 15
+        "flow_states": [f.model_dump() for f in flow_states[:10]],
+        "propagation": propagation_results[:15],
         "duration_ms": round(duration_ms, 1),
+        # Frontend backward-compatible aliases
+        "headline_loss_usd": headline["total_loss_usd"],
+        "severity_pct": round(severity * 100, 1),
+        "peak_day": headline.get("peak_day", 0),
+        "financial_impacts": financial_list,
+        "banking_stress": banking_dict,
+        "insurance_stress": insurance_dict,
+        "fintech_stress": fintech_dict,
+        "decision_actions": decisions_dict.get("actions", []),
+        "narrative": explanation_dict.get("narrative_en", ""),
+        "methodology": explanation_dict.get("methodology", "deterministic_propagation"),
     }
+
+    # ── Step 13: Business Impact Service ─────────────────────────
+    t0 = time.monotonic()
+    impact_input = {
+        "run_id": run_id,
+        "scenario": result["scenario"],
+        "financial_impacts": result["financial"],
+        "headline_loss_usd": headline["total_loss_usd"],
+        "banking_stress": banking_dict,
+        "insurance_stress": insurance_dict,
+        "fintech_stress": fintech_dict,
+    }
+    business_impact = business_impact_service.compute_business_impact(impact_input)
+    result["business_impact"] = business_impact
+    stage_timings["business_impact"] = round((time.monotonic() - t0) * 1000, 1)
+    stages_completed += 1
+    _log_stage("business_impact", run_id, stage_timings["business_impact"], stages_completed)
+
+    # ── Step 14: Timeline Service ────────────────────────────────
+    t0 = time.monotonic()
+    timeline = timeline_service.compute_timeline(impact_input)
+    result["timeline"] = timeline
+    stage_timings["timeline"] = round((time.monotonic() - t0) * 1000, 1)
+    stages_completed += 1
+    _log_stage("timeline", run_id, stage_timings["timeline"], stages_completed)
+
+    # ── Step 15: Regulatory Service ──────────────────────────────
+    t0 = time.monotonic()
+    regulatory_state = regulatory_service.compute_regulatory_state(
+        run_id=run_id,
+        banking=banking_dict,
+        insurance=insurance_dict,
+        fintech=fintech_dict,
+    )
+    result["regulatory_state"] = regulatory_state
+    stage_timings["regulatory"] = round((time.monotonic() - t0) * 1000, 1)
+    stages_completed += 1
+    _log_stage("regulatory", run_id, stage_timings["regulatory"], stages_completed)
+
+    result["pipeline_stages_completed"] = stages_completed
+    return result

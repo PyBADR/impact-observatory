@@ -1,14 +1,18 @@
 """v1 Runs API — execute and query scenario runs.
 
-POST /api/v1/runs                         — execute full pipeline
-GET  /api/v1/runs/{run_id}                — full result
-GET  /api/v1/runs/{run_id}/financial      — financial impacts only
-GET  /api/v1/runs/{run_id}/banking        — banking stress only
-GET  /api/v1/runs/{run_id}/insurance      — insurance stress only
-GET  /api/v1/runs/{run_id}/fintech        — fintech stress only
-GET  /api/v1/runs/{run_id}/decision       — decision plan only
-GET  /api/v1/runs/{run_id}/explanation    — explanation pack only
-GET  /api/v1/runs/{run_id}/report/{mode}  — report in executive|analyst|regulatory mode
+POST /api/v1/runs                              — execute full pipeline
+GET  /api/v1/runs/{run_id}                     — full result
+GET  /api/v1/runs/{run_id}/financial           — financial impacts only
+GET  /api/v1/runs/{run_id}/banking             — banking stress only
+GET  /api/v1/runs/{run_id}/insurance           — insurance stress only
+GET  /api/v1/runs/{run_id}/fintech             — fintech stress only
+GET  /api/v1/runs/{run_id}/decision            — decision plan only
+GET  /api/v1/runs/{run_id}/explanation         — explanation pack only
+GET  /api/v1/runs/{run_id}/report/{mode}       — report in executive|analyst|regulatory mode
+GET  /api/v1/runs/{run_id}/business-impact     — business impact summary + loss trajectory
+GET  /api/v1/runs/{run_id}/timeline            — timestep-by-timestep temporal simulation
+GET  /api/v1/runs/{run_id}/regulatory-timeline — regulatory breach events over time
+GET  /api/v1/runs/{run_id}/executive-explanation — executive-level business explanation
 """
 
 from __future__ import annotations
@@ -165,6 +169,54 @@ async def get_run_report(
         "insurance": result["insurance"],
         "fintech": result["fintech"],
         "decisions": result["decisions"],
+    }
+
+
+@router.get("/{run_id}/business-impact")
+async def get_business_impact(run_id: str):
+    """Business impact summary with loss trajectory."""
+    if run_id not in _results:
+        raise HTTPException(status_code=404, detail="Run not found")
+    return _results[run_id].get("business_impact", {})
+
+
+@router.get("/{run_id}/timeline")
+async def get_timeline(run_id: str):
+    """Timestep-by-timestep temporal simulation."""
+    if run_id not in _results:
+        raise HTTPException(status_code=404, detail="Run not found")
+    return _results[run_id].get("timeline", {})
+
+
+@router.get("/{run_id}/regulatory-timeline")
+async def get_regulatory_timeline(run_id: str):
+    """Regulatory breach events over time."""
+    if run_id not in _results:
+        raise HTTPException(status_code=404, detail="Run not found")
+    bi = _results[run_id].get("business_impact", {})
+    return {"regulatory_breach_events": bi.get("regulatory_breach_events", []), "regulatory_state": _results[run_id].get("regulatory_state", {})}
+
+
+@router.get("/{run_id}/executive-explanation")
+async def get_executive_explanation(run_id: str):
+    """Executive-level business explanation."""
+    if run_id not in _results:
+        raise HTTPException(status_code=404, detail="Run not found")
+    explanation = _results[run_id].get("explanation", {})
+    bi = _results[run_id].get("business_impact", {})
+    summary = bi.get("summary", {})
+    return {
+        "run_id": run_id,
+        "executive_summary": explanation.get("narrative_en", ""),
+        "loss_translation": {
+            "peak_loss_value": summary.get("peak_cumulative_loss", 0),
+            "peak_loss_time": summary.get("peak_loss_timestamp", ""),
+            "affected_revenue_value": summary.get("peak_cumulative_loss", 0) * 0.15,
+            "entities_at_risk_count": len(_results[run_id].get("financial", _results[run_id].get("financial_impacts", []))),
+            "business_materiality_band": "critical" if summary.get("business_severity") == "severe" else summary.get("business_severity", "low"),
+        },
+        "business_severity": summary.get("business_severity", "low"),
+        "executive_status": summary.get("executive_status", "monitor"),
     }
 
 

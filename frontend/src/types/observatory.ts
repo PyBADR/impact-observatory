@@ -191,6 +191,123 @@ export interface RunResult {
   duration_ms: number;
 }
 
+// ── V4 Business Impact Types ──────────────────────────────────
+
+export interface LossTrajectoryPoint {
+  run_id: string;
+  scope_level: "entity" | "sector" | "system";
+  scope_ref: string;
+  timestep_index: number;
+  timestamp: string;
+  direct_loss: number;
+  propagated_loss: number;
+  cumulative_loss: number;
+  revenue_at_risk: number;
+  loss_velocity: number;
+  loss_acceleration: number;
+  status: "stable" | "deteriorating" | "critical" | "failed";
+}
+
+export interface TimeToFailure {
+  run_id: string;
+  scope_level: "entity" | "sector" | "system";
+  scope_ref: string;
+  failure_type: string;
+  failure_threshold_value: number;
+  current_value_at_t0: number;
+  predicted_failure_timestep: number | null;
+  predicted_failure_timestamp: string | null;
+  time_to_failure_hours: number | null;
+  confidence_score: number;
+  failure_reached_within_horizon: boolean;
+}
+
+export interface RegulatoryBreachEvent {
+  run_id: string;
+  timestep_index: number;
+  timestamp: string;
+  scope_level: "entity" | "sector" | "system";
+  scope_ref: string;
+  metric_name: string;
+  metric_value: number;
+  threshold_value: number;
+  breach_direction: "below_minimum" | "above_maximum";
+  breach_level: "minor" | "major" | "critical";
+  first_breach: boolean;
+  reportable: boolean;
+}
+
+export interface BusinessImpactSummary {
+  run_id: string;
+  currency: string;
+  peak_cumulative_loss: number;
+  peak_loss_timestep: number;
+  peak_loss_timestamp: string;
+  system_time_to_first_failure_hours: number | null;
+  first_failure_type: string | null;
+  first_failure_scope_ref: string | null;
+  critical_breach_count: number;
+  reportable_breach_count: number;
+  business_severity: "low" | "medium" | "high" | "severe";
+  executive_status: "monitor" | "intervene" | "escalate" | "crisis";
+}
+
+export interface BusinessImpact {
+  summary: BusinessImpactSummary;
+  loss_trajectory: LossTrajectoryPoint[];
+  time_to_failures: TimeToFailure[];
+  regulatory_breach_events: RegulatoryBreachEvent[];
+}
+
+export interface TimeStepState {
+  run_id: string;
+  timestep_index: number;
+  timestamp: string;
+  shock_intensity_effective: number;
+  aggregate_loss: number;
+  aggregate_flow: number;
+  regulatory_breach_count: number;
+  system_status: "stable" | "degrading" | "critical" | "failed";
+}
+
+export interface TimelineResult {
+  run_id: string;
+  status: string;
+  time_config: {
+    time_granularity_minutes: number;
+    time_horizon_steps: number;
+    shock_decay_rate: number;
+    propagation_delay_steps: number;
+    recovery_rate: number;
+  };
+  timesteps: TimeStepState[];
+}
+
+export interface RegulatoryState {
+  run_id: string;
+  timestamp: string;
+  jurisdiction: string;
+  regulatory_version: string;
+  aggregate_lcr: number;
+  aggregate_nsfr: number;
+  aggregate_solvency_ratio: number;
+  aggregate_capital_adequacy_ratio: number;
+  breach_level: "none" | "minor" | "major" | "critical";
+  mandatory_actions: string[];
+  reporting_required: boolean;
+}
+
+// ── Extended RunResult with v4 fields ─────────────────────────
+
+export interface RunResultV4 extends RunResult {
+  business_impact: BusinessImpact;
+  timeline: TimelineResult;
+  regulatory_state: RegulatoryState;
+  headline_loss_usd: number;
+  severity_pct: number;
+  peak_day: number;
+}
+
 export type Classification =
   | "NOMINAL"
   | "LOW"
@@ -200,3 +317,4 @@ export type Classification =
 
 export type ViewMode = "executive" | "analyst" | "regulatory";
 export type Language = "en" | "ar";
+export type Role = "viewer" | "analyst" | "operator" | "admin" | "regulator";
