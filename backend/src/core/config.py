@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     backend_host: str = "0.0.0.0"
     backend_port: int = 8000
     log_level: str = "info"
-    cors_origins: str = "http://localhost:3000"
+    cors_origins: str = "http://localhost:3000,https://deevo-sim.vercel.app"
 
     @property
     def postgres_dsn(self) -> str:
