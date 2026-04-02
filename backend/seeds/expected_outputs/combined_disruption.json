@@ -3,21 +3,54 @@
   "test_type": "regression",
   "timestamp": "2024-02-25T13:50:00Z",
   "risk_metrics": {
-    "overall_risk_increase": {"min": 0.38, "max": 0.62},
-    "confidence_adjustment": {"min": -0.22, "max": 0.02},
-    "system_stress_level": {"min": 0.75, "max": 0.95}
+    "overall_risk_increase": {
+      "min": 0.38,
+      "max": 0.62
+    },
+    "confidence_adjustment": {
+      "min": -0.22,
+      "max": 0.02
+    },
+    "system_stress_level": {
+      "min": 0.75,
+      "max": 0.95
+    }
   },
   "impact_metrics": {
-    "affected_ports": {"min": 9, "max": 13},
-    "affected_airports": {"min": 8, "max": 12},
-    "affected_corridors": {"min": 7, "max": 11},
-    "insurance_surge": {"min": 0.52, "max": 0.78},
-    "logistics_delay_hours": {"min": 168, "max": 336}
+    "affected_ports": {
+      "min": 9,
+      "max": 13
+    },
+    "affected_airports": {
+      "min": 8,
+      "max": 12
+    },
+    "affected_corridors": {
+      "min": 7,
+      "max": 11
+    },
+    "insurance_surge": {
+      "min": 0.52,
+      "max": 0.78
+    },
+    "logistics_delay_hours": {
+      "min": 168,
+      "max": 336
+    }
   },
   "cascade_metrics": {
-    "cascade_depth": {"min": 3, "max": 5},
-    "propagation_factor": {"min": 0.65, "max": 0.88},
-    "nodes_affected_total": {"min": 20, "max": 30}
+    "cascade_depth": {
+      "min": 3,
+      "max": 5
+    },
+    "propagation_factor": {
+      "min": 0.65,
+      "max": 0.88
+    },
+    "nodes_affected_total": {
+      "min": 20,
+      "max": 30
+    }
   },
   "expected_events": [
     "NAVAL_BLOCKADE",
@@ -44,6 +77,33 @@
   "time_horizon": {
     "initial_hours": 0,
     "terminal_hours": 168,
-    "peak_stress_hours": {"min": 24, "max": 96}
-  }
+    "peak_stress_hours": {
+      "min": 24,
+      "max": 96
+    }
+  },
+  "expected_risk_range": [
+    0.7,
+    1.0
+  ],
+  "expected_affected_ports": [
+    5,
+    11
+  ],
+  "expected_affected_airports": [
+    6,
+    12
+  ],
+  "expected_affected_corridors": [
+    3,
+    9
+  ],
+  "expected_cascade_depth": [
+    3,
+    5
+  ],
+  "expected_nodes_affected": [
+    18,
+    28
+  ]
 }

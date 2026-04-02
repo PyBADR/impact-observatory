@@ -1,4 +1,4 @@
-# DecisionCore Intelligence — API Contract v1.0
+# Impact Observatory | مرصد الأثر — API Contract v1.0
 
 ## Base URL
 ```

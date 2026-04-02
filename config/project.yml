@@ -1,0 +1,110 @@
+# Impact Observatory | مرصد الأثر — Canonical Project Configuration
+# This file is the single source of truth for project identity, flow, and structure.
+
+project:
+  name_en: Impact Observatory
+  name_ar: مرصد الأثر
+  short_name: impact-observatory
+  repo_name: impact-observatory
+  default_locale: ar
+  supported_locales:
+    - ar
+    - en
+
+identity:
+  category: executive_decision_intelligence_platform
+  positioning_en: Decision Intelligence for Financial Impact
+  positioning_ar: ذكاء القرار لقياس الأثر المالي
+  tone:
+    - executive
+    - financial_first
+    - decision_driven
+    - regulatory_aware
+    - bilingual
+    - explainable
+
+v1_focus:
+  flagship_scenario: hormuz_closure
+  primary_views:
+    - banking
+    - insurance
+    - fintech
+  secondary_views:
+    - sovereign
+
+principles:
+  - financial_first
+  - decision_terminal
+  - gcc_aware
+  - auditable
+  - explainable
+  - modular
+  - json_first
+  - white_light_ui
+  - safe_migration_in_place
+
+runtime_flow:
+  - scenario
+  - physics
+  - graph_snapshot
+  - propagation
+  - financial
+  - sector_risk
+  - regulatory
+  - decision
+  - explanation
+  - output
+
+core_objects:
+  - Scenario
+  - Entity
+  - Edge
+  - FlowState
+  - FinancialImpact
+  - BankingStress
+  - InsuranceStress
+  - FintechStress
+  - DecisionAction
+  - DecisionPlan
+  - RegulatoryState
+  - ExplanationPack
+
+domain_terms:
+  scenario: Event Scenario
+  physics: Flow Impact
+  propagation: Impact Chain
+  financial: Financial Impact
+  banking: Banking Stress
+  insurance: Insurance Stress
+  fintech: Fintech Disruption
+  decision: Decision Actions
+  explanation: Explanation Pack
+
+rename_map:
+  old_product_names:
+    - Deevo Sim
+    - Deevo Intelligence Core
+    - Deevo intelligence operation
+    - DecisionCore Intelligence
+  new_product_name_en: Impact Observatory
+  new_product_name_ar: مرصد الأثر
+
+theme:
+  mode: light
+  palette:
+    background: "#F8FAFC"
+    surface: "#FFFFFF"
+    primary: "#0F172A"
+    secondary: "#475569"
+    accent: "#1D4ED8"
+    success: "#15803D"
+    warning: "#B45309"
+    danger: "#B91C1C"
+    border: "#E2E8F0"
+  design_rules:
+    - clean_spacing
+    - premium_cards
+    - no_neon
+    - no_black_default
+    - boardroom_aesthetic
+    - graph_is_secondary

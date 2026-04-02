@@ -1,80 +1,61 @@
 # Impact Observatory | مرصد الأثر
 
-**Decision Intelligence Platform for GCC Financial Markets**
+Impact Observatory is a production-grade GCC decision intelligence platform that transforms major disruptions into financial impact, sector stress, and ranked decision actions.
 
-منصة ذكاء القرار للأسواق المالية الخليجية
+## Core Purpose
 
----
+The platform converts events such as Strait of Hormuz closure into:
 
-## Mission
+- Financial Impact
+- Banking Stress
+- Insurance Stress
+- Fintech Stress
+- Decision Plan
+- Explanation Pack
 
-Transform: **Event → Financial Impact → Sector Stress → Decision**
+## V1 Scope
 
-Every output maps a geopolitical or economic event through a 12-stage intelligence pipeline to produce calibrated financial losses, sector stress indicators, and ranked decision actions.
+Flagship scenario:
 
-## Architecture
+- Hormuz Closure — 14D — Severe
 
-```
-Scenario → Entity Graph → Physics → Propagation → Financial →
-Banking → Insurance → Fintech → Decision → Explainability →
-Reporting → Audit
-```
+Primary sector views:
 
-### Backend (FastAPI + Python)
-- **12 specialized services** orchestrated by `run_orchestrator.py`
-- **8 scenario templates**: Hormuz Closure, Yemen Escalation, Cyber Attack, Oil Price Shock, Banking Stress, Port Disruption, Iran Sanctions, Gulf Airspace
-- **VersionedModel** base class: `schema_version: "v1"` on all outputs
-- **Structured audit trail** with per-stage timing
+- Banking
+- Insurance
+- Fintech
 
-### Frontend (Next.js + React + TypeScript)
-- **White boardroom UI** — executive presentation grade
-- **Bilingual**: English + Arabic with full RTL support
-- **Components**: KPICard, StressGauge, DecisionActionCard, FinancialImpactPanel
-- **Typography**: DM Sans + IBM Plex Sans Arabic
-
-## Sectors
-
-| Sector | Analysis |
-|--------|----------|
-| **Banking** | Liquidity stress, credit risk, FX exposure, interbank contagion |
-| **Insurance** | Claims surge, combined ratio, IFRS-17 risk adjustment |
-| **Fintech** | Payment volume impact, settlement delays, API availability |
-| **Energy** | Oil supply disruption, flow states |
-| **Maritime** | Shipping reroute, port disruption |
-
-## API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/v1/runs` | Execute full 12-stage pipeline |
-| `GET` | `/api/v1/runs/{id}` | Retrieve run result |
-| `GET` | `/api/v1/runs/{id}/financial` | Financial impacts |
-| `GET` | `/api/v1/runs/{id}/banking` | Banking stress |
-| `GET` | `/api/v1/runs/{id}/insurance` | Insurance stress |
-| `GET` | `/api/v1/runs/{id}/fintech` | Fintech stress |
-| `GET` | `/api/v1/runs/{id}/decision` | Decision actions (Top 3) |
-| `POST` | `/api/v1/runs/{id}/actions/{aid}/approve` | Human approval |
-| `GET` | `/api/v1/scenarios` | List scenario templates |
-
-## Quick Start
-
-```bash
-# Backend
-cd backend && pip install -r requirements.txt
-uvicorn src.main:app --reload --port 8000
-
-# Frontend
-cd frontend && npm install && npm run dev
-```
-
-## Decision Model
+## Runtime Flow
 
 ```
-Priority = 0.25×Urgency + 0.30×Value + 0.20×RegulatoryRisk + 0.15×Feasibility + 0.10×TimeEffect
+Scenario → Physics → Graph Snapshot → Propagation → Financial → Sector Risk → Regulatory → Decision → Explanation → Output
 ```
 
-Only **Top 3 actions** are returned. No action executes without **human approval**.
+## Core Principles
 
-## License
+- Financial-first
+- Decision-terminal
+- GCC-aware
+- Explainable
+- Auditable
+- JSON-first
+- White/light executive UI
 
-Copyright (c) 2026 Deevo Analytics. All rights reserved.
+## Tech Direction
+
+- Backend: FastAPI
+- Frontend: Next.js
+- Storage: PostgreSQL + Graph-capable layer
+- Contracts: strict schemas
+- Deployment: Docker-based
+
+## UX Direction
+
+- White/light by default
+- Executive dashboard first
+- Graph and map as secondary views
+- Arabic + English bilingual support
+
+## Migration Rule
+
+This project is a controlled in-place replatforming of the existing repository. Reusable infrastructure must be preserved. Obsolete branding, dark-first UI, and incompatible legacy payloads must be replaced.

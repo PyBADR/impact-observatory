@@ -1,4 +1,4 @@
-# DecisionCore Intelligence GCC Platform — Developer Runbook
+# Impact Observatory — Developer Runbook
 
 **Version:** 1.0.0 | **Updated:** 2026-03-31
 

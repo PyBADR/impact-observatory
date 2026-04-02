@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --font-en: 'DM Sans', system-ui, sans-serif;
+  --font-ar: 'IBM Plex Sans Arabic', 'Noto Sans Arabic', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+}
+
+@layer base {
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  body { @apply bg-ds-bg text-ds-text font-sans; overflow-x: hidden; }
+  ::selection { @apply bg-ds-accent/15 text-ds-accent; }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { @apply bg-transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-ds-border rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-ds-text-dim; }
+
+  /* Bilingual font selection */
+  html[lang="en"] body { font-family: var(--font-en); }
+  html[lang="ar"] body { font-family: var(--font-ar); }
+
+  /* RTL support */
+  [dir="rtl"], [dir="rtl"] * { font-family: var(--font-ar); }
+  [dir="rtl"] { font-feature-settings: "ss01", "ss02"; }
+}
+
+@layer components {
+  /* Layout */
+  .ds-container { @apply max-w-7xl mx-auto px-6 sm:px-8 lg:px-10; }
+  .ds-section { @apply py-16 lg:py-24; }
+  .ds-section-tight { @apply py-10 lg:py-16; }
+
+  /* Cards — clean executive style */
+  .ds-card { @apply bg-ds-card border border-ds-border rounded-ds-lg shadow-ds; transition: all 0.25s ease; }
+  .ds-card-interactive { @apply ds-card cursor-pointer; }
+  .ds-card-interactive:hover { @apply bg-ds-card-hover border-ds-border-hover shadow-ds-card-hover; transform: translateY(-1px); }
+
+  /* KPI Card — prominent metric display */
+  .ds-kpi { @apply bg-ds-card border border-ds-border rounded-ds-lg p-6 shadow-ds; }
+  .ds-kpi-value { @apply text-display-sm font-bold text-ds-text tracking-tight; }
+  .ds-kpi-label { @apply text-caption text-ds-text-secondary font-medium uppercase tracking-wider mt-1; }
+  .ds-kpi-sublabel { @apply text-micro text-ds-text-muted mt-0.5; }
+
+  /* Stress level indicators */
+  .ds-stress-low { @apply bg-ds-success-dim text-ds-success border border-ds-success/20; }
+  .ds-stress-medium { @apply bg-ds-warning-dim text-ds-warning border border-ds-warning/20; }
+  .ds-stress-high { @apply bg-ds-danger-dim text-ds-danger border border-ds-danger/20; }
+  .ds-stress-critical { @apply bg-ds-critical-dim text-ds-critical border border-ds-critical/20; }
+
+  /* Buttons — minimal executive */
+  .ds-btn-primary { @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-ds-accent text-white font-medium text-caption rounded-ds-lg transition-all duration-200 shadow-ds; }
+  .ds-btn-primary:hover { @apply bg-ds-accent-hover shadow-ds-md; transform: translateY(-1px); }
+  .ds-btn-secondary { @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-transparent border border-ds-border text-ds-text font-medium text-caption rounded-ds-lg transition-all duration-200; }
+  .ds-btn-secondary:hover { @apply bg-ds-surface border-ds-border-hover; }
+  .ds-btn-ghost { @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-ds-text-secondary text-caption rounded-ds transition-all duration-200; }
+  .ds-btn-ghost:hover { @apply text-ds-text bg-ds-surface; }
+
+  /* Badge */
+  .ds-badge { @apply inline-flex items-center px-3 py-1 text-nano font-medium tracking-widest uppercase rounded-full border; }
+  .ds-badge-accent { @apply ds-badge text-ds-accent bg-ds-accent-muted border-ds-accent/12; }
+  .ds-badge-gold { @apply ds-badge text-ds-gold bg-ds-gold-muted border-ds-gold/15; }
+
+  /* Input */
+  .ds-input { @apply w-full bg-ds-surface border border-ds-border rounded-ds-lg px-4 py-3 text-caption text-ds-text placeholder:text-ds-text-dim outline-none transition-all duration-200; }
+  .ds-input:focus { @apply border-ds-accent/30 ring-2 ring-ds-accent/8; }
+
+  /* Panels */
+  .ds-panel-header { @apply flex items-center justify-between px-5 py-3.5 border-b border-ds-border; }
+  .ds-panel-header-title { @apply flex items-center gap-2.5; }
+  .ds-panel-header-meta { @apply text-micro text-ds-text-dim font-mono; }
+
+  /* Divider */
+  .ds-divider { @apply w-full h-px bg-ds-border; }
+
+  /* Flow stages */
+  .ds-flow-stage { @apply flex items-center gap-2 px-3 py-1.5 text-micro font-medium rounded-full bg-ds-surface border border-ds-border text-ds-text-secondary; }
+  .ds-flow-stage-active { @apply bg-ds-accent text-white border-ds-accent; }
+  .ds-flow-stage-complete { @apply bg-ds-success-dim text-ds-success border-ds-success/20; }
+}
+
+/* React Flow — light theme overrides */
+.react-flow__background { background-color: #F8F9FC !important; }
+.react-flow__minimap { background-color: #FFFFFF !important; border: 1px solid #E2E5ED !important; border-radius: 8px !important; }
+.react-flow__controls { background-color: #FFFFFF !important; border: 1px solid #E2E5ED !important; border-radius: 8px !important; }
+.react-flow__controls button { background-color: #FFFFFF !important; border-color: #E2E5ED !important; color: #5A6178 !important; }
+.react-flow__controls button:hover { background-color: #F1F3F8 !important; color: #1A1D26 !important; }

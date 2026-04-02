@@ -1,8 +1,8 @@
-# DecisionCore Intelligence — Implementation Roadmap
+# Impact Observatory | مرصد الأثر — Implementation Roadmap
 
 ## Architecture Overview
 
-DecisionCore Intelligence is a graph-native, mathematically grounded, physics-aware decision intelligence system built on a 7-layer stack:
+Impact Observatory is a graph-native, mathematically grounded, physics-aware decision intelligence system built on a 7-layer stack:
 
 1. **Data Layer** — Multi-source ingestion (ACLED, aviation, maritime, manual import) with canonical normalization
 2. **Schema Layer** — 9 Pydantic v2 modules defining 41 canonical models (Event, Airport, Port, Flight, Vessel, Route, Corridor, Region, RiskScore)

@@ -1,4 +1,4 @@
-"""Loader for all seed data in the GCC DecisionCore Intelligence platform."""
+"""Loader for all seed data in the Impact Observatory platform."""
 
 import json
 from datetime import datetime, timezone
@@ -16,7 +16,7 @@ from .actors import get_seed_actors
 
 
 class SeedLoader:
-    """Loader class for GCC DecisionCore Intelligence seed data.
+    """Loader class for Impact Observatory seed data.
     
     Provides methods to load all seed data types, validate data integrity,
     and export seed data to JSON format for database ingestion.
@@ -354,7 +354,7 @@ class SeedLoader:
         """
         data = {
             "timestamp": self._load_timestamp or datetime.now(timezone.utc).isoformat(),
-            "platform": "DecisionCore Intelligence - GCC Seed Data",
+            "platform": "Impact Observatory Seed Data",
             "version": "1.0",
             "data": {
                 "events": [json.loads(event.model_dump_json()) for event in self._events or []],
