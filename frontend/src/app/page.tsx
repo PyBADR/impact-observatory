@@ -188,8 +188,8 @@ export default function HomePage() {
           </h1>
           <p className="text-lg md:text-xl text-io-secondary max-w-2xl mx-auto mb-10 leading-relaxed">
             {isAr
-              ? "نمذجة الأثر المالي في الوقت الحقيقي عبر القطاع البنكي والتأمين والفنتك. من الحدث إلى القرار في ثوانٍ."
-              : "Real-time financial impact modeling across banking, insurance, and fintech sectors. From event to decision in seconds."}
+              ? "حاكي الضغط النظامي عبر البنوك والتأمين والفنتك والبنية الحيوية — واتخذ القرار قبل الانهيار."
+              : "Simulate systemic stress across banking, insurance, fintech, and critical infrastructure — then act before failure."}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
@@ -199,10 +199,10 @@ export default function HomePage() {
               {isAr ? "ابدأ التحليل" : "Run Scenario"}
             </button>
             <a
-              href="#capabilities"
+              href="/dashboard"
               className="px-8 py-3.5 text-io-secondary text-base font-medium rounded-xl border border-io-border hover:border-io-accent hover:text-io-accent transition-colors"
             >
-              {isAr ? "اكتشف المنصة" : "Explore Platform"}
+              {isAr ? "عرض الملخص التنفيذي" : "View Executive Brief"}
             </a>
           </div>
         </section>

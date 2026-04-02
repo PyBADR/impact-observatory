@@ -5,7 +5,7 @@ import { Providers } from "@/components/shared/providers";
 export const metadata: Metadata = {
   title: "Impact Observatory | مرصد الأثر",
   description:
-    "Decision Intelligence Platform for GCC Financial Markets — Financial-first, decision-terminal, explainable",
+    "Simulate systemic stress across banking, insurance, fintech, and critical infrastructure — then act before failure. Production-grade GCC executive decision intelligence.",
 };
 
 export default function RootLayout({
