@@ -1,0 +1,6 @@
+/**
+ * Impact Observatory | مرصد الأثر
+ * Redirects to theme/globals.css — this file kept for Next.js import compatibility.
+ */
+
+@import "../theme/globals.css";

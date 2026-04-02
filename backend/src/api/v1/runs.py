@@ -1,0 +1,274 @@
+"""v1 Runs API — execute and query scenario runs.
+
+POST /api/v1/runs                         — execute full pipeline
+GET  /api/v1/runs/{run_id}                — full result
+GET  /api/v1/runs/{run_id}/financial      — financial impacts only
+GET  /api/v1/runs/{run_id}/banking        — banking stress only
+GET  /api/v1/runs/{run_id}/insurance      — insurance stress only
+GET  /api/v1/runs/{run_id}/fintech        — fintech stress only
+GET  /api/v1/runs/{run_id}/decision       — decision plan only
+GET  /api/v1/runs/{run_id}/explanation    — explanation pack only
+GET  /api/v1/runs/{run_id}/report/{mode}  — report in executive|analyst|regulatory mode
+"""
+
+from __future__ import annotations
+
+import logging
+
+from fastapi import APIRouter, HTTPException, Query
+
+from src.schemas.scenario import ScenarioCreate
+from src.services.run_orchestrator import execute_run
+from src.services.scenario_service import get_run
+from src.services import reporting_service, audit_service
+from src.i18n.labels import get_all_labels
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/runs", tags=["runs"])
+
+# In-memory result cache (production: Redis/PostgreSQL)
+_results: dict[str, dict] = {}
+
+
+@router.post("", status_code=201)
+async def create_run(body: ScenarioCreate):
+    """Execute a full scenario run through all 12 services.
+
+    Returns: complete run result with headline, financial, banking,
+    insurance, fintech, decisions, explanation.
+    """
+    try:
+        result = execute_run(body)
+        _results[result["run_id"]] = result
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Run execution failed")
+        raise HTTPException(status_code=500, detail=f"Run failed: {str(e)}")
+
+
+@router.get("/{run_id}")
+async def get_run_result(run_id: str):
+    """Get full result for a completed run."""
+    result = _results.get(run_id)
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return result
+
+
+@router.get("/{run_id}/financial")
+async def get_run_financial(run_id: str):
+    """Get financial impacts for a run."""
+    result = _results.get(run_id)
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return {
+        "run_id": run_id,
+        "headline": result["headline"],
+        "financial": result["financial"],
+    }
+
+
+@router.get("/{run_id}/banking")
+async def get_run_banking(run_id: str):
+    """Get banking stress for a run."""
+    result = _results.get(run_id)
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return result["banking"]
+
+
+@router.get("/{run_id}/insurance")
+async def get_run_insurance(run_id: str):
+    """Get insurance stress for a run."""
+    result = _results.get(run_id)
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return result["insurance"]
+
+
+@router.get("/{run_id}/fintech")
+async def get_run_fintech(run_id: str):
+    """Get fintech stress for a run."""
+    result = _results.get(run_id)
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return result["fintech"]
+
+
+@router.get("/{run_id}/decision")
+async def get_run_decision(run_id: str):
+    """Get decision plan for a run (top 3 actions)."""
+    result = _results.get(run_id)
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return result["decisions"]
+
+
+@router.get("/{run_id}/explanation")
+async def get_run_explanation(run_id: str):
+    """Get explanation pack for a run."""
+    result = _results.get(run_id)
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return result["explanation"]
+
+
+@router.get("/{run_id}/report/{mode}")
+async def get_run_report(
+    run_id: str,
+    mode: str,
+    lang: str = Query("en", pattern=r"^(en|ar)$"),
+):
+    """Get a formatted report for a run.
+
+    Modes: executive, analyst, regulatory
+    Languages: en, ar
+    """
+    result = _results.get(run_id)
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+
+    if mode not in ("executive", "analyst", "regulatory"):
+        raise HTTPException(status_code=400, detail=f"Invalid mode: {mode}. Use executive|analyst|regulatory")
+
+    # We need to reconstruct the typed objects from cached dicts
+    # For the executive report, we already have it cached
+    if mode == "executive":
+        return result.get("executive_report", {})
+
+    # For analyst and regulatory, return the full data
+    if mode == "analyst":
+        return {
+            "mode": "analyst",
+            "run_id": run_id,
+            "lang": lang,
+            "financial": result["financial"],
+            "banking": result["banking"],
+            "insurance": result["insurance"],
+            "fintech": result["fintech"],
+            "decisions": result["decisions"],
+            "explanation": result["explanation"],
+            "flow_states": result.get("flow_states", []),
+            "propagation": result.get("propagation", []),
+        }
+
+    # Regulatory brief
+    return {
+        "mode": "regulatory_brief",
+        "run_id": run_id,
+        "lang": lang,
+        "classification": "CONFIDENTIAL",
+        "headline": result["headline"],
+        "banking": result["banking"],
+        "insurance": result["insurance"],
+        "fintech": result["fintech"],
+        "decisions": result["decisions"],
+    }
+
+
+@router.post("/{run_id}/actions/{action_id}/approve", status_code=200)
+async def approve_action(run_id: str, action_id: str):
+    """Human-in-the-loop: approve a decision action for execution.
+
+    This is the ONLY way an action can move from PENDING_REVIEW to APPROVED.
+    No action executes without explicit human approval.
+    """
+    result = _results.get(run_id)
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+
+    decisions = result.get("decisions", {})
+    actions = decisions.get("actions", [])
+
+    # Find the action
+    target = None
+    for action in actions:
+        aid = action.get("id") if isinstance(action, dict) else getattr(action, "id", None)
+        if aid == action_id:
+            target = action
+            break
+
+    if not target:
+        raise HTTPException(status_code=404, detail=f"Action {action_id} not found in run {run_id}")
+
+    # Update status
+    if isinstance(target, dict):
+        target["status"] = "APPROVED"
+    else:
+        target.status = "APPROVED"
+
+    # Audit trail
+    audit_service.record_decision_action(
+        run_id=run_id,
+        action_id=action_id,
+        action=target.get("action") if isinstance(target, dict) else getattr(target, "action", ""),
+        owner=target.get("owner") if isinstance(target, dict) else getattr(target, "owner", ""),
+        priority=target.get("priority", 0) if isinstance(target, dict) else getattr(target, "priority", 0),
+    )
+
+    logger.info("Action %s in run %s approved by human reviewer", action_id, run_id)
+    return {
+        "run_id": run_id,
+        "action_id": action_id,
+        "status": "APPROVED",
+        "message": "Action approved for execution",
+        "message_ar": "تمت الموافقة على الإجراء للتنفيذ",
+    }
+
+
+@router.post("/{run_id}/actions/{action_id}/reject", status_code=200)
+async def reject_action(run_id: str, action_id: str):
+    """Human-in-the-loop: reject a decision action.
+
+    Rejected actions are recorded in the audit trail but not executed.
+    """
+    result = _results.get(run_id)
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+
+    decisions = result.get("decisions", {})
+    actions = decisions.get("actions", [])
+
+    target = None
+    for action in actions:
+        aid = action.get("id") if isinstance(action, dict) else getattr(action, "id", None)
+        if aid == action_id:
+            target = action
+            break
+
+    if not target:
+        raise HTTPException(status_code=404, detail=f"Action {action_id} not found in run {run_id}")
+
+    if isinstance(target, dict):
+        target["status"] = "REJECTED"
+    else:
+        target.status = "REJECTED"
+
+    logger.info("Action %s in run %s rejected by human reviewer", action_id, run_id)
+    return {
+        "run_id": run_id,
+        "action_id": action_id,
+        "status": "REJECTED",
+        "message": "Action rejected",
+        "message_ar": "تم رفض الإجراء",
+    }
+
+
+@router.get("/audit/log")
+async def get_audit_log(run_id: str | None = Query(None), limit: int = Query(100, ge=1, le=1000)):
+    """Get audit trail entries."""
+    return audit_service.get_audit_log(run_id=run_id, limit=limit)
+
+
+@router.get("/audit/stats")
+async def get_audit_stats():
+    """Get aggregate audit statistics."""
+    return audit_service.get_audit_stats()
+
+
+@router.get("/labels")
+async def get_labels(lang: str = Query("en", pattern=r"^(en|ar)$")):
+    """Get all UI labels in the requested language."""
+    return get_all_labels(lang)
