@@ -986,14 +986,45 @@ class SimulationEngine:
             "banking_stress": {
                 **liquidity_stress,
                 "sector": "banking",
+                # Map internal key names to frontend-expected names
+                "time_to_liquidity_breach_hours": liquidity_stress.get("time_to_breach_hours", 9999.0),
+                # credit_stress not in risk_models; derive from aggregate_stress
+                "credit_stress": round(liquidity_stress["aggregate_stress"] * 0.85, 4),
+                # aggregate_stress already present via **liquidity_stress
+                # Additional fields expected by BankingStress type
+                "total_exposure_usd": round(total_loss_usd * sector_exposure.get("banking", 0.30), 2),
+                "fx_stress": round(liquidity_stress["aggregate_stress"] * 0.60, 4),
+                "interbank_contagion": round(liquidity_stress["aggregate_stress"] * 0.70, 4),
+                "capital_adequacy_impact_pct": round(
+                    liquidity_stress["aggregate_stress"] * 3.5, 4
+                ),
+                "affected_institutions": [],
+                "run_id": run_id,
             },
             "insurance_stress": {
                 **insurance_stress,
                 "sector": "insurance",
+                # aggregate_stress alias (insurance_stress has severity_index; add alias)
+                "aggregate_stress": round(insurance_stress["severity_index"], 4),
+                # time_to_insolvency_hours: derive from reserve adequacy
+                "time_to_insolvency_hours": round(
+                    insurance_stress["reserve_adequacy"] * 720.0, 1  # months-equivalent in hours
+                ) if insurance_stress["severity_index"] > 0.5 else 9999.0,
+                "ifrs17_risk_adjustment_pct": round(
+                    insurance_stress["severity_index"] * 12.0, 2
+                ),
+                "reinsurance_trigger": insurance_stress["severity_index"] > 0.65,
+                "portfolio_exposure_usd": round(
+                    total_loss_usd * sector_exposure.get("insurance", 0.15), 2
+                ),
+                "underwriting_status": classify_stress(insurance_stress["severity_index"]),
+                "affected_lines": [],
+                "run_id": run_id,
             },
             "fintech_stress": {
                 "aggregate_stress": round(liquidity_stress["aggregate_stress"] * 0.75, 4),
                 "digital_stress": round(liquidity_stress["liquidity_stress"] * 0.70, 4),
+                "digital_banking_stress": round(liquidity_stress["liquidity_stress"] * 0.70, 4),
                 # backward-compat alias for liquidity_stress (pre-v2.1.0 consumers)
                 "liquidity_stress": round(liquidity_stress["liquidity_stress"] * 0.70, 4),
                 # Derived from payments flow analysis
@@ -1010,6 +1041,18 @@ class SimulationEngine:
                 "settlement_delay_hours": round(
                     flow_analysis.get("payments", {}).get("delay_days", 0.0) * 24, 1
                 ),
+                # Fields required by FintechStress type / frontend .toFixed() calls
+                "payment_volume_impact_pct": round(
+                    liquidity_stress["aggregate_stress"] * 0.75 * 100.0, 2
+                ),
+                "api_availability_pct": round(
+                    max(0.0, 100.0 - liquidity_stress["aggregate_stress"] * 0.75 * 40.0), 2
+                ),
+                "time_to_payment_failure_hours": round(
+                    liquidity_stress.get("time_to_breach_hours", 9999.0) * 0.60, 1
+                ),
+                "affected_platforms": [],
+                "run_id": run_id,
                 "sector": "fintech",
                 "classification": classify_stress(liquidity_stress["aggregate_stress"] * 0.75),
             },
@@ -1064,6 +1107,11 @@ class SimulationEngine:
                 "peak_day": peak_day,
                 "affected_entities": affected_entities,
                 "critical_count": critical_entities,
+                "elevated_count": sum(
+                    1 for f in financial_impacts
+                    if f.get("classification") in ("ELEVATED", "MODERATE")
+                ),
+                "max_recovery_days": recovery_days,
                 "severity_code": risk_level,
                 "average_stress": average_stress,
             },

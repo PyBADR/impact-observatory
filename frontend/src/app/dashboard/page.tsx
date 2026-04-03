@@ -35,7 +35,8 @@ const SCENARIOS = [
   { id: "critical_port_throughput_disruption", label: "Critical Port Throughput Disruption", labelAr: "تعطّل تدفق العمليات في ميناء حيوي", severity: 0.6, horizon: 336 },
 ];
 
-function formatLoss(usd: number): string {
+function formatLoss(usd: number | null | undefined): string {
+  if (usd === null || usd === undefined || !isFinite(usd)) return "$0";
   if (usd >= 1e9) return `$${(usd / 1e9).toFixed(1)}B`;
   if (usd >= 1e6) return `$${(usd / 1e6).toFixed(0)}M`;
   return `$${Math.round(usd)}`;
@@ -273,8 +274,8 @@ export default function DashboardPage() {
           <KPICard
             label="Liquidity Breach"
             labelAr="كسر السيولة"
-            value={formatHours(banking.time_to_liquidity_breach_hours)}
-            severity={banking.time_to_liquidity_breach_hours < 168 ? "severe" : "medium"}
+            value={formatHours(banking?.time_to_liquidity_breach_hours ?? banking?.time_to_breach_hours ?? Infinity)}
+            severity={(banking?.time_to_liquidity_breach_hours ?? banking?.time_to_breach_hours ?? Infinity) < 168 ? "severe" : "medium"}
             locale={locale}
           />
         </div>
@@ -283,11 +284,11 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
           <div className="lg:col-span-3">
             <FinancialImpactPanel
-              loss_usd={headline.total_loss_usd}
-              loss_baseline_usd={headline.total_loss_usd * 1.2}
-              peak_loss_day={headline.peak_day}
+              loss_usd={headline?.total_loss_usd ?? 0}
+              loss_baseline_usd={(headline?.total_loss_usd ?? 0) * 1.2}
+              peak_loss_day={headline?.peak_day ?? 0}
               duration_days={horizonDays}
-              liquidity_breach_hours={banking.time_to_liquidity_breach_hours}
+              liquidity_breach_hours={banking?.time_to_liquidity_breach_hours ?? banking?.time_to_breach_hours ?? Infinity}
               sector_exposure={sectorExposure}
               severity_code={classifyStress(severity)}
               locale={locale}
@@ -298,15 +299,15 @@ export default function DashboardPage() {
               sector="banking"
               sectorLabel="Banking"
               sectorLabelAr="البنوك"
-              score={stressToPercent(banking.aggregate_stress)}
-              classification={banking.classification}
+              score={stressToPercent(banking?.aggregate_stress ?? 0)}
+              classification={banking?.classification ?? "NOMINAL"}
               indicators={[
-                `Liquidity: ${(banking.liquidity_stress * 100).toFixed(0)}%`,
-                `Credit: ${(banking.credit_stress * 100).toFixed(0)}%`,
+                `Liquidity: ${((banking?.liquidity_stress ?? 0) * 100).toFixed(0)}%`,
+                `Credit: ${((banking?.credit_stress ?? 0) * 100).toFixed(0)}%`,
               ]}
               indicatorsAr={[
-                `السيولة: ${(banking.liquidity_stress * 100).toFixed(0)}%`,
-                `الائتمان: ${(banking.credit_stress * 100).toFixed(0)}%`,
+                `السيولة: ${((banking?.liquidity_stress ?? 0) * 100).toFixed(0)}%`,
+                `الائتمان: ${((banking?.credit_stress ?? 0) * 100).toFixed(0)}%`,
               ]}
               locale={locale}
             />
@@ -314,15 +315,15 @@ export default function DashboardPage() {
               sector="insurance"
               sectorLabel="Insurance"
               sectorLabelAr="التأمين"
-              score={stressToPercent(insurance.aggregate_stress)}
-              classification={insurance.classification}
+              score={stressToPercent(insurance?.aggregate_stress ?? 0)}
+              classification={insurance?.classification ?? "NOMINAL"}
               indicators={[
-                `Claims: ${insurance.claims_surge_multiplier.toFixed(1)}x`,
-                `Combined: ${(insurance.combined_ratio * 100).toFixed(0)}%`,
+                `Claims: ${(insurance?.claims_surge_multiplier ?? 1).toFixed(1)}x`,
+                `Combined: ${((insurance?.combined_ratio ?? 0) * 100).toFixed(0)}%`,
               ]}
               indicatorsAr={[
-                `المطالبات: ${insurance.claims_surge_multiplier.toFixed(1)}x`,
-                `النسبة المجمعة: ${(insurance.combined_ratio * 100).toFixed(0)}%`,
+                `المطالبات: ${(insurance?.claims_surge_multiplier ?? 1).toFixed(1)}x`,
+                `النسبة المجمعة: ${((insurance?.combined_ratio ?? 0) * 100).toFixed(0)}%`,
               ]}
               locale={locale}
             />
@@ -330,15 +331,15 @@ export default function DashboardPage() {
               sector="fintech"
               sectorLabel="Fintech"
               sectorLabelAr="التقنية المالية"
-              score={stressToPercent(fintech.aggregate_stress)}
-              classification={fintech.classification}
+              score={stressToPercent(fintech?.aggregate_stress ?? 0)}
+              classification={fintech?.classification ?? "NOMINAL"}
               indicators={[
-                `Payments: -${fintech.payment_volume_impact_pct.toFixed(0)}%`,
-                `Settlement: +${fintech.settlement_delay_hours.toFixed(0)}h`,
+                `Payments: -${(fintech?.payment_volume_impact_pct ?? 0).toFixed(0)}%`,
+                `Settlement: +${(fintech?.settlement_delay_hours ?? 0).toFixed(0)}h`,
               ]}
               indicatorsAr={[
-                `المدفوعات: -${fintech.payment_volume_impact_pct.toFixed(0)}%`,
-                `التسوية: +${fintech.settlement_delay_hours.toFixed(0)}h`,
+                `المدفوعات: -${(fintech?.payment_volume_impact_pct ?? 0).toFixed(0)}%`,
+                `التسوية: +${(fintech?.settlement_delay_hours ?? 0).toFixed(0)}h`,
               ]}
               locale={locale}
             />

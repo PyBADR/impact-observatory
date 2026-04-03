@@ -52,7 +52,7 @@ export default function BusinessImpactPanel({ data, lang }: Props) {
         <div className="bg-io-surface border border-io-border rounded-xl p-4 text-center">
           <p className="text-xs text-io-secondary font-medium">{isAr ? "ذروة الخسارة" : "Peak Loss"}</p>
           <p className="text-xl font-bold text-io-danger tabular-nums">
-            ${(summary.peak_cumulative_loss / 1e9).toFixed(2)}B
+            ${((summary?.peak_cumulative_loss ?? 0) / 1e9).toFixed(2)}B
           </p>
         </div>
         <div className="bg-io-surface border border-io-border rounded-xl p-4 text-center">
@@ -64,7 +64,7 @@ export default function BusinessImpactPanel({ data, lang }: Props) {
         <div className="bg-io-surface border border-io-border rounded-xl p-4 text-center">
           <p className="text-xs text-io-secondary font-medium">{isAr ? "أول فشل" : "First Failure"}</p>
           <p className="text-xl font-bold text-io-danger tabular-nums">
-            {summary.system_time_to_first_failure_hours
+            {summary?.system_time_to_first_failure_hours != null && isFinite(summary.system_time_to_first_failure_hours)
               ? `${summary.system_time_to_first_failure_hours.toFixed(0)}h`
               : "—"}
           </p>
@@ -112,7 +112,7 @@ export default function BusinessImpactPanel({ data, lang }: Props) {
                   />
                 </div>
                 <span className="text-[10px] text-io-secondary w-20 text-right tabular-nums">
-                  ${(point.cumulative_loss / 1e9).toFixed(2)}B
+                  ${((point?.cumulative_loss ?? 0) / 1e9).toFixed(2)}B
                 </span>
                 <span className={`text-[9px] w-16 text-right font-medium ${
                   point.status === "critical" ? "text-red-600" :
@@ -155,7 +155,7 @@ export default function BusinessImpactPanel({ data, lang }: Props) {
                     <td className="py-2 text-right font-bold text-io-danger tabular-nums">
                       {ttf.time_to_failure_hours ? `${ttf.time_to_failure_hours}h` : "—"}
                     </td>
-                    <td className="py-2 text-right tabular-nums">{(ttf.confidence_score * 100).toFixed(0)}%</td>
+                    <td className="py-2 text-right tabular-nums">{((ttf?.confidence_score ?? 0) * 100).toFixed(0)}%</td>
                     <td className="py-2 text-center">
                       {ttf.failure_reached_within_horizon
                         ? <span className="text-red-600 font-bold">⚠</span>

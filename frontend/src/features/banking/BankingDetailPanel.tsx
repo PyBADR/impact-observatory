@@ -143,12 +143,12 @@ export default function BankingDetailPanel({
           score={Math.round(data.aggregate_stress * 100)}
           classification={data.classification}
           indicators={[
-            `Liquidity ${(data.liquidity_stress * 100).toFixed(0)}%`,
-            `Credit ${(data.credit_stress * 100).toFixed(0)}%`,
+            `Liquidity ${((data?.liquidity_stress ?? 0) * 100).toFixed(0)}%`,
+            `Credit ${((data?.credit_stress ?? 0) * 100).toFixed(0)}%`,
           ]}
           indicatorsAr={[
-            `السيولة ${(data.liquidity_stress * 100).toFixed(0)}%`,
-            `الائتمان ${(data.credit_stress * 100).toFixed(0)}%`,
+            `السيولة ${((data?.liquidity_stress ?? 0) * 100).toFixed(0)}%`,
+            `الائتمان ${((data?.credit_stress ?? 0) * 100).toFixed(0)}%`,
           ]}
           locale={lang}
         />
@@ -158,7 +158,7 @@ export default function BankingDetailPanel({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-io-surface border border-io-border rounded-xl p-4 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wider text-io-secondary mb-1">{t.aggregate}</p>
-          <p className="text-2xl font-bold tabular-nums text-io-primary">{(data.aggregate_stress * 100).toFixed(1)}%</p>
+          <p className="text-2xl font-bold tabular-nums text-io-primary">{((data?.aggregate_stress ?? 0) * 100).toFixed(1)}%</p>
         </div>
         <div className="bg-io-surface border border-io-border rounded-xl p-4 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wider text-io-secondary mb-1">{t.total_exposure}</p>
@@ -170,7 +170,7 @@ export default function BankingDetailPanel({
         </div>
         <div className="bg-io-surface border border-io-border rounded-xl p-4 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wider text-io-secondary mb-1">{t.car_impact}</p>
-          <p className="text-2xl font-bold tabular-nums text-io-danger">-{data.capital_adequacy_impact_pct.toFixed(2)}%</p>
+          <p className="text-2xl font-bold tabular-nums text-io-danger">-{(data?.capital_adequacy_impact_pct ?? 0).toFixed(2)}%</p>
         </div>
       </div>
 
@@ -200,13 +200,13 @@ export default function BankingDetailPanel({
           <div className="flex justify-between text-sm border-b border-io-border/50 pb-2">
             <span className="text-io-secondary">{t.car_impact}</span>
             <span className={`font-semibold ${data.capital_adequacy_impact_pct > 2 ? "text-io-danger" : "text-io-warning"}`}>
-              -{data.capital_adequacy_impact_pct.toFixed(2)}%
+              -{(data?.capital_adequacy_impact_pct ?? 0).toFixed(2)}%
             </span>
           </div>
           <div className="flex justify-between text-sm border-b border-io-border/50 pb-2">
             <span className="text-io-secondary">{t.contagion}</span>
-            <span className={`font-semibold ${data.interbank_contagion > 0.5 ? "text-io-danger" : "text-io-primary"}`}>
-              {(data.interbank_contagion * 100).toFixed(1)}%
+            <span className={`font-semibold ${(data?.interbank_contagion ?? 0) > 0.5 ? "text-io-danger" : "text-io-primary"}`}>
+              {((data?.interbank_contagion ?? 0) * 100).toFixed(1)}%
             </span>
           </div>
         </div>

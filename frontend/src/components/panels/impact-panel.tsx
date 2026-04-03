@@ -24,12 +24,12 @@ export function ImpactPanel({ result, isAr }: Props) {
       <div className="grid grid-cols-2 gap-2">
         <ScoreCard
           label={isAr ? "إجهاد النظام" : "System Stress"}
-          value={result.system_stress}
+          value={result.system_stress_score ?? result.unified_risk_score ?? 0}
           color="danger"
         />
         <ScoreCard
           label={isAr ? "خسارة اقتصادية" : "Econ. Loss"}
-          value={`$${(result.total_economic_loss_usd / 1e9).toFixed(2)}B`}
+          value={`$${((result.headline?.total_loss_usd ?? result.total_economic_loss_usd ?? 0) / 1e9).toFixed(2)}B`}
           color="warning"
           isText
         />

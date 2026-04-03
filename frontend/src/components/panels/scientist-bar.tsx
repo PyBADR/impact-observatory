@@ -18,20 +18,23 @@ export function ScientistBar({ result, isAr }: Props) {
     );
   }
 
+  const systemStressScore: number = result.system_stress_score ?? result.unified_risk_score ?? 0;
+  const totalLossUsd: number = result.headline?.total_loss_usd ?? result.total_economic_loss_usd ?? 0;
+
   const metrics = [
     {
       label: isAr ? "طاقة النظام" : "System Energy",
-      value: `${(result.system_stress * 100).toFixed(1)}%`,
+      value: `${(systemStressScore * 100).toFixed(1)}%`,
       color:
-        result.system_stress > 0.5
+        systemStressScore > 0.5
           ? "text-io-danger"
-          : result.system_stress > 0.2
+          : systemStressScore > 0.2
           ? "text-io-warning"
           : "text-io-success",
     },
     {
       label: isAr ? "خسارة اقتصادية" : "Econ. Loss",
-      value: `$${(result.total_economic_loss_usd / 1e9).toFixed(2)}B`,
+      value: `$${(totalLossUsd / 1e9).toFixed(2)}B`,
       color: "text-io-warning",
     },
     {

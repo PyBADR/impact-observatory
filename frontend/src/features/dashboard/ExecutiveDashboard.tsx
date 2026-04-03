@@ -24,7 +24,8 @@ import { FinancialImpactPanel } from "@/components/FinancialImpactPanel";
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-function formatUSD(value: number): string {
+function formatUSD(value: number | null | undefined): string {
+  if (value === null || value === undefined || !isFinite(value)) return "$0";
   if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
   if (value >= 1e6) return `$${(value / 1e6).toFixed(0)}M`;
   return `$${value.toLocaleString()}`;
@@ -146,7 +147,7 @@ function SectorStressCard({
         <Badge level={classification} />
       </div>
       <p className="text-2xl font-bold tabular-nums text-io-primary mb-3">
-        {(stress * 100).toFixed(1)}%
+        {((stress ?? 0) * 100).toFixed(1)}%
       </p>
       <div className="space-y-1.5">
         {metrics.map((m, i) => (
@@ -273,12 +274,12 @@ export default function ExecutiveDashboard({
               score={Math.round(banking.aggregate_stress * 100)}
               classification={banking.classification}
               indicators={[
-                `Liquidity ${(banking.liquidity_stress * 100).toFixed(0)}%`,
-                `Credit ${(banking.credit_stress * 100).toFixed(0)}%`,
+                `Liquidity ${((banking?.liquidity_stress ?? 0) * 100).toFixed(0)}%`,
+                `Credit ${((banking?.credit_stress ?? 0) * 100).toFixed(0)}%`,
               ]}
               indicatorsAr={[
-                `السيولة ${(banking.liquidity_stress * 100).toFixed(0)}%`,
-                `الائتمان ${(banking.credit_stress * 100).toFixed(0)}%`,
+                `السيولة ${((banking?.liquidity_stress ?? 0) * 100).toFixed(0)}%`,
+                `الائتمان ${((banking?.credit_stress ?? 0) * 100).toFixed(0)}%`,
               ]}
               locale={lang}
             />
@@ -291,12 +292,12 @@ export default function ExecutiveDashboard({
               score={Math.round(insurance.aggregate_stress * 100)}
               classification={insurance.classification}
               indicators={[
-                `Claims ${insurance.claims_surge_multiplier.toFixed(2)}x`,
-                `Combined ${(insurance.combined_ratio * 100).toFixed(0)}%`,
+                `Claims ${(insurance?.claims_surge_multiplier ?? 1).toFixed(2)}x`,
+                `Combined ${((insurance?.combined_ratio ?? 0) * 100).toFixed(0)}%`,
               ]}
               indicatorsAr={[
-                `المطالبات ${insurance.claims_surge_multiplier.toFixed(2)}x`,
-                `النسبة ${(insurance.combined_ratio * 100).toFixed(0)}%`,
+                `المطالبات ${(insurance?.claims_surge_multiplier ?? 1).toFixed(2)}x`,
+                `النسبة ${((insurance?.combined_ratio ?? 0) * 100).toFixed(0)}%`,
               ]}
               locale={lang}
             />
@@ -309,12 +310,12 @@ export default function ExecutiveDashboard({
               score={Math.round(fintech.aggregate_stress * 100)}
               classification={fintech.classification}
               indicators={[
-                `Payments −${fintech.payment_volume_impact_pct.toFixed(1)}%`,
-                `API ${fintech.api_availability_pct.toFixed(0)}% up`,
+                `Payments −${(fintech?.payment_volume_impact_pct ?? 0).toFixed(1)}%`,
+                `API ${(fintech?.api_availability_pct ?? 100).toFixed(0)}% up`,
               ]}
               indicatorsAr={[
-                `المدفوعات −${fintech.payment_volume_impact_pct.toFixed(1)}%`,
-                `الإتاحة ${fintech.api_availability_pct.toFixed(0)}%`,
+                `المدفوعات −${(fintech?.payment_volume_impact_pct ?? 0).toFixed(1)}%`,
+                `الإتاحة ${(fintech?.api_availability_pct ?? 100).toFixed(0)}%`,
               ]}
               locale={lang}
             />
@@ -355,7 +356,7 @@ export default function ExecutiveDashboard({
                     <strong>{t.owner}:</strong> {action.owner}
                   </span>
                   <span>
-                    <strong>{t.priority}:</strong> {action.priority.toFixed(1)}
+                    <strong>{t.priority}:</strong> {(action?.priority ?? 0).toFixed(1)}
                   </span>
                   <span>
                     <strong>{t.loss_avoided}:</strong> {formatUSD(action.loss_avoided_usd)}

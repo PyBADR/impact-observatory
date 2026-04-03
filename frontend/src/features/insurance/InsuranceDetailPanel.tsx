@@ -160,12 +160,12 @@ export default function InsuranceDetailPanel({
           score={Math.round(data.aggregate_stress * 100)}
           classification={data.classification}
           indicators={[
-            `Claims ${data.claims_surge_multiplier.toFixed(2)}x`,
-            `Combined ${(data.combined_ratio * 100).toFixed(0)}%`,
+            `Claims ${(data?.claims_surge_multiplier ?? 1).toFixed(2)}x`,
+            `Combined ${((data?.combined_ratio ?? 0) * 100).toFixed(0)}%`,
           ]}
           indicatorsAr={[
-            `المطالبات ${data.claims_surge_multiplier.toFixed(2)}x`,
-            `النسبة ${(data.combined_ratio * 100).toFixed(0)}%`,
+            `المطالبات ${(data?.claims_surge_multiplier ?? 1).toFixed(2)}x`,
+            `النسبة ${((data?.combined_ratio ?? 0) * 100).toFixed(0)}%`,
           ]}
           locale={lang}
         />
@@ -175,11 +175,11 @@ export default function InsuranceDetailPanel({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-io-surface border border-io-border rounded-xl p-4 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wider text-io-secondary mb-1">{t.aggregate}</p>
-          <p className="text-2xl font-bold tabular-nums text-io-primary">{(data.aggregate_stress * 100).toFixed(1)}%</p>
+          <p className="text-2xl font-bold tabular-nums text-io-primary">{((data?.aggregate_stress ?? 0) * 100).toFixed(1)}%</p>
         </div>
         <div className="bg-io-surface border border-io-border rounded-xl p-4 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wider text-io-secondary mb-1">{t.claims_surge}</p>
-          <p className="text-2xl font-bold tabular-nums text-io-primary">{data.claims_surge_multiplier.toFixed(2)}x</p>
+          <p className="text-2xl font-bold tabular-nums text-io-primary">{(data?.claims_surge_multiplier ?? 1).toFixed(2)}x</p>
         </div>
         <div className="bg-io-surface border border-io-border rounded-xl p-4 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wider text-io-secondary mb-1">{t.portfolio}</p>
@@ -218,12 +218,12 @@ export default function InsuranceDetailPanel({
           </div>
           <div className="flex justify-between items-center text-sm border-b border-io-border/50 pb-2">
             <span className="text-io-secondary">{t.ifrs17}</span>
-            <span className="font-semibold text-io-primary">{data.ifrs17_risk_adjustment_pct.toFixed(2)}%</span>
+            <span className="font-semibold text-io-primary">{(data?.ifrs17_risk_adjustment_pct ?? 0).toFixed(2)}%</span>
           </div>
           <div className="flex justify-between items-center text-sm border-b border-io-border/50 pb-2">
             <span className="text-io-secondary">{t.claims_surge}</span>
-            <span className={`font-semibold ${data.claims_surge_multiplier > 2 ? "text-io-danger" : data.claims_surge_multiplier > 1.5 ? "text-io-warning" : "text-io-primary"}`}>
-              {data.claims_surge_multiplier.toFixed(2)}x
+            <span className={`font-semibold ${(data?.claims_surge_multiplier ?? 1) > 2 ? "text-io-danger" : (data?.claims_surge_multiplier ?? 1) > 1.5 ? "text-io-warning" : "text-io-primary"}`}>
+              {(data?.claims_surge_multiplier ?? 1).toFixed(2)}x
             </span>
           </div>
         </div>

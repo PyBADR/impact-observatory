@@ -53,12 +53,15 @@ function formatHours(hours: number): string {
   return `${Math.round(hours)}h`;
 }
 
-function PriorityBar({ urgency, value, regulatory }: { urgency: number; value: number; regulatory: number }) {
-  const total = urgency + value + regulatory;
+function PriorityBar({ urgency, value, regulatory }: { urgency: number | null | undefined; value: number | null | undefined; regulatory: number | null | undefined }) {
+  const u = urgency ?? 0;
+  const v = value ?? 0;
+  const r = regulatory ?? 0;
+  const total = u + v + r;
   if (total === 0) return null;
-  const uPct = (urgency / total) * 100;
-  const vPct = (value / total) * 100;
-  const rPct = (regulatory / total) * 100;
+  const uPct = (u / total) * 100;
+  const vPct = (v / total) * 100;
+  const rPct = (r / total) * 100;
 
   return (
     <div className="space-y-1">
@@ -68,9 +71,9 @@ function PriorityBar({ urgency, value, regulatory }: { urgency: number; value: n
         <div className="bg-io-warning" style={{ width: `${rPct}%` }} title="Regulatory Risk" />
       </div>
       <div className="flex gap-3 text-[10px] text-io-secondary">
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-io-danger inline-block" /> Urgency {urgency.toFixed(1)}</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-io-accent inline-block" /> Value {value.toFixed(1)}</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-io-warning inline-block" /> Reg. Risk {regulatory.toFixed(1)}</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-io-danger inline-block" /> Urgency {u.toFixed(1)}</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-io-accent inline-block" /> Value {v.toFixed(1)}</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-io-warning inline-block" /> Reg. Risk {r.toFixed(1)}</span>
       </div>
     </div>
   );
@@ -225,7 +228,7 @@ export default function DecisionDetailPanel({
                       {lang === "ar" ? action.action_ar || action.action : action.action}
                     </td>
                     <td className="py-2 text-io-secondary">{action.sector}</td>
-                    <td className="py-2 text-right tabular-nums font-semibold">{action.priority.toFixed(1)}</td>
+                    <td className="py-2 text-right tabular-nums font-semibold">{(action?.priority ?? 0).toFixed(1)}</td>
                     <td className="py-2 text-right tabular-nums text-io-success">{formatUSD(action.loss_avoided_usd)}</td>
                     <td className="py-2 text-right tabular-nums">{formatUSD(action.cost_usd)}</td>
                   </tr>
@@ -269,7 +272,7 @@ export default function DecisionDetailPanel({
                   </p>
                   <div className="flex gap-3 mt-1 text-xs text-io-secondary">
                     <span>Impact: {formatUSD(step.impact_usd)}</span>
-                    <span>Stress: +{(step.stress_delta * 100).toFixed(1)}%</span>
+                    <span>Stress: +{((step?.stress_delta ?? 0) * 100).toFixed(1)}%</span>
                     <span className="text-io-accent">{step.mechanism}</span>
                   </div>
                 </div>
