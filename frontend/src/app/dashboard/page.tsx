@@ -388,7 +388,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-io-bg" dir={locale === "ar" ? "rtl" : "ltr"}>
-      <Nav locale={locale} onLocaleToggle={() => setLocale(locale === "en" ? "ar" : "en")} />
+      <Nav locale={locale} onLocaleToggle={() => setLocale(locale === "en" ? "ar" : "en")} runId={data.run_id} />
 
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
         {/* Scenario selector */}
@@ -624,7 +624,16 @@ export default function DashboardPage() {
 }
 
 // ── Nav Component ──
-function Nav({ locale, onLocaleToggle }: { locale: Language; onLocaleToggle: () => void }) {
+function Nav({
+  locale,
+  onLocaleToggle,
+  runId,
+}: {
+  locale: Language;
+  onLocaleToggle: () => void;
+  runId?: string;
+}) {
+  const qs = runId ? `?runId=${runId}` : "";
   return (
     <nav className="bg-white border-b border-io-border px-4 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -641,6 +650,15 @@ function Nav({ locale, onLocaleToggle }: { locale: Language; onLocaleToggle: () 
           </Link>
           <Link href="/control-room" className="text-sm text-io-secondary hover:text-io-accent transition-colors">
             {locale === "ar" ? "الهيكلية" : "Architecture"}
+          </Link>
+          <Link href={`/graph-explorer${qs}`} className="text-sm text-io-secondary hover:text-io-accent transition-colors">
+            {locale === "ar" ? "مستكشف الشبكة" : "Graph Explorer"}
+          </Link>
+          <Link href={`/regulatory${qs}`} className="text-sm text-io-secondary hover:text-io-accent transition-colors">
+            {locale === "ar" ? "الامتثال" : "Regulatory"}
+          </Link>
+          <Link href={`/timeline${qs}`} className="text-sm text-io-secondary hover:text-io-accent transition-colors">
+            {locale === "ar" ? "الجدول الزمني" : "Timeline"}
           </Link>
         </div>
         <button

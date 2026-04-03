@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from src.engines.math.decay import haversine_km, spatial_decay, temporal_decay
+from src.engines.math_core.decay import haversine_km, spatial_decay, temporal_decay
 
 
 class TestSpatialDecay:

@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.engines.math.scoring import (
+from src.engines.math_core.scoring import (
     composite_risk_score,
     confidence_score,
     disruption_score,

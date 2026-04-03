@@ -168,6 +168,18 @@ export default function ControlRoomPage() {
             >
               {isAr ? "رسم بياني" : "Graph"}
             </Link>
+            <Link
+              href="/regulatory"
+              className="px-2 py-1 bg-io-bg text-io-secondary border border-io-border rounded hover:text-io-primary transition"
+            >
+              {isAr ? "الامتثال" : "Regulatory"}
+            </Link>
+            <Link
+              href="/timeline"
+              className="px-2 py-1 bg-io-bg text-io-secondary border border-io-border rounded hover:text-io-primary transition"
+            >
+              {isAr ? "الجدول الزمني" : "Timeline"}
+            </Link>
           </div>
 
           {/* Insurance toggle */}

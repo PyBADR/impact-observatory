@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from src.engines.math.propagation import (
+from src.engines.math_core.propagation_matrix import (
     build_adjacency_matrix,
     compute_gdp_loss,
     compute_sector_impacts,
