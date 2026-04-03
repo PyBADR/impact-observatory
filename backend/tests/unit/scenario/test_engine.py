@@ -36,8 +36,8 @@ class TestScenarioEngine:
         assert len(baseline) == len(GCC_NODES)
         assert all(0 <= v <= 1 for v in baseline)
 
-    def test_hormuz_disruption(self, engine):
-        scenario = get_template("hormuz_disruption")
+    def test_hormuz_chokepoint_disruption(self, engine):
+        scenario = get_template("hormuz_chokepoint_disruption")
         assert scenario is not None
         result = engine.run(scenario)
 
@@ -55,7 +55,7 @@ class TestScenarioEngine:
         assert any("aviation" in i.target_entity_id or "airspace" in i.target_entity_id for i in result.impacts)
 
     def test_triple_cascade_highest_stress(self, engine):
-        hormuz = engine.run(get_template("hormuz_disruption"))
+        hormuz = engine.run(get_template("hormuz_chokepoint_disruption"))
         triple = engine.run(get_template("triple_cascade"))
 
         # Triple cascade should produce higher system stress
@@ -71,7 +71,7 @@ class TestScenarioEngine:
             assert isinstance(result.recommendations, list)
 
     def test_impacts_have_deltas(self, engine):
-        scenario = get_template("hormuz_disruption")
+        scenario = get_template("hormuz_chokepoint_disruption")
         result = engine.run(scenario)
 
         for impact in result.impacts:

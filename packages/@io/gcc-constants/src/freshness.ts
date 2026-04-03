@@ -1,5 +1,5 @@
 /**
- * @deevo/gcc-constants — Freshness & Provenance Tracking
+ * @io/gcc-constants — Freshness & Provenance Tracking
  *
  * Tracks the last update date of constants and maps each constant
  * to its authoritative source. Critical for data governance and

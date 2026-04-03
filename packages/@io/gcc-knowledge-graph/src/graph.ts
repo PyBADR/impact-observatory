@@ -1,5 +1,5 @@
 /**
- * @deevo/gcc-knowledge-graph — GCCGraph Class
+ * @io/gcc-knowledge-graph — GCCGraph Class
  *
  * In-memory graph structure with O(1) lookups, adjacency traversal,
  * layer filtering, and scenario shock application.

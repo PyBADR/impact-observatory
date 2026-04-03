@@ -57,7 +57,7 @@ class TestScenarioRegression:
     def test_hormuz_high_stress(self, client):
         """Hormuz disruption should produce elevated or critical stress."""
         r = client.post("/api/v1/scenario/run", json={
-            "scenario_id": "hormuz_disruption",
+            "scenario_id": "hormuz_chokepoint_disruption",
             "severity_override": 0.9,
         })
         data = r.json()
@@ -66,11 +66,11 @@ class TestScenarioRegression:
     def test_severity_scaling(self, client):
         """Higher severity should produce higher stress."""
         r_low = client.post("/api/v1/scenario/run", json={
-            "scenario_id": "hormuz_disruption",
+            "scenario_id": "hormuz_chokepoint_disruption",
             "severity_override": 0.3,
         })
         r_high = client.post("/api/v1/scenario/run", json={
-            "scenario_id": "hormuz_disruption",
+            "scenario_id": "hormuz_chokepoint_disruption",
             "severity_override": 0.9,
         })
         assert r_high.json()["system_stress"] >= r_low.json()["system_stress"]

@@ -1,5 +1,5 @@
 /**
- * @deevo/gcc-constants — GCC Macro-Financial Constants
+ * @io/gcc-constants — GCC Macro-Financial Constants
  *
  * Canonical source for all GCC baseline values used across:
  * - Scenario engines (compute chain steps)

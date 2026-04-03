@@ -10,16 +10,16 @@ from src.schemas.base import VersionedModel
 
 class ScenarioCreate(VersionedModel):
     """Input to create a scenario run."""
-    template_id: str = Field(..., description="e.g. hormuz_disruption, yemen_escalation")
+    scenario_id: str = Field(..., description="e.g. hormuz_chokepoint_disruption, energy_market_volatility_shock")
     severity: float = Field(..., ge=0.0, le=1.0, description="0.0–1.0 severity scale")
     horizon_hours: int = Field(336, ge=1, le=8760, description="Projection horizon in hours (default 14 days)")
-    label: str | None = Field(None, description="Human-readable label e.g. 'Hormuz Closure - 14D - Severe'")
+    label: str | None = Field(None, description="Human-readable label e.g. 'Strategic Maritime Chokepoint Disruption - 14D'")
 
 
 class Scenario(VersionedModel):
     """Full scenario record."""
     id: str
-    template_id: str
+    scenario_id: str
     severity: float
     horizon_hours: int
     label: str | None = None

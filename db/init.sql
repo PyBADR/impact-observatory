@@ -131,14 +131,14 @@ CREATE TABLE IF NOT EXISTS scenario_templates (
 -- ============================================================================
 INSERT INTO scenario_templates (template_id, title_en, title_ar, scenario_type, default_severity, default_horizon_hours)
 VALUES
-    ('hormuz_disruption', 'Strait of Hormuz Closure', 'إغلاق مضيق هرمز', 'disruption', 0.8, 336),
-    ('yemen_escalation', 'Yemen Escalation', 'تصعيد يمني', 'escalation', 0.7, 336),
-    ('cyber_attack', 'Cyber Attack on Financial Infrastructure', 'هجوم سيبراني على البنية المالية', 'cascading', 0.6, 168),
-    ('oil_price_shock', 'Oil Price Shock', 'صدمة أسعار النفط', 'disruption', 0.8, 504),
-    ('banking_stress', 'Regional Banking Stress', 'ضغط بنكي إقليمي', 'cascading', 0.7, 336),
-    ('port_disruption', 'Major Port Disruption', 'تعطل ميناء رئيسي', 'disruption', 0.6, 240),
-    ('iran_sanctions', 'Iran Sanctions Escalation', 'تصعيد عقوبات إيران', 'escalation', 0.7, 504),
-    ('gulf_airspace', 'Gulf Airspace Restriction', 'تقييد المجال الجوي الخليجي', 'disruption', 0.5, 168)
+    ('hormuz_chokepoint_disruption', 'Strategic Maritime Chokepoint Disruption (Hormuz)', 'تعطّل نقطة اختناق بحرية استراتيجية (مضيق هرمز)', 'disruption', 0.8, 336),
+    ('red_sea_trade_corridor_instability', 'Red Sea Trade Corridor Instability', 'اضطراب ممر التجارة في البحر الأحمر', 'escalation', 0.7, 336),
+    ('financial_infrastructure_cyber_disruption', 'Financial Infrastructure Cyber Disruption', 'تعطّل البنية المالية نتيجة هجوم سيبراني', 'cascading', 0.6, 168),
+    ('energy_market_volatility_shock', 'Energy Market Volatility Shock', 'صدمة تقلبات أسواق الطاقة', 'disruption', 0.8, 504),
+    ('regional_liquidity_stress_event', 'Regional Liquidity Stress Event', 'أزمة سيولة مصرفية إقليمية', 'cascading', 0.7, 336),
+    ('critical_port_throughput_disruption', 'Critical Port Throughput Disruption', 'تعطّل تدفق العمليات في ميناء حيوي', 'disruption', 0.6, 240),
+    ('cross_border_sanctions_escalation', 'Cross-Border Sanctions Escalation', 'تصاعد العقوبات العابرة للحدود', 'escalation', 0.7, 504),
+    ('regional_airspace_constraint', 'Regional Airspace Constraint Scenario', 'سيناريو قيود المجال الجوي الإقليمي', 'disruption', 0.5, 168)
 ON CONFLICT (template_id) DO NOTHING;
 
 -- Grant privileges

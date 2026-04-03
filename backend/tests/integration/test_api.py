@@ -142,7 +142,7 @@ class TestScenarios:
 
     def test_run_scenario(self, client):
         r = client.post("/api/v1/scenario/run", json={
-            "scenario_id": "hormuz_disruption",
+            "scenario_id": "hormuz_chokepoint_disruption",
             "severity_override": 0.7,
         })
         assert r.status_code == 200

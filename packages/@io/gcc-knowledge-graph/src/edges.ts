@@ -1,5 +1,5 @@
 /**
- * @deevo/gcc-knowledge-graph — Edge Registry
+ * @io/gcc-knowledge-graph — Edge Registry
  *
  * 191 weighted causal dependencies across 5 layers.
  * Canonical source — extracted from frontend/lib/gcc-graph.ts.

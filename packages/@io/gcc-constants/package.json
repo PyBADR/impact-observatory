@@ -1,5 +1,5 @@
 {
-  "name": "@deevo/gcc-constants",
+  "name": "@io/gcc-constants",
   "version": "1.0.0",
   "description": "GCC macro-financial constants and sector baselines — server-side canonical source",
   "main": "dist/index.js",

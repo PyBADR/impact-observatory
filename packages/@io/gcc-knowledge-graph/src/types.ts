@@ -1,5 +1,5 @@
 /**
- * @deevo/gcc-knowledge-graph — Type Definitions
+ * @io/gcc-knowledge-graph — Type Definitions
  *
  * GCC Reality Graph: 5-Layer Causal Dependency Model v5.0
  * Extracted from frontend/lib/gcc-graph.ts — server-side canonical source.

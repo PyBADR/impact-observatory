@@ -1,5 +1,5 @@
 /**
- * @deevo/gcc-knowledge-graph — Scenario Registry
+ * @io/gcc-knowledge-graph — Scenario Registry
  *
  * 17 Strategic GCC Command Scenarios across 6 groups.
  * Canonical source — extracted from frontend/lib/gcc-graph.ts.

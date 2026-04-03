@@ -5,7 +5,7 @@
 // Maps to backend schemas exactly
 
 export interface ScenarioCreate {
-  template_id: string;
+  scenario_id: string;
   severity: number;
   horizon_hours: number;
   label?: string;
@@ -172,7 +172,7 @@ export interface RunResult {
   status: string;
   pipeline_stages_completed: number;
   scenario: {
-    template_id: string;
+    scenario_id: string;
     label: string;
     label_ar: string | null;
     severity: number;
@@ -318,3 +318,15 @@ export type Classification =
 export type ViewMode = "executive" | "analyst" | "regulatory";
 export type Language = "en" | "ar";
 export type Role = "viewer" | "analyst" | "operator" | "admin" | "regulator";
+
+export interface RunSummary {
+  run_id: string;
+  scenario_id: string;
+  severity: number;
+  status: string;
+  headline_loss_usd: number;
+  peak_day: number;
+  severity_code: string | null;
+  created_at: string | null;
+  duration_ms: number | null;
+}

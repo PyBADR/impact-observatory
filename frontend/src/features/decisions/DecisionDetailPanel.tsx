@@ -18,6 +18,7 @@ import type {
   Classification,
   Language,
 } from "@/types/observatory";
+import { DecisionActionCard } from "@/components/DecisionActionCard";
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -179,43 +180,23 @@ export default function DecisionDetailPanel({
       <div className="bg-io-surface border border-io-border rounded-xl p-5 shadow-sm">
         <h3 className="text-sm font-semibold text-io-primary uppercase tracking-wider mb-4">{t.prioritized_actions}</h3>
         <div className="space-y-4">
-          {decisions.actions.map((action, i) => (
-            <div key={action.id} className="p-4 rounded-lg bg-io-bg border border-io-border">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-io-accent text-white flex items-center justify-center text-lg font-bold">
-                  {i + 1}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-io-primary text-base">
-                    {lang === "ar" ? action.action_ar || action.action : action.action}
-                  </p>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-io-secondary">
-                    <span><strong>{t.sector}:</strong> {action.sector}</span>
-                    <span><strong>{t.owner}:</strong> {action.owner}</span>
-                    <span><strong>{t.time_to_act}:</strong> {formatHours(action.time_to_act_hours)}</span>
-                    <span><strong>{t.confidence}:</strong> {(action.confidence * 100).toFixed(0)}%</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3 mt-3 text-sm">
-                    <div className="bg-io-surface border border-io-border rounded-lg p-2 text-center">
-                      <p className="text-[10px] text-io-secondary uppercase">{t.loss_avoided}</p>
-                      <p className="font-bold text-io-success tabular-nums">{formatUSD(action.loss_avoided_usd)}</p>
-                    </div>
-                    <div className="bg-io-surface border border-io-border rounded-lg p-2 text-center">
-                      <p className="text-[10px] text-io-secondary uppercase">{t.cost}</p>
-                      <p className="font-bold text-io-primary tabular-nums">{formatUSD(action.cost_usd)}</p>
-                    </div>
-                    <div className="bg-io-surface border border-io-border rounded-lg p-2 text-center">
-                      <p className="text-[10px] text-io-secondary uppercase">{t.net_benefit}</p>
-                      <p className="font-bold text-io-accent tabular-nums">{formatUSD(action.loss_avoided_usd - action.cost_usd)}</p>
-                    </div>
-                  </div>
-                  <div className="mt-3">
-                    <PriorityBar urgency={action.urgency} value={action.value} regulatory={action.regulatory_risk} />
-                  </div>
-                </div>
-                <Badge level={action.urgency > 50 ? "CRITICAL" : action.urgency > 10 ? "ELEVATED" : "MODERATE"} />
-              </div>
-            </div>
+          {decisions.actions.slice(0, 3).map((action, i) => (
+            <DecisionActionCard
+              key={action.id}
+              rank={(i + 1) as 1 | 2 | 3}
+              actionId={action.id}
+              priority_score={Math.min(action.priority / 100, 1)}
+              title_en={action.action}
+              title_ar={action.action_ar || action.action}
+              urgency={Math.min(action.urgency / 100, 1)}
+              value={Math.min(action.value / 100, 1)}
+              time_to_act_hours={action.time_to_act_hours}
+              cost_usd={action.cost_usd}
+              loss_avoided_usd={action.loss_avoided_usd}
+              status="PENDING_REVIEW"
+              locale={lang}
+              onSubmitForReview={() => {}}
+            />
           ))}
         </div>
       </div>

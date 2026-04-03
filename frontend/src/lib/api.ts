@@ -17,6 +17,7 @@ import type {
   GraphNode,
   GraphEdge,
 } from "@/types";
+import type { RunSummary } from "@/types/observatory";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -36,10 +37,17 @@ async function fetchJSON<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  // ---- Health ----
+  // ================================================================
+  // DEPRECATED — Legacy V0 API (globe-only, pre-Observatory)
+  // Use api.observatory.* for all new code.
+  // Routes below target /events /flights /vessels /scores /graph etc.
+  // These endpoints no longer exist in the active backend.
+  // ================================================================
+
+  /** @deprecated Legacy V0 — use api.observatory.run() */
   health: () => fetchJSON<{ status: string }>("/health"),
 
-  // ---- Events ----
+  /** @deprecated Legacy V0 — no active /events route */
   events: (params?: { limit?: number; severity_min?: number; event_type?: string }) => {
     const qs = new URLSearchParams();
     if (params?.limit) qs.set("limit", String(params.limit));
@@ -48,7 +56,7 @@ export const api = {
     return fetchJSON<EventsResponse>(`/events?${qs}`);
   },
 
-  // ---- Flights ----
+  /** @deprecated Legacy V0 — no active /flights route */
   flights: (params?: { limit?: number; status?: string }) => {
     const qs = new URLSearchParams();
     if (params?.limit) qs.set("limit", String(params.limit));
@@ -56,7 +64,7 @@ export const api = {
     return fetchJSON<FlightsResponse>(`/flights?${qs}`);
   },
 
-  // ---- Vessels ----
+  /** @deprecated Legacy V0 — no active /vessels route */
   vessels: (params?: { limit?: number; vessel_type?: string }) => {
     const qs = new URLSearchParams();
     if (params?.limit) qs.set("limit", String(params.limit));
@@ -64,19 +72,20 @@ export const api = {
     return fetchJSON<VesselsResponse>(`/vessels?${qs}`);
   },
 
-  // ---- Threat Field ----
+  /** @deprecated Legacy V0 — no active /events/threat-field route */
   threatField: (lat: number, lng: number) =>
     fetchJSON<{ threat_intensity: number; top_contributors: { id: string; contribution: number }[] }>(
       `/events/threat-field?lat=${lat}&lng=${lng}`
     ),
 
-  // ---- Scoring ----
+  /** @deprecated Legacy V0 — use api.observatory.run() for scenario-driven risk */
   riskScore: (body: Record<string, number>) =>
     fetchJSON<RiskScore>("/scores/risk", {
       method: "POST",
       body: JSON.stringify(body),
     }),
 
+  /** @deprecated Legacy V0 — use api.observatory.run() for scenario-driven risk */
   riskScores: (params?: { sector?: string; region?: string; limit?: number }) => {
     const qs = new URLSearchParams();
     if (params?.sector) qs.set("sector", params.sector);
@@ -85,12 +94,14 @@ export const api = {
     return fetchJSON<{ scores: RiskScore[] }>(`/scores/risk?${qs}`);
   },
 
+  /** @deprecated Legacy V0 — use api.observatory.run() for scenario-driven disruption */
   disruptionScore: (body: Record<string, number>) =>
     fetchJSON<DisruptionScore>("/scores/disruption", {
       method: "POST",
       body: JSON.stringify(body),
     }),
 
+  /** @deprecated Legacy V0 — no active /scores/confidence route */
   confidenceScore: (params: Record<string, number | string>) => {
     const qs = new URLSearchParams(
       Object.entries(params).map(([k, v]) => [k, String(v)])
@@ -100,13 +111,14 @@ export const api = {
     );
   },
 
-  // ---- System Stress ----
+  /** @deprecated Legacy V0 — use api.observatory.run() for system-wide stress */
   systemStress: () => fetchJSON<SystemStress>("/system/stress"),
 
-  // ---- Scenarios ----
+  /** @deprecated Legacy V0 — use api.observatory.templates() */
   scenarioTemplates: () =>
     fetchJSON<TemplatesResponse>("/scenario/templates"),
 
+  /** @deprecated Legacy V0 — use api.observatory.run() */
   scenarioRun: (body: {
     scenario_id?: string;
     severity_override?: number;
@@ -118,16 +130,18 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
-  // ---- Graph ----
+  /** @deprecated Legacy V0 — no active /graph/propagation-path route */
   graphPropagation: (startNodeId: string, maxHops?: number) => {
     const qs = new URLSearchParams({ start_node_id: startNodeId });
     if (maxHops) qs.set("max_hops", String(maxHops));
     return fetchJSON<PropagationResponse>(`/graph/propagation-path?${qs}`);
   },
 
+  /** @deprecated Legacy V0 — no active /graph/chokepoints route */
   graphChokepoints: () =>
     fetchJSON<ChokepointsResponse>("/graph/chokepoints"),
 
+  /** @deprecated Legacy V0 — no active /graph/nodes route */
   graphNodes: (params?: { sector?: string; limit?: number }) => {
     const qs = new URLSearchParams();
     if (params?.sector) qs.set("sector", params.sector);
@@ -135,7 +149,7 @@ export const api = {
     return fetchJSON<{ nodes: GraphNode[]; edges: GraphEdge[] }>(`/graph/nodes?${qs}`);
   },
 
-  // ---- Insurance ----
+  /** @deprecated Legacy V0 — use api.observatory.insurance() */
   insuranceExposure: (params?: { sector?: string; region?: string }) => {
     const qs = new URLSearchParams();
     if (params?.sector) qs.set("sector", params.sector);
@@ -143,26 +157,29 @@ export const api = {
     return fetchJSON<{ exposures: InsuranceExposure[] }>(`/insurance/exposure?${qs}`);
   },
 
+  /** @deprecated Legacy V0 — use api.observatory.insurance() */
   claimsSurge: (scenarioId: string) =>
     fetchJSON<ClaimsSurge>(`/insurance/claims-surge?scenario_id=${scenarioId}`),
 
+  /** @deprecated Legacy V0 — use api.observatory.insurance() */
   underwritingWatch: (params?: { watch_level?: string }) => {
     const qs = new URLSearchParams();
     if (params?.watch_level) qs.set("watch_level", params.watch_level);
     return fetchJSON<{ watches: UnderwritingWatch[] }>(`/insurance/underwriting?${qs}`);
   },
 
+  /** @deprecated Legacy V0 — use api.observatory.insurance() */
   severityProjection: (scenarioId: string, horizonHours?: number) => {
     const qs = new URLSearchParams({ scenario_id: scenarioId });
     if (horizonHours) qs.set("horizon_hours", String(horizonHours));
     return fetchJSON<SeverityProjection>(`/insurance/severity-projection?${qs}`);
   },
 
-  // ---- Decision Output ----
+  /** @deprecated Legacy V0 — use api.observatory.decision() */
   decisionOutput: (scenarioId: string) =>
     fetchJSON<DecisionOutput>(`/decision/output?scenario_id=${scenarioId}`),
 
-  // ---- Entity Detail ----
+  /** @deprecated Legacy V0 — no active /entity/:id route */
   entityDetail: (entityId: string) =>
     fetchJSON<{
       id: string;
@@ -232,5 +249,19 @@ export const api = {
     /** Get bilingual labels */
     labels: (lang: string = "en") =>
       fetchJSON<Record<string, string>>(`/api/v1/runs/labels?lang=${lang}`),
+  },
+
+  // ---- Runs List (v1) ----
+  runsList: (params?: { limit?: number; offset?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.limit) qs.set("limit", String(params.limit));
+    if (params?.offset) qs.set("offset", String(params.offset));
+    const headers: Record<string, string> = {};
+    const apiKey = process.env.NEXT_PUBLIC_API_KEY || "observatory-dev-key";
+    if (apiKey) headers["X-API-Key"] = apiKey;
+    return fetchJSON<{ runs: RunSummary[]; count: number; limit: number; offset: number }>(
+      `/api/v1/runs?${qs}`,
+      { headers }
+    );
   },
 };

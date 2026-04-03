@@ -71,7 +71,7 @@ def execute_run(params: ScenarioCreate) -> dict:
     # Audit: record start
     audit_service.record_run_start(
         run_id=run_id,
-        template_id=params.template_id,
+        template_id=params.scenario_id,
         severity=severity,
         horizon_hours=horizon_hours,
     )
@@ -257,7 +257,7 @@ def execute_run(params: ScenarioCreate) -> dict:
         "pipeline_stages_completed": stages_completed,
         "stage_timings": stage_timings,
         "scenario": {
-            "template_id": params.template_id,
+            "scenario_id": params.scenario_id,
             "label": run["label"],
             "label_ar": run.get("label_ar"),
             "severity": severity,
@@ -275,6 +275,10 @@ def execute_run(params: ScenarioCreate) -> dict:
         "flow_states": [f.model_dump() for f in flow_states[:10]],
         "propagation": propagation_results[:15],
         "duration_ms": round(duration_ms, 1),
+        # Top-level fields for run_store persistence
+        "scenario_id": params.scenario_id,
+        "severity": severity,
+        "horizon_hours": horizon_hours,
         # Frontend backward-compatible aliases
         "headline_loss_usd": headline["total_loss_usd"],
         "severity_pct": round(severity * 100, 1),

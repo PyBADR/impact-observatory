@@ -18,9 +18,9 @@ _PROV = Provenance(source_type=SourceType.MANUAL, source_name="scenario_library"
 SCENARIO_TEMPLATES: list[Scenario] = [
     # 1. Strait of Hormuz disruption
     Scenario(
-        id="hormuz_disruption",
-        title="Strait of Hormuz Disruption",
-        title_ar="تعطل مضيق هرمز",
+        id="hormuz_chokepoint_disruption",
+        title="Strategic Maritime Chokepoint Disruption (Hormuz)",
+        title_ar="تعطّل نقطة اختناق بحرية استراتيجية (مضيق هرمز)",
         description="Full or partial blockage of the Strait of Hormuz, disrupting oil tanker transit and Gulf shipping lanes.",
         description_ar="إغلاق كلي أو جزئي لمضيق هرمز مما يعطل عبور ناقلات النفط وممرات الشحن الخليجية.",
         scenario_type="disruption",

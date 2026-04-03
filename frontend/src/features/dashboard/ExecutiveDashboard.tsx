@@ -18,6 +18,9 @@ import type {
   Classification,
   Language,
 } from "@/types/observatory";
+import { KPICard } from "@/components/KPICard";
+import { StressGauge } from "@/components/StressGauge";
+import { FinancialImpactPanel } from "@/components/FinancialImpactPanel";
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -186,115 +189,131 @@ export default function ExecutiveDashboard({
 
       {/* Top Row: 6 headline metrics */}
       <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-        <MetricCard
+        <KPICard
           label={t.headline_loss}
+          labelAr={labels.ar.headline_loss}
           value={formatUSD(headline.total_loss_usd)}
-          sub={`${headline.affected_entities} entities`}
+          severity={headline.total_loss_usd >= 1e10 ? "critical" : headline.total_loss_usd >= 1e9 ? "severe" : headline.total_loss_usd >= 1e8 ? "high" : "medium"}
+          sublabel={`${headline.affected_entities} entities`}
+          locale={lang}
         />
-        <MetricCard
+        <KPICard
           label={t.severity}
+          labelAr={labels.ar.severity}
           value={`${(data.scenario.severity * 100).toFixed(0)}%`}
-          sub={`${headline.critical_count} critical`}
+          severity={data.scenario.severity >= 0.8 ? "critical" : data.scenario.severity >= 0.6 ? "severe" : data.scenario.severity >= 0.4 ? "high" : "medium"}
+          sublabel={`${headline.critical_count} critical`}
+          locale={lang}
         />
-        <MetricCard
+        <KPICard
           label={t.peak_day}
+          labelAr={labels.ar.peak_day}
           value={`Day ${headline.peak_day}`}
-          sub={`${headline.max_recovery_days}d recovery`}
+          sublabel={`${headline.max_recovery_days}d recovery`}
+          locale={lang}
         />
-        <MetricCard
+        <KPICard
           label={t.ttl_breach}
+          labelAr={labels.ar.ttl_breach}
           value={formatHours(banking.time_to_liquidity_breach_hours)}
+          severity={banking.time_to_liquidity_breach_hours < 24 ? "critical" : banking.time_to_liquidity_breach_hours < 72 ? "high" : "normal"}
+          locale={lang}
         />
-        <MetricCard
+        <KPICard
           label={t.tt_insurance}
+          labelAr={labels.ar.tt_insurance}
           value={formatHours(insurance.time_to_insolvency_hours)}
+          severity={insurance.time_to_insolvency_hours < 48 ? "critical" : insurance.time_to_insolvency_hours < 168 ? "high" : "normal"}
+          locale={lang}
         />
-        <MetricCard
+        <KPICard
           label={t.tt_payment}
+          labelAr={labels.ar.tt_payment}
           value={formatHours(fintech.time_to_payment_failure_hours)}
+          severity={fintech.time_to_payment_failure_hours < 12 ? "critical" : fintech.time_to_payment_failure_hours < 48 ? "high" : "normal"}
+          locale={lang}
         />
       </section>
 
       {/* Middle + Right: Financial Impact + Sector Stress */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        {/* Financial Impact Table (2 cols) */}
-        <div className="lg:col-span-2 bg-io-surface border border-io-border rounded-xl p-5 shadow-sm">
-          <h2 className="text-sm font-semibold text-io-primary uppercase tracking-wider mb-4">
-            {t.financial_impact}
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-io-border text-io-secondary">
-                  <th className="text-left py-2 font-medium">{t.entity}</th>
-                  <th className="text-left py-2 font-medium">{t.sector}</th>
-                  <th className="text-right py-2 font-medium">{t.loss}</th>
-                  <th className="text-right py-2 font-medium">{t.stress}</th>
-                  <th className="text-center py-2 font-medium">{t.classification}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {financial.slice(0, 10).map((fi) => (
-                  <tr key={fi.entity_id} className="border-b border-io-border/50">
-                    <td className="py-2 font-medium text-io-primary">
-                      {fi.entity_label || fi.entity_id}
-                    </td>
-                    <td className="py-2 text-io-secondary">{fi.sector}</td>
-                    <td className="py-2 text-right tabular-nums font-medium">
-                      {formatUSD(fi.loss_usd)}
-                    </td>
-                    <td className="py-2 text-right tabular-nums">
-                      {(fi.stress_level * 100).toFixed(1)}%
-                    </td>
-                    <td className="py-2 text-center">
-                      <Badge level={fi.classification} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        {/* Financial Impact Panel (2 cols) */}
+        <div className="lg:col-span-2">
+          <FinancialImpactPanel
+            loss_usd={headline.total_loss_usd}
+            loss_baseline_usd={headline.total_loss_usd * 1.5}
+            peak_loss_day={headline.peak_day}
+            duration_days={headline.max_recovery_days}
+            liquidity_breach_hours={banking.time_to_liquidity_breach_hours}
+            sector_exposure={financial.reduce<Record<string, number>>((acc, fi) => {
+              acc[fi.sector] = (acc[fi.sector] ?? 0) + fi.loss_usd;
+              return acc;
+            }, {})}
+            severity_code={
+              data.scenario.severity >= 0.85 ? "CRITICAL"
+              : data.scenario.severity >= 0.7 ? "SEVERE"
+              : data.scenario.severity >= 0.55 ? "HIGH"
+              : data.scenario.severity >= 0.4 ? "ELEVATED"
+              : "MODERATE"
+            }
+            locale={lang}
+          />
         </div>
 
-        {/* Right: Sector Stress Cards (1 col) */}
+        {/* Right: Sector Stress Gauges (1 col) */}
         <div className="space-y-4">
           <div onClick={() => onNavigate?.("banking")} className={onNavigate ? "cursor-pointer" : ""}>
-            <SectorStressCard
-              title={t.banking_stress}
-              classification={banking.classification as Classification}
-              stress={banking.aggregate_stress}
-              metrics={[
-                { label: "Liquidity", value: `${(banking.liquidity_stress * 100).toFixed(0)}%` },
-                { label: "Credit", value: `${(banking.credit_stress * 100).toFixed(0)}%` },
-                { label: "FX", value: `${(banking.fx_stress * 100).toFixed(0)}%` },
-                { label: "Contagion", value: `${(banking.interbank_contagion * 100).toFixed(0)}%` },
+            <StressGauge
+              sector="banking"
+              sectorLabel={t.banking_stress}
+              sectorLabelAr={labels.ar.banking_stress}
+              score={Math.round(banking.aggregate_stress * 100)}
+              classification={banking.classification}
+              indicators={[
+                `Liquidity ${(banking.liquidity_stress * 100).toFixed(0)}%`,
+                `Credit ${(banking.credit_stress * 100).toFixed(0)}%`,
               ]}
+              indicatorsAr={[
+                `السيولة ${(banking.liquidity_stress * 100).toFixed(0)}%`,
+                `الائتمان ${(banking.credit_stress * 100).toFixed(0)}%`,
+              ]}
+              locale={lang}
             />
           </div>
           <div onClick={() => onNavigate?.("insurance")} className={onNavigate ? "cursor-pointer" : ""}>
-            <SectorStressCard
-              title={t.insurance_stress}
-              classification={insurance.classification as Classification}
-              stress={insurance.aggregate_stress}
-              metrics={[
-                { label: "Claims Surge", value: `${insurance.claims_surge_multiplier.toFixed(2)}x` },
-                { label: "Combined Ratio", value: `${(insurance.combined_ratio * 100).toFixed(0)}%` },
-                { label: "UW Status", value: insurance.underwriting_status },
-                { label: "Reinsurance", value: insurance.reinsurance_trigger ? "TRIGGERED" : "Normal" },
+            <StressGauge
+              sector="insurance"
+              sectorLabel={t.insurance_stress}
+              sectorLabelAr={labels.ar.insurance_stress}
+              score={Math.round(insurance.aggregate_stress * 100)}
+              classification={insurance.classification}
+              indicators={[
+                `Claims ${insurance.claims_surge_multiplier.toFixed(2)}x`,
+                `Combined ${(insurance.combined_ratio * 100).toFixed(0)}%`,
               ]}
+              indicatorsAr={[
+                `المطالبات ${insurance.claims_surge_multiplier.toFixed(2)}x`,
+                `النسبة ${(insurance.combined_ratio * 100).toFixed(0)}%`,
+              ]}
+              locale={lang}
             />
           </div>
           <div onClick={() => onNavigate?.("fintech")} className={onNavigate ? "cursor-pointer" : ""}>
-            <SectorStressCard
-              title={t.fintech_stress}
-              classification={fintech.classification as Classification}
-              stress={fintech.aggregate_stress}
-              metrics={[
-                { label: "Payment Drop", value: `${fintech.payment_volume_impact_pct.toFixed(1)}%` },
-                { label: "Delay", value: `+${fintech.settlement_delay_hours.toFixed(1)}h` },
-                { label: "API Uptime", value: `${fintech.api_availability_pct.toFixed(0)}%` },
-                { label: "Cross-Border", value: `${(fintech.cross_border_disruption * 100).toFixed(0)}%` },
+            <StressGauge
+              sector="fintech"
+              sectorLabel={t.fintech_stress}
+              sectorLabelAr={labels.ar.fintech_stress}
+              score={Math.round(fintech.aggregate_stress * 100)}
+              classification={fintech.classification}
+              indicators={[
+                `Payments −${fintech.payment_volume_impact_pct.toFixed(1)}%`,
+                `API ${fintech.api_availability_pct.toFixed(0)}% up`,
               ]}
+              indicatorsAr={[
+                `المدفوعات −${fintech.payment_volume_impact_pct.toFixed(1)}%`,
+                `الإتاحة ${fintech.api_availability_pct.toFixed(0)}%`,
+              ]}
+              locale={lang}
             />
           </div>
         </div>

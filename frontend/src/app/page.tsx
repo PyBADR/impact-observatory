@@ -9,6 +9,7 @@
  */
 
 import React, { useState } from "react";
+import ImpactGlobe from "@/components/globe/impact-globe";
 import ExecutiveDashboard from "@/features/dashboard/ExecutiveDashboard";
 import BankingDetailPanel from "@/features/banking/BankingDetailPanel";
 import InsuranceDetailPanel from "@/features/insurance/InsuranceDetailPanel";
@@ -25,14 +26,14 @@ type DetailView = "dashboard" | "banking" | "insurance" | "fintech" | "decisions
 // ── Scenarios ────────────────────────────────────────────────────────
 
 const SCENARIOS = [
-  { id: "hormuz_disruption", label: "Hormuz Closure", label_ar: "إغلاق مضيق هرمز", desc: "Strait of Hormuz blockade — oil transit, shipping, energy supply chain", desc_ar: "حصار مضيق هرمز — عبور النفط والشحن وسلسلة إمداد الطاقة", loss: "$3.2B", severity: 0.8, icon: "⚓" },
-  { id: "yemen_escalation", label: "Yemen Escalation", label_ar: "تصعيد يمني", desc: "Regional conflict escalation — Red Sea shipping, insurance claims surge", desc_ar: "تصعيد صراع إقليمي — شحن البحر الأحمر وارتفاع مطالبات التأمين", loss: "$1.8B", severity: 0.7, icon: "🔥" },
-  { id: "cyber_attack", label: "Cyber Attack", label_ar: "هجوم سيبراني", desc: "Financial infrastructure cyberattack — payment systems, API disruption", desc_ar: "هجوم سيبراني على البنية المالية — أنظمة الدفع وتعطل الواجهات", loss: "$0.9B", severity: 0.6, icon: "🛡️" },
-  { id: "oil_price_shock", label: "Oil Price Shock", label_ar: "صدمة أسعار النفط", desc: "Sudden oil price collapse — GDP impact, banking stress, fiscal reserves", desc_ar: "انهيار مفاجئ في أسعار النفط — أثر على الناتج المحلي والاحتياطيات", loss: "$4.5B", severity: 0.8, icon: "📉" },
-  { id: "banking_stress", label: "Banking Stress", label_ar: "ضغط بنكي إقليمي", desc: "Regional banking contagion — liquidity crisis, CAR deterioration", desc_ar: "عدوى بنكية إقليمية — أزمة سيولة وتدهور كفاية رأس المال", loss: "$2.1B", severity: 0.7, icon: "🏦" },
-  { id: "port_disruption", label: "Port Disruption", label_ar: "تعطل ميناء رئيسي", desc: "Major port shutdown — trade flow, supply chain cascade, insurance", desc_ar: "توقف ميناء رئيسي — تدفق التجارة وتأثيرات سلسلة التوريد", loss: "$1.5B", severity: 0.6, icon: "🚢" },
-  { id: "iran_sanctions", label: "Iran Sanctions", label_ar: "عقوبات إيران", desc: "New sanctions wave — trade rerouting, compliance costs, banking exposure", desc_ar: "موجة عقوبات جديدة — إعادة توجيه التجارة وتكاليف الامتثال والتعرض البنكي", loss: "$2.8B", severity: 0.7, icon: "⚖️" },
-  { id: "gulf_airspace", label: "Gulf Airspace Closure", label_ar: "إغلاق المجال الجوي", desc: "Regional airspace restrictions — aviation disruption, cargo delays, tourism impact", desc_ar: "قيود المجال الجوي الإقليمي — تعطل الطيران وتأخر الشحن وأثر السياحة", loss: "$1.2B", severity: 0.6, icon: "✈️" },
+  { id: "hormuz_chokepoint_disruption", label: "Strategic Maritime Chokepoint Disruption (Hormuz)", label_ar: "تعطّل نقطة اختناق بحرية استراتيجية (مضيق هرمز)", desc: "Strait of Hormuz blockade — oil transit, shipping, energy supply chain", desc_ar: "حصار مضيق هرمز — عبور النفط والشحن وسلسلة إمداد الطاقة", loss: "$3.2B", severity: 0.8, icon: "⚓" },
+  { id: "red_sea_trade_corridor_instability", label: "Red Sea Trade Corridor Instability", label_ar: "اضطراب ممر التجارة في البحر الأحمر", desc: "Regional conflict escalation — Red Sea shipping, insurance claims surge", desc_ar: "تصعيد صراع إقليمي — شحن البحر الأحمر وارتفاع مطالبات التأمين", loss: "$1.8B", severity: 0.7, icon: "🔥" },
+  { id: "financial_infrastructure_cyber_disruption", label: "Financial Infrastructure Cyber Disruption", label_ar: "تعطّل البنية المالية نتيجة هجوم سيبراني", desc: "Financial infrastructure cyberattack — payment systems, API disruption", desc_ar: "هجوم سيبراني على البنية المالية — أنظمة الدفع وتعطل الواجهات", loss: "$0.9B", severity: 0.6, icon: "🛡️" },
+  { id: "energy_market_volatility_shock", label: "Energy Market Volatility Shock", label_ar: "صدمة تقلبات أسواق الطاقة", desc: "Sudden oil price collapse — GDP impact, banking stress, fiscal reserves", desc_ar: "انهيار مفاجئ في أسعار النفط — أثر على الناتج المحلي والاحتياطيات", loss: "$4.5B", severity: 0.8, icon: "📉" },
+  { id: "regional_liquidity_stress_event", label: "Regional Liquidity Stress Event", label_ar: "أزمة سيولة مصرفية إقليمية", desc: "Regional banking contagion — liquidity crisis, CAR deterioration", desc_ar: "عدوى بنكية إقليمية — أزمة سيولة وتدهور كفاية رأس المال", loss: "$2.1B", severity: 0.7, icon: "🏦" },
+  { id: "critical_port_throughput_disruption", label: "Critical Port Throughput Disruption", label_ar: "تعطّل تدفق العمليات في ميناء حيوي", desc: "Major port shutdown — trade flow, supply chain cascade, insurance", desc_ar: "توقف ميناء رئيسي — تدفق التجارة وتأثيرات سلسلة التوريد", loss: "$1.5B", severity: 0.6, icon: "🚢" },
+  { id: "cross_border_sanctions_escalation", label: "Cross-Border Sanctions Escalation", label_ar: "تصاعد العقوبات العابرة للحدود", desc: "New sanctions wave — trade rerouting, compliance costs, banking exposure", desc_ar: "موجة عقوبات جديدة — إعادة توجيه التجارة وتكاليف الامتثال والتعرض البنكي", loss: "$2.4B", severity: 0.7, icon: "⚖️" },
+  { id: "regional_airspace_constraint", label: "Regional Airspace Constraint Scenario", label_ar: "سيناريو قيود المجال الجوي الإقليمي", desc: "Regional airspace restrictions — aviation disruption, cargo delays, tourism impact", desc_ar: "قيود المجال الجوي الإقليمي — تعطل الطيران وتأخر الشحن وأثر السياحة", loss: "$1.1B", severity: 0.6, icon: "✈️" },
 ];
 
 // ── Capability Cards ─────────────────────────────────────────────────
@@ -66,6 +67,7 @@ export default function HomePage() {
   const [lang, setLang] = useState<Language>("en");
   const [viewMode, setViewMode] = useState<ViewMode>("executive");
   const [detailView, setDetailView] = useState<DetailView>("dashboard");
+  const [gccEntities, setGccEntities] = useState<any[]>([]);
 
   const isAr = lang === "ar";
 
@@ -79,7 +81,7 @@ export default function HomePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          template_id: templateId,
+          scenario_id: templateId,
           severity,
           horizon_hours: 336,
         }),
@@ -88,6 +90,13 @@ export default function HomePage() {
       const data = await res.json();
       setResult(data);
       setDetailView("dashboard");
+      // Fetch GCC entities for the globe
+      fetch(`${BASE}/api/v1/graph/nodes?limit=200`, {
+        headers: { "X-API-Key": "observatory-dev-key" },
+      })
+        .then((r) => r.json())
+        .then((d) => setGccEntities(d.nodes || []))
+        .catch(() => {});
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Unknown error");
     } finally {
@@ -409,6 +418,16 @@ export default function HomePage() {
               {detailLabels[lang][view]}
             </button>
           ))}
+          {/* PDF Export Button */}
+          <a
+            href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/runs/${result.run_id}/report/executive/pdf?lang=${lang}`}
+            download={`impact-report-${result.run_id}.pdf`}
+            className="flex items-center gap-1.5 px-3 py-1.5 ml-auto bg-io-primary text-white text-xs font-semibold rounded hover:bg-io-primary/90 transition-colors whitespace-nowrap"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            ↓ {isAr ? "تصدير PDF" : "Export PDF"}
+          </a>
         </div>
       )}
 
@@ -444,7 +463,18 @@ export default function HomePage() {
 
       {/* Dashboard */}
       {result && detailView === "dashboard" && (
-        <ExecutiveDashboard data={result} lang={lang} onNavigate={(view: string) => setDetailView(view as DetailView)} />
+        <>
+          <ExecutiveDashboard data={result} lang={lang} onNavigate={(view: string) => setDetailView(view as DetailView)} />
+          {/* Geographic Impact Map */}
+          <div className="max-w-6xl mx-auto px-6 pb-8">
+            <ImpactGlobe
+              runResult={result}
+              entities={gccEntities}
+              lang={lang}
+              className="w-full min-h-[360px]"
+            />
+          </div>
+        </>
       )}
 
       {result && detailView === "banking" && (

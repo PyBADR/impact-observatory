@@ -1,5 +1,5 @@
 /**
- * @deevo/gcc-knowledge-graph — Node Registry
+ * @io/gcc-knowledge-graph — Node Registry
  *
  * 76 real GCC entities across 5 layers.
  * Canonical source — extracted from frontend/lib/gcc-graph.ts.

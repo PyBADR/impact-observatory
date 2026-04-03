@@ -1,5 +1,5 @@
 /**
- * @deevo/gcc-knowledge-graph
+ * @io/gcc-knowledge-graph
  *
  * GCC Reality Graph — 5-Layer Causal Dependency Model v5.0
  * Server-side canonical source for all GCC knowledge graph data.

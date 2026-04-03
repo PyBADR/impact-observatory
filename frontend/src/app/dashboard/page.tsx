@@ -15,21 +15,24 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import ImpactGlobe from "@/components/globe/impact-globe";
 import KPICard from "@/components/KPICard";
 import StressGauge from "@/components/StressGauge";
 import DecisionActionCard from "@/components/DecisionActionCard";
 import FinancialImpactPanel from "@/components/FinancialImpactPanel";
 import type { RunResult, Language } from "@/types/observatory";
+import { useRunsList } from "@/hooks/use-api";
+import type { RunSummary } from "@/types/observatory";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const SCENARIOS = [
-  { id: "hormuz_disruption", label: "Hormuz Closure", labelAr: "إغلاق مضيق هرمز", severity: 0.85, horizon: 336 },
-  { id: "yemen_escalation", label: "Yemen Escalation", labelAr: "تصعيد يمني", severity: 0.7, horizon: 336 },
-  { id: "cyber_attack", label: "Cyber Attack", labelAr: "هجوم سيبراني", severity: 0.6, horizon: 168 },
-  { id: "oil_price_shock", label: "Oil Price Shock", labelAr: "صدمة أسعار النفط", severity: 0.8, horizon: 336 },
-  { id: "banking_stress", label: "Banking Stress", labelAr: "ضغط بنكي", severity: 0.7, horizon: 336 },
-  { id: "port_disruption", label: "Port Disruption", labelAr: "تعطل ميناء", severity: 0.6, horizon: 336 },
+  { id: "hormuz_chokepoint_disruption", label: "Strategic Maritime Chokepoint Disruption (Hormuz)", labelAr: "تعطّل نقطة اختناق بحرية استراتيجية (مضيق هرمز)", severity: 0.85, horizon: 336 },
+  { id: "red_sea_trade_corridor_instability", label: "Red Sea Trade Corridor Instability", labelAr: "اضطراب ممر التجارة في البحر الأحمر", severity: 0.7, horizon: 336 },
+  { id: "financial_infrastructure_cyber_disruption", label: "Financial Infrastructure Cyber Disruption", labelAr: "تعطّل البنية المالية نتيجة هجوم سيبراني", severity: 0.6, horizon: 168 },
+  { id: "energy_market_volatility_shock", label: "Energy Market Volatility Shock", labelAr: "صدمة تقلبات أسواق الطاقة", severity: 0.8, horizon: 336 },
+  { id: "regional_liquidity_stress_event", label: "Regional Liquidity Stress Event", labelAr: "أزمة سيولة مصرفية إقليمية", severity: 0.7, horizon: 336 },
+  { id: "critical_port_throughput_disruption", label: "Critical Port Throughput Disruption", labelAr: "تعطّل تدفق العمليات في ميناء حيوي", severity: 0.6, horizon: 336 },
 ];
 
 function formatLoss(usd: number): string {
@@ -70,6 +73,8 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedScenario, setSelectedScenario] = useState(SCENARIOS[0].id);
   const [locale, setLocale] = useState<Language>("en");
+  const [gccEntities, setGccEntities] = useState<any[]>([]);
+  const { data: runsHistory } = useRunsList({ limit: 10 });
 
   const runScenario = useCallback(async (scenarioId: string) => {
     setLoading(true);
@@ -80,7 +85,7 @@ export default function DashboardPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          template_id: scenario.id,
+          scenario_id: scenario.id,
           severity: scenario.severity,
           horizon_hours: scenario.horizon,
         }),
@@ -91,6 +96,13 @@ export default function DashboardPage() {
       }
       const result: RunResult = await res.json();
       setData(result);
+      // Fetch GCC entities for the globe
+      fetch(`${API_BASE}/api/v1/graph/nodes?limit=200`, {
+        headers: { "X-API-Key": "observatory-dev-key" },
+      })
+        .then((r) => r.json())
+        .then((d) => setGccEntities(d.nodes || []))
+        .catch(() => {});
     } catch (err) {
       setError(err instanceof Error ? err.message : "Pipeline unavailable");
     } finally {
@@ -216,6 +228,16 @@ export default function DashboardPage() {
           >
             {locale === "ar" ? "تشغيل السيناريو" : "Run Scenario"}
           </button>
+          {/* PDF Export Button */}
+          <a
+            href={`${API_BASE}/api/v1/runs/${data.run_id}/report/executive/pdf?lang=${locale}`}
+            download={`impact-report-${data.run_id}.pdf`}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-io-primary text-white text-xs font-semibold rounded hover:bg-io-primary/90 transition-colors"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            ↓ {locale === "ar" ? "تصدير PDF" : "Export PDF"}
+          </a>
           <span className="text-xs text-io-secondary">
             {scenarioLabel} — {horizonDays}d
           </span>
@@ -320,6 +342,14 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* ── Geographic Impact Map ── */}
+        <ImpactGlobe
+          runResult={data}
+          entities={gccEntities}
+          lang={locale}
+          className="w-full min-h-[360px]"
+        />
+
         {/* ── BOTTOM: 3 Decision Action Cards ── */}
         <div>
           <h2 className="text-sm font-semibold text-io-secondary uppercase tracking-wide mb-3">
@@ -346,6 +376,51 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
+
+        {/* ── Run History ── */}
+        {runsHistory && runsHistory.runs.length > 0 && (
+          <section className="mt-6">
+            <h2 className="text-sm font-semibold text-io-secondary mb-3">
+              {locale === "ar" ? "سجل التشغيل" : "Run History"}
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-io-border text-io-secondary/60">
+                    <th className="text-left py-2 pr-4 font-medium">{locale === "ar" ? "السيناريو" : "Scenario"}</th>
+                    <th className="text-right py-2 pr-4 font-medium">{locale === "ar" ? "الخسارة" : "Loss"}</th>
+                    <th className="text-right py-2 pr-4 font-medium">{locale === "ar" ? "ذروة الأثر" : "Peak Day"}</th>
+                    <th className="text-right py-2 pr-4 font-medium">{locale === "ar" ? "الشدة" : "Severity"}</th>
+                    <th className="text-right py-2 font-medium">{locale === "ar" ? "الحالة" : "Status"}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {runsHistory.runs.map((run: RunSummary) => (
+                    <tr key={run.run_id} className="border-b border-io-border/40 hover:bg-io-bg/50">
+                      <td className="py-2 pr-4 font-mono text-io-primary">{run.scenario_id}</td>
+                      <td className="py-2 pr-4 text-right text-io-danger font-semibold">
+                        {run.headline_loss_usd >= 1e9
+                          ? `$${(run.headline_loss_usd / 1e9).toFixed(1)}B`
+                          : `$${(run.headline_loss_usd / 1e6).toFixed(0)}M`}
+                      </td>
+                      <td className="py-2 pr-4 text-right text-io-secondary">Day {run.peak_day}</td>
+                      <td className="py-2 pr-4 text-right text-io-secondary">{(run.severity * 100).toFixed(0)}%</td>
+                      <td className="py-2 text-right">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                          run.severity_code === "CRITICAL" ? "bg-red-100 text-red-700" :
+                          run.severity_code === "SEVERE" ? "bg-orange-100 text-orange-700" :
+                          "bg-green-100 text-green-700"
+                        }`}>
+                          {run.severity_code || run.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
 
         {/* ── Footer: pipeline metadata ── */}
         <div className="flex items-center justify-between text-xs text-io-secondary/60 pt-4 border-t border-io-border">

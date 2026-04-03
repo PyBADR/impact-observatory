@@ -1,5 +1,5 @@
 /**
- * @deevo/gcc-knowledge-graph — Zod Validation Schemas
+ * @io/gcc-knowledge-graph — Zod Validation Schemas
  *
  * Runtime validation for nodes, edges, scenarios, and shock vectors.
  * Used for API input validation and data contract enforcement.

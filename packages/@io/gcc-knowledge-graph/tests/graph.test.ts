@@ -1,5 +1,5 @@
 /**
- * @deevo/gcc-knowledge-graph — Test Suite
+ * @io/gcc-knowledge-graph — Test Suite
  *
  * Validates graph integrity, node/edge counts, scenario completeness,
  * Zod schema validation, GCCGraph class operations, and data contracts.

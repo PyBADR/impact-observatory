@@ -700,7 +700,7 @@ def scenario_templates() -> List[Dict[str, Any]]:
         },
         {
             "scenario_id": "SCEN-STRAIT-001",
-            "scenario_name": "Strait of Hormuz Closure",
+            "scenario_name": "Strategic Maritime Chokepoint Disruption (Hormuz)",
             "category": "Disruption",
             "description": "Closure of Strait of Hormuz blocking oil shipments",
             "severity": "critical",

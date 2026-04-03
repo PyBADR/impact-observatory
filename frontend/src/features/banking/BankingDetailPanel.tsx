@@ -13,6 +13,7 @@
 
 import React from "react";
 import type { BankingStress, Classification, Language } from "@/types/observatory";
+import { StressGauge } from "@/components/StressGauge";
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -131,6 +132,26 @@ export default function BankingDetailPanel({
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-io-primary">{t.title}</h2>
         <Badge level={data.classification as Classification} />
+      </div>
+
+      {/* Stress Gauge */}
+      <div className="flex justify-center">
+        <StressGauge
+          sector="banking"
+          sectorLabel={t.title}
+          sectorLabelAr={t.title}
+          score={Math.round(data.aggregate_stress * 100)}
+          classification={data.classification}
+          indicators={[
+            `Liquidity ${(data.liquidity_stress * 100).toFixed(0)}%`,
+            `Credit ${(data.credit_stress * 100).toFixed(0)}%`,
+          ]}
+          indicatorsAr={[
+            `السيولة ${(data.liquidity_stress * 100).toFixed(0)}%`,
+            `الائتمان ${(data.credit_stress * 100).toFixed(0)}%`,
+          ]}
+          locale={lang}
+        />
       </div>
 
       {/* Top Metrics Row */}

@@ -21,10 +21,10 @@ class TestFullPipeline:
         from src.schemas.scenario import ScenarioCreate
         from src.services.run_orchestrator import execute_run
         params = ScenarioCreate(
-            template_id="hormuz_disruption",
+            scenario_id="hormuz_chokepoint_disruption",
             severity=severity,
             horizon_hours=336,
-            label="Hormuz Closure - 14D - Severe",
+            label="Strategic Maritime Chokepoint Disruption - 14D",
         )
         return execute_run(params)
 
@@ -154,8 +154,8 @@ class TestSeverityScaling:
         from src.schemas.scenario import ScenarioCreate
         from src.services.run_orchestrator import execute_run
 
-        low = execute_run(ScenarioCreate(template_id="hormuz_disruption", severity=0.3, horizon_hours=336))
-        high = execute_run(ScenarioCreate(template_id="hormuz_disruption", severity=0.9, horizon_hours=336))
+        low = execute_run(ScenarioCreate(scenario_id="hormuz_chokepoint_disruption", severity=0.3, horizon_hours=336))
+        high = execute_run(ScenarioCreate(scenario_id="hormuz_chokepoint_disruption", severity=0.9, horizon_hours=336))
 
         assert high["headline"]["total_loss_usd"] > low["headline"]["total_loss_usd"]
 
@@ -163,8 +163,8 @@ class TestSeverityScaling:
         from src.schemas.scenario import ScenarioCreate
         from src.services.run_orchestrator import execute_run
 
-        low = execute_run(ScenarioCreate(template_id="hormuz_disruption", severity=0.3, horizon_hours=336))
-        high = execute_run(ScenarioCreate(template_id="hormuz_disruption", severity=0.9, horizon_hours=336))
+        low = execute_run(ScenarioCreate(scenario_id="hormuz_chokepoint_disruption", severity=0.3, horizon_hours=336))
+        high = execute_run(ScenarioCreate(scenario_id="hormuz_chokepoint_disruption", severity=0.9, horizon_hours=336))
 
         assert high["banking"]["aggregate_stress"] >= low["banking"]["aggregate_stress"]
 
@@ -173,16 +173,16 @@ class TestAllScenarioTemplates:
     """All 8 scenario templates must produce valid output."""
 
     TEMPLATES = [
-        "hormuz_disruption", "yemen_escalation", "iran_sanctions",
-        "cyber_attack", "gulf_airspace", "port_disruption",
-        "oil_price_shock", "banking_stress",
+        "hormuz_chokepoint_disruption", "red_sea_trade_corridor_instability", "cross_border_sanctions_escalation",
+        "financial_infrastructure_cyber_disruption", "regional_airspace_constraint", "critical_port_throughput_disruption",
+        "energy_market_volatility_shock", "regional_liquidity_stress_event",
     ]
 
-    @pytest.mark.parametrize("template_id", TEMPLATES)
+    @pytest.mark.parametrize("scenario_id", TEMPLATES)
     def test_template_runs(self, template_id):
         from src.schemas.scenario import ScenarioCreate
         from src.services.run_orchestrator import execute_run
-        result = execute_run(ScenarioCreate(template_id=template_id, severity=0.6, horizon_hours=336))
+        result = execute_run(ScenarioCreate(scenario_id=scenario_id, severity=0.6, horizon_hours=336))
         assert result["status"] == "completed"
         assert result["headline"]["total_loss_usd"] > 0
         assert len(result["decisions"]["actions"]) >= 0  # some may not trigger
@@ -194,13 +194,13 @@ class TestSchemaValidation:
     def test_scenario_create_validation(self):
         from src.schemas.scenario import ScenarioCreate
         # Valid
-        s = ScenarioCreate(template_id="hormuz_disruption", severity=0.8)
+        s = ScenarioCreate(scenario_id="hormuz_chokepoint_disruption", severity=0.8)
         assert s.severity == 0.8
         assert s.horizon_hours == 336  # default
 
         # Invalid severity
         with pytest.raises(Exception):
-            ScenarioCreate(template_id="hormuz_disruption", severity=1.5)
+            ScenarioCreate(scenario_id="hormuz_chokepoint_disruption", severity=1.5)
 
     def test_financial_impact_classification(self):
         from src.schemas.financial_impact import FinancialImpact

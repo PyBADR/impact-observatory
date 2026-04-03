@@ -1,5 +1,5 @@
 {
-  "name": "@deevo/gcc-knowledge-graph",
+  "name": "@io/gcc-knowledge-graph",
   "version": "1.0.0",
   "description": "GCC Reality Graph — 5-Layer Causal Dependency Model for Decision Intelligence",
   "main": "dist/index.js",
@@ -14,9 +14,9 @@
     "knowledge-graph",
     "causal-model",
     "decision-intelligence",
-    "deevo"
+    "impact-observatory"
   ],
-  "author": "Deevo Analytics",
+  "author": "Impact Observatory",
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {

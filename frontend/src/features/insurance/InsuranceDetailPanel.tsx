@@ -15,6 +15,7 @@
 
 import React from "react";
 import type { InsuranceStress, Classification, Language } from "@/types/observatory";
+import { StressGauge } from "@/components/StressGauge";
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -148,6 +149,26 @@ export default function InsuranceDetailPanel({
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-io-primary">{t.title}</h2>
         <Badge level={data.classification as Classification} />
+      </div>
+
+      {/* Stress Gauge */}
+      <div className="flex justify-center">
+        <StressGauge
+          sector="insurance"
+          sectorLabel={t.title}
+          sectorLabelAr={t.title}
+          score={Math.round(data.aggregate_stress * 100)}
+          classification={data.classification}
+          indicators={[
+            `Claims ${data.claims_surge_multiplier.toFixed(2)}x`,
+            `Combined ${(data.combined_ratio * 100).toFixed(0)}%`,
+          ]}
+          indicatorsAr={[
+            `المطالبات ${data.claims_surge_multiplier.toFixed(2)}x`,
+            `النسبة ${(data.combined_ratio * 100).toFixed(0)}%`,
+          ]}
+          locale={lang}
+        />
       </div>
 
       {/* Top Metrics */}

@@ -15,6 +15,7 @@
 
 import React from "react";
 import type { FintechStress, Classification, Language } from "@/types/observatory";
+import { StressGauge } from "@/components/StressGauge";
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -130,6 +131,26 @@ export default function FintechDetailPanel({
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-io-primary">{t.title}</h2>
         <Badge level={data.classification as Classification} />
+      </div>
+
+      {/* Stress Gauge */}
+      <div className="flex justify-center">
+        <StressGauge
+          sector="fintech"
+          sectorLabel="Fintech Stress"
+          sectorLabelAr="ضغط الفنتك"
+          score={Math.round(data.aggregate_stress * 100)}
+          classification={data.classification}
+          indicators={[
+            `Payments −${data.payment_volume_impact_pct.toFixed(1)}%`,
+            `API ${data.api_availability_pct.toFixed(0)}% up`,
+          ]}
+          indicatorsAr={[
+            `المدفوعات −${data.payment_volume_impact_pct.toFixed(1)}%`,
+            `الإتاحة ${data.api_availability_pct.toFixed(0)}%`,
+          ]}
+          locale={lang}
+        />
       </div>
 
       {/* Top Metrics */}

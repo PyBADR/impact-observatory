@@ -1,6 +1,7 @@
 // ============================================================
-// Impact Observatory | مرصد الأثر — Legacy Canonical Types
-// See types/observatory.ts for v1 types
+// Impact Observatory | مرصد الأثر — Legacy V1 Types
+// FROZEN — globe-only era (pre-Observatory pipeline)
+// DO NOT extend. Use types/observatory.ts for all new code.
 // ============================================================
 
 // --------------- Core Geo / Entity Types ---------------
