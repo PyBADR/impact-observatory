@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 import numpy as np
 from numpy.typing import NDArray
 
-from src.engines.math.propagation import (
+from src.engines.math_core.propagation_matrix import (
     compute_system_confidence,
     compute_system_energy,
     compute_sector_impacts,

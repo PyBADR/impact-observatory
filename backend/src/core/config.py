@@ -26,6 +26,13 @@ class Settings(BaseSettings):
     acled_api_key: str = ""
     acled_api_email: str = ""
 
+    # Real-time data feeds (optional)
+    acled_email: str = ""
+    aisstream_api_key: str = ""
+    opensky_username: str = ""
+    opensky_password: str = ""
+    feed_refresh_minutes: int = 15
+
     # Cesium / Mapbox tokens
     cesium_ion_token: str = ""
     next_public_mapbox_token: str = ""

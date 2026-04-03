@@ -8,13 +8,14 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://deevo:deevo_secure@postgres:5432/deevo
+      - DATABASE_URL=postgresql://observatory_admin:io_secure_2026@postgres:5432/impact_observatory
       - NEO4J_URI=bolt://neo4j:7687
       - NEO4J_USER=neo4j
-      - NEO4J_PASSWORD=deevo_neo4j_2026
+      - NEO4J_PASSWORD=io_graph_2026
       - REDIS_URL=redis://redis:6379/0
       - ENVIRONMENT=production
       - LOG_LEVEL=INFO
+      - API_KEY=observatory-prod-key-2026
     depends_on:
       postgres:
         condition: service_healthy
@@ -24,21 +25,21 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --workers 4
 
   postgres:
     image: postgis/postgis:16-3.4
     environment:
-      - POSTGRES_DB=deevo
-      - POSTGRES_USER=deevo
-      - POSTGRES_PASSWORD=deevo_secure
+      - POSTGRES_DB=impact_observatory
+      - POSTGRES_USER=observatory_admin
+      - POSTGRES_PASSWORD=io_secure_2026
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./packages/@deevo/gcc-knowledge-graph/migrations:/docker-entrypoint-initdb.d
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U deevo"]
+      test: ["CMD-SHELL", "pg_isready -U observatory_admin"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -46,7 +47,7 @@ services:
   neo4j:
     image: neo4j:5.18-community
     environment:
-      - NEO4J_AUTH=neo4j/deevo_neo4j_2026
+      - NEO4J_AUTH=neo4j/io_graph_2026
       - NEO4J_PLUGINS=["apoc","graph-data-science"]
     ports:
       - "7474:7474"

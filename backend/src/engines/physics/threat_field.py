@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from src.engines.math.decay import haversine_km, spatial_decay
+from src.engines.math_core.decay import haversine_km, spatial_decay
 
 
 @dataclass

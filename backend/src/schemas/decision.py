@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import Field
 
 from src.schemas.base import VersionedModel
+
+ActionStatus = Literal["PENDING_REVIEW", "APPROVED", "REJECTED"]
 
 
 class DecisionAction(VersionedModel):
@@ -31,6 +35,7 @@ class DecisionAction(VersionedModel):
     feasibility: float = Field(0.0, ge=0.0, le=1.0, description="execution_probability × resource_availability")
     time_effect: float = Field(0.0, ge=0.0, le=1.0, description="exp(-lambda × time_to_effect)")
     confidence: float = Field(0.5, ge=0.0, le=1.0)
+    status: ActionStatus = Field("PENDING_REVIEW", description="Human-in-the-loop approval state")
 
 
 class DecisionPlan(VersionedModel):

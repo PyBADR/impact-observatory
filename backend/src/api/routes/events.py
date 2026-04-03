@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Query
 
-from src.engines.math.scoring import composite_risk_score
+from src.engines.math_core.scoring import composite_risk_score
 from src.engines.physics.threat_field import ThreatField, compute_threat_at_point
 from src.services.state import get_state
 

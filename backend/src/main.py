@@ -25,6 +25,7 @@ from src.api.routes.vessels import router as vessels_router
 # Impact Observatory v1 API
 from src.api.v1.scenarios import router as v1_scenarios_router
 from src.api.v1.runs import router as v1_runs_router
+from src.api.v1.auth import router as v1_auth_router
 
 from src.core.config import settings
 from src.services.state import init_state
@@ -36,6 +37,15 @@ async def lifespan(app: FastAPI):
 
     # Startup
     init_state()
+
+    # Start real-time data feeds (non-blocking — falls back to seed data if APIs unavailable)
+    try:
+        from src.services.data_feeds import refresh_all_feeds
+        from src.services.state import get_state
+        asyncio.ensure_future(refresh_all_feeds(get_state()))
+        print("📡 Data feeds initializing (ACLED/AIS/OpenSky)...")
+    except Exception as e:
+        print(f"⚠️  Data feeds skipped: {e}")
 
     # Optional: connect to databases if available (with 5s timeout each)
     try:
@@ -104,5 +114,11 @@ api_v1.include_router(decision_router)
 # ── Impact Observatory v1 endpoints ──
 api_v1.include_router(v1_scenarios_router)
 api_v1.include_router(v1_runs_router)
+
+# Auth endpoints — no API key required
+app.include_router(
+    v1_auth_router,
+    prefix="/api/v1",
+)
 
 app.include_router(api_v1)

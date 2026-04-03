@@ -14,3 +14,5 @@ passlib[bcrypt]==1.7.4
 python-multipart==0.0.9
 httpx==0.27.0
 mesa==2.3.0
+aiohttp>=3.9.0
+fpdf2>=2.7.9

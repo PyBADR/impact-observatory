@@ -110,7 +110,7 @@ def generate_explanation(
             event=event_en,
             event_ar=event_ar,
             impact_usd=fin.loss_usd if fin else 0.0,
-            stress_delta=impact,
+            stress_delta=round(prop.get("raw_impact", impact), 4),
             mechanism=mechanism["en"],
         ))
 

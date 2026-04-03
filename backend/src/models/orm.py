@@ -180,3 +180,27 @@ class InsuranceAssessmentRecord(Base):
     classification: Mapped[str | None] = mapped_column(String(32), nullable=True)
     breakdown_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+# ---- Pipeline Runs (v1 API) ----
+
+class RunRecord(Base):
+    __tablename__ = "runs"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
+    run_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    template_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    severity: Mapped[float] = mapped_column(Float, nullable=False, default=0.5)
+    horizon_hours: Mapped[int] = mapped_column(Integer, nullable=False, default=336)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="completed", index=True)
+    headline_loss_usd: Mapped[float | None] = mapped_column(Float, nullable=True)
+    peak_day: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    severity_code: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    result_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, index=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    duration_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    __table_args__ = (
+        Index("ix_runs_created_desc", "created_at"),
+    )

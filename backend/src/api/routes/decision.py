@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field
 
 import numpy as np
 
-from src.engines.math.propagation import (
+from src.engines.math_core.propagation_matrix import (
     build_adjacency_matrix,
     propagate_multi_step,
     compute_system_energy,

@@ -137,3 +137,13 @@ export function useEntityDetail(entityId: string | null) {
     enabled: !!entityId,
   });
 }
+
+// ---- Runs List (history) ----
+export function useRunsList(params?: { limit?: number; offset?: number }) {
+  return useQuery({
+    queryKey: ["runs-list", params],
+    queryFn: () => api.runsList(params),
+    staleTime: 5_000,
+    refetchInterval: 15_000,
+  });
+}

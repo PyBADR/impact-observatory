@@ -30,3 +30,10 @@ async def health_check():
         "service": "Impact Observatory",
         "version": "1.0.0",
     }
+
+
+@router.get("/health/feeds")
+async def feeds_health():
+    """Data feed status — shows ACLED/AIS/OpenSky connectivity."""
+    from src.services.data_feeds import get_feed_status
+    return get_feed_status()

@@ -199,9 +199,10 @@ def compute_decision_plan(
         resource_availability = 0.7
         lambda_decay = 0.01
 
-        # Urgency = max(0, 1 - time_to_failure / time_to_act), capped [0, 1]
-        if time_to_failure < float("inf") and time_to_act > 0:
-            urgency = max(0.0, 1.0 - time_to_failure / time_to_act)
+        # Urgency = max(0, 1 - time_to_act / time_to_failure), capped [0, 1]
+        # High urgency when time_to_act approaches time_to_failure
+        if time_to_failure < float("inf") and time_to_failure > 0:
+            urgency = max(0.0, 1.0 - time_to_act / time_to_failure)
         else:
             urgency = 0.0
         urgency = min(urgency, 1.0)

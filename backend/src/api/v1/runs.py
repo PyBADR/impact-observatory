@@ -1,6 +1,7 @@
 """v1 Runs API — execute and query scenario runs.
 
 POST /api/v1/runs                              — execute full pipeline
+GET  /api/v1/runs                              — list runs (paginated)
 GET  /api/v1/runs/{run_id}                     — full result
 GET  /api/v1/runs/{run_id}/financial           — financial impacts only
 GET  /api/v1/runs/{run_id}/banking             — banking stress only
@@ -25,14 +26,24 @@ from src.schemas.scenario import ScenarioCreate
 from src.services.run_orchestrator import execute_run
 from src.services.scenario_service import get_run
 from src.services import reporting_service, audit_service
+from src.services import run_store
 from src.i18n.labels import get_all_labels
 from src.core.rbac import enforce_permission, get_role_from_request
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/runs", tags=["runs"])
 
-# In-memory result cache (production: Redis/PostgreSQL)
-_results: dict[str, dict] = {}
+
+def _get_org_from_request(request: Request) -> str:
+    """Extract org from JWT token, default to 'default' for API key auth."""
+    from src.services.auth_service import verify_token
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        token = auth[7:]
+        payload = verify_token(token)
+        if payload:
+            return payload.get("org", "default")
+    return "default"
 
 
 @router.post("", status_code=201)
@@ -46,7 +57,7 @@ async def create_run(body: ScenarioCreate, request: Request):
     enforce_permission(get_role_from_request(request), "run:create")
     try:
         result = execute_run(body)
-        _results[result["run_id"]] = result
+        run_store.put_for_org(result["run_id"], result, org=_get_org_from_request(request))
         return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -55,11 +66,26 @@ async def create_run(body: ScenarioCreate, request: Request):
         raise HTTPException(status_code=500, detail=f"Run failed: {str(e)}")
 
 
+@router.get("")
+async def list_runs(
+    request: Request,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+):
+    """List all runs, newest first. Paginated.
+
+    Returns summary objects: run_id, template_id, severity, headline_loss_usd, peak_day, status, created_at.
+    """
+    enforce_permission(get_role_from_request(request), "run:read")
+    runs = await run_store.alist_for_org(org=_get_org_from_request(request), limit=limit, offset=offset)
+    return {"runs": runs, "limit": limit, "offset": offset, "count": len(runs), "org": _get_org_from_request(request)}
+
+
 @router.get("/{run_id}")
 async def get_run_result(run_id: str, request: Request):
     """Get full result for a completed run."""
     enforce_permission(get_role_from_request(request), "run:read")
-    result = _results.get(run_id)
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
     if not result:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
     return result
@@ -69,7 +95,7 @@ async def get_run_result(run_id: str, request: Request):
 async def get_run_financial(run_id: str, request: Request):
     """Get financial impacts for a run."""
     enforce_permission(get_role_from_request(request), "run:financial")
-    result = _results.get(run_id)
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
     if not result:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
     return {
@@ -83,7 +109,7 @@ async def get_run_financial(run_id: str, request: Request):
 async def get_run_banking(run_id: str, request: Request):
     """Get banking stress for a run."""
     enforce_permission(get_role_from_request(request), "run:banking")
-    result = _results.get(run_id)
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
     if not result:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
     return result["banking"]
@@ -93,7 +119,7 @@ async def get_run_banking(run_id: str, request: Request):
 async def get_run_insurance(run_id: str, request: Request):
     """Get insurance stress for a run."""
     enforce_permission(get_role_from_request(request), "run:insurance")
-    result = _results.get(run_id)
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
     if not result:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
     return result["insurance"]
@@ -103,7 +129,7 @@ async def get_run_insurance(run_id: str, request: Request):
 async def get_run_fintech(run_id: str, request: Request):
     """Get fintech stress for a run."""
     enforce_permission(get_role_from_request(request), "run:fintech")
-    result = _results.get(run_id)
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
     if not result:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
     return result["fintech"]
@@ -113,7 +139,7 @@ async def get_run_fintech(run_id: str, request: Request):
 async def get_run_decision(run_id: str, request: Request):
     """Get decision plan for a run (top 3 actions)."""
     enforce_permission(get_role_from_request(request), "run:decision")
-    result = _results.get(run_id)
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
     if not result:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
     return result["decisions"]
@@ -123,7 +149,7 @@ async def get_run_decision(run_id: str, request: Request):
 async def get_run_explanation(run_id: str, request: Request):
     """Get explanation pack for a run."""
     enforce_permission(get_role_from_request(request), "run:explanation")
-    result = _results.get(run_id)
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
     if not result:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
     return result["explanation"]
@@ -143,7 +169,7 @@ async def get_run_report(
     """
     report_perm = f"report:{mode}" if mode in ("executive", "analyst", "regulatory") else "report:executive"
     enforce_permission(get_role_from_request(request), report_perm)
-    result = _results.get(run_id)
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
     if not result:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
 
@@ -185,42 +211,77 @@ async def get_run_report(
     }
 
 
+@router.get("/{run_id}/report/{mode}/pdf")
+async def get_run_report_pdf(
+    run_id: str,
+    mode: str,
+    request: Request,
+    lang: str = Query(default="en", description="Language: en or ar"),
+):
+    """Export run report as PDF. Mode: executive|analyst|regulatory."""
+    from fastapi.responses import Response
+    enforce_permission(get_role_from_request(request), f"report:{mode}" if mode in ("executive", "analyst", "regulatory") else "report:executive")
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+
+    try:
+        from src.services.pdf_export import generate_executive_pdf
+        pdf_bytes = generate_executive_pdf(result, lang=lang)
+        filename = f"impact-observatory-{run_id}-{mode}.pdf"
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+                "Content-Length": str(len(pdf_bytes)),
+            },
+        )
+    except Exception as e:
+        logger.exception("PDF generation failed")
+        raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
+
+
 @router.get("/{run_id}/business-impact")
 async def get_business_impact(run_id: str, request: Request):
     """Business impact summary with loss trajectory."""
     enforce_permission(get_role_from_request(request), "run:business_impact")
-    if run_id not in _results:
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
+    if result is None:
         raise HTTPException(status_code=404, detail="Run not found")
-    return _results[run_id].get("business_impact", {})
+    return result.get("business_impact", {})
 
 
 @router.get("/{run_id}/timeline")
 async def get_timeline(run_id: str, request: Request):
     """Timestep-by-timestep temporal simulation."""
     enforce_permission(get_role_from_request(request), "run:timeline")
-    if run_id not in _results:
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
+    if result is None:
         raise HTTPException(status_code=404, detail="Run not found")
-    return _results[run_id].get("timeline", {})
+    return result.get("timeline", {})
 
 
 @router.get("/{run_id}/regulatory-timeline")
 async def get_regulatory_timeline(run_id: str, request: Request):
     """Regulatory breach events over time."""
     enforce_permission(get_role_from_request(request), "run:regulatory")
-    if run_id not in _results:
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
+    if result is None:
         raise HTTPException(status_code=404, detail="Run not found")
-    bi = _results[run_id].get("business_impact", {})
-    return {"regulatory_breach_events": bi.get("regulatory_breach_events", []), "regulatory_state": _results[run_id].get("regulatory_state", {})}
+    bi = result.get("business_impact", {})
+    return {"regulatory_breach_events": bi.get("regulatory_breach_events", []), "regulatory_state": result.get("regulatory_state", {})}
 
 
 @router.get("/{run_id}/executive-explanation")
 async def get_executive_explanation(run_id: str, request: Request):
     """Executive-level business explanation."""
     enforce_permission(get_role_from_request(request), "run:read")
-    if run_id not in _results:
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
+    if result is None:
         raise HTTPException(status_code=404, detail="Run not found")
-    explanation = _results[run_id].get("explanation", {})
-    bi = _results[run_id].get("business_impact", {})
+    explanation = result.get("explanation", {})
+    bi = result.get("business_impact", {})
     summary = bi.get("summary", {})
     return {
         "run_id": run_id,
@@ -229,7 +290,7 @@ async def get_executive_explanation(run_id: str, request: Request):
             "peak_loss_value": summary.get("peak_cumulative_loss", 0),
             "peak_loss_time": summary.get("peak_loss_timestamp", ""),
             "affected_revenue_value": summary.get("peak_cumulative_loss", 0) * 0.15,
-            "entities_at_risk_count": len(_results[run_id].get("financial", _results[run_id].get("financial_impacts", []))),
+            "entities_at_risk_count": len(result.get("financial", result.get("financial_impacts", []))),
             "business_materiality_band": "critical" if summary.get("business_severity") == "severe" else summary.get("business_severity", "low"),
         },
         "business_severity": summary.get("business_severity", "low"),
@@ -245,7 +306,7 @@ async def approve_action(run_id: str, action_id: str, request: Request):
     No action executes without explicit human approval.
     """
     enforce_permission(get_role_from_request(request), "action:approve")
-    result = _results.get(run_id)
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
     if not result:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
 
@@ -295,7 +356,7 @@ async def reject_action(run_id: str, action_id: str, request: Request):
     Rejected actions are recorded in the audit trail but not executed.
     """
     enforce_permission(get_role_from_request(request), "action:reject")
-    result = _results.get(run_id)
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
     if not result:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
 

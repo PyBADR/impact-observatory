@@ -39,7 +39,7 @@ class FlowField:
 
     def density_at(self, lat: float, lng: float, radius_km: float = 50.0) -> float:
         """Flow density at a point: count of vectors within radius, weighted by magnitude."""
-        from src.engines.math.decay import haversine_km
+        from src.engines.math_core.decay import haversine_km
 
         total = 0.0
         for v in self.vectors:
@@ -53,7 +53,7 @@ class FlowField:
         self, lat: float, lng: float, radius_km: float = 50.0
     ) -> tuple[float, float]:
         """Average flow direction at a point. Returns (avg_vx, avg_vy)."""
-        from src.engines.math.decay import haversine_km
+        from src.engines.math_core.decay import haversine_km
 
         sum_vx, sum_vy, count = 0.0, 0.0, 0
         for v in self.vectors:
