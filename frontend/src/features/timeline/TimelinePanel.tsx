@@ -31,7 +31,7 @@ export default function TimelinePanel({ data, lang }: Props) {
     );
   }
 
-  const { timesteps, time_config } = data;
+  const { timesteps, time_config = { time_horizon_steps: 0, time_granularity_minutes: 0, shock_decay_rate: 0, propagation_delay_steps: 0, recovery_rate: 0 } } = data;
   const maxLoss = Math.max(...timesteps.map((s) => s.aggregate_loss), 1);
   const maxFlow = Math.max(...timesteps.map((s) => s.aggregate_flow), 1);
 

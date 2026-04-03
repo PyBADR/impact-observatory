@@ -29,6 +29,9 @@ const classificationColors: Record<Classification, string> = {
   MODERATE: "bg-io-moderate text-white",
   LOW: "bg-io-low text-white",
   NOMINAL: "bg-io-nominal text-white",
+  GUARDED: "bg-yellow-500 text-white",
+  HIGH: "bg-orange-600 text-white",
+  SEVERE: "bg-red-700 text-white",
 };
 
 function Badge({ level }: { level: Classification }) {
@@ -193,11 +196,11 @@ export default function DecisionDetailPanel({
               key={action.id || i}
               rank={(i + 1) as 1 | 2 | 3}
               actionId={action.id || String(i)}
-              priority_score={Math.min(safeNum(action.priority) / 100, 1)}
+              priority_score={Math.min(safeNum(action.priority_score ?? action.priority) / 100, 1)}
               title_en={action.action || ""}
               title_ar={action.action_ar || action.action || ""}
               urgency={Math.min(safeNum(action.urgency) / 100, 1)}
-              value={Math.min(safeNum(action.value) / 100, 1)}
+              value={Math.min(safeNum(action.value ?? action.priority_score ?? action.priority) / 100, 1)}
               time_to_act_hours={safeNum(action.time_to_act_hours, 24)}
               cost_usd={safeNum(action.cost_usd)}
               loss_avoided_usd={safeNum(action.loss_avoided_usd)}
@@ -233,7 +236,7 @@ export default function DecisionDetailPanel({
                       {lang === "ar" ? action.action_ar || action.action : action.action}
                     </td>
                     <td className="py-2 text-io-secondary">{action.sector}</td>
-                    <td className="py-2 text-right tabular-nums font-semibold">{safeFixed(action?.priority, 1)}</td>
+                    <td className="py-2 text-right tabular-nums font-semibold">{safeFixed(action?.priority_score ?? action?.priority, 1)}</td>
                     <td className="py-2 text-right tabular-nums text-io-success">{formatUSD(action.loss_avoided_usd)}</td>
                     <td className="py-2 text-right tabular-nums">{formatUSD(action.cost_usd)}</td>
                   </tr>

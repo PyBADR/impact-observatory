@@ -25,6 +25,9 @@ const classificationColors: Record<Classification, string> = {
   MODERATE: "bg-io-moderate text-white",
   LOW: "bg-io-low text-white",
   NOMINAL: "bg-io-nominal text-white",
+  GUARDED: "bg-yellow-500 text-white",
+  HIGH: "bg-orange-600 text-white",
+  SEVERE: "bg-red-700 text-white",
 };
 
 function Badge({ level }: { level: Classification }) {

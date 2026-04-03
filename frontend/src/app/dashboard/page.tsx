@@ -42,8 +42,9 @@ function normalizeRunResult(raw: Record<string, unknown>): RunResult {
       sector: String(act.sector ?? ""),
       owner: String(act.owner ?? ""),
       urgency: safeNum(act.urgency),
-      value: safeNum(act.value),
+      value: safeNum(act.value ?? act.priority_score ?? act.priority),
       regulatory_risk: safeNum(act.regulatory_risk ?? act.reg_risk),
+      priority_score: safeNum(act.priority_score ?? act.priority),
       priority: safeNum(act.priority ?? act.priority_score),
       time_to_act_hours: safeNum(act.time_to_act_hours, 24),
       time_to_failure_hours: safeNum(act.time_to_failure_hours ?? act.time_to_failure, Infinity),
@@ -69,10 +70,13 @@ function normalizeRunResult(raw: Record<string, unknown>): RunResult {
   const rawBanking = (raw.banking ?? raw.banking_stress ?? {}) as Record<string, unknown>;
   const banking = {
     run_id: String(rawBanking.run_id ?? raw.run_id ?? ""),
+    sector: String(rawBanking.sector ?? "banking"),
     total_exposure_usd: safeNum(rawBanking.total_exposure_usd),
     liquidity_stress: safeNum(rawBanking.liquidity_stress),
     credit_stress: safeNum(rawBanking.credit_stress),
     fx_stress: safeNum(rawBanking.fx_stress),
+    market_stress: safeNum(rawBanking.market_stress),
+    wholesale_funding_stress: safeNum(rawBanking.wholesale_funding_stress),
     interbank_contagion: safeNum(rawBanking.interbank_contagion),
     time_to_liquidity_breach_hours: safeNum(rawBanking.time_to_liquidity_breach_hours ?? rawBanking.time_to_breach_hours, Infinity),
     capital_adequacy_impact_pct: safeNum(rawBanking.capital_adequacy_impact_pct),
@@ -98,7 +102,9 @@ function normalizeRunResult(raw: Record<string, unknown>): RunResult {
   const rawInsurance = (raw.insurance ?? raw.insurance_stress ?? {}) as Record<string, unknown>;
   const insurance = {
     run_id: String(rawInsurance.run_id ?? raw.run_id ?? ""),
+    sector: String(rawInsurance.sector ?? "insurance"),
     portfolio_exposure_usd: safeNum(rawInsurance.portfolio_exposure_usd),
+    reserve_adequacy_ratio: safeNum(rawInsurance.reserve_adequacy_ratio ?? rawInsurance.reserve_adequacy, 1),
     claims_surge_multiplier: safeNum(rawInsurance.claims_surge_multiplier, 1),
     severity_index: safeNum(rawInsurance.severity_index),
     loss_ratio: safeNum(rawInsurance.loss_ratio),
@@ -128,6 +134,7 @@ function normalizeRunResult(raw: Record<string, unknown>): RunResult {
   const rawFintech = (raw.fintech ?? raw.fintech_stress ?? {}) as Record<string, unknown>;
   const fintech = {
     run_id: String(rawFintech.run_id ?? raw.run_id ?? ""),
+    sector: String(rawFintech.sector ?? "fintech"),
     payment_volume_impact_pct: safeNum(rawFintech.payment_volume_impact_pct),
     settlement_delay_hours: safeNum(rawFintech.settlement_delay_hours),
     api_availability_pct: safeNum(rawFintech.api_availability_pct, 100),
@@ -164,6 +171,12 @@ function normalizeRunResult(raw: Record<string, unknown>): RunResult {
     ),
     actions: normalizedActions,
     all_actions: normalizedActions,
+    escalation_triggers: Array.isArray(rawDecisions.escalation_triggers)
+      ? (rawDecisions.escalation_triggers as string[])
+      : [],
+    monitoring_priorities: Array.isArray(rawDecisions.monitoring_priorities)
+      ? (rawDecisions.monitoring_priorities as string[])
+      : [],
   };
 
   if (process.env.NODE_ENV === "development") {
@@ -529,11 +542,11 @@ export default function DashboardPage() {
                 key={action.id}
                 rank={(idx + 1) as 1 | 2 | 3}
                 actionId={action.id}
-                priority_score={action.priority}
+                priority_score={action.priority_score ?? action.priority ?? 0}
                 title_en={action.action}
                 title_ar={action.action_ar ?? action.action}
                 urgency={action.urgency}
-                value={action.value}
+                value={action.value ?? 0}
                 time_to_act_hours={action.time_to_act_hours}
                 cost_usd={action.cost_usd}
                 loss_avoided_usd={action.loss_avoided_usd}

@@ -26,6 +26,9 @@ const classificationColors: Record<Classification, string> = {
   MODERATE: "bg-io-moderate text-white",
   LOW: "bg-io-low text-white",
   NOMINAL: "bg-io-nominal text-white",
+  GUARDED: "bg-yellow-500 text-white",
+  HIGH: "bg-orange-600 text-white",
+  SEVERE: "bg-red-700 text-white",
 };
 
 function Badge({ level }: { level: Classification }) {
@@ -45,7 +48,8 @@ function formatUSD(value: number | null | undefined): string {
 }
 
 function formatHours(hours: number): string {
-  if (!isFinite(hours)) return "N/A";
+  // 9999 is the sentinel value meaning "no imminent risk"
+  if (!isFinite(hours) || hours >= 9999) return "N/A";
   if (hours >= 720) return `${Math.round(hours / 720)}mo`;
   if (hours >= 168) return `${Math.round(hours / 168)}w`;
   if (hours >= 24) return `${Math.round(hours / 24)}d`;

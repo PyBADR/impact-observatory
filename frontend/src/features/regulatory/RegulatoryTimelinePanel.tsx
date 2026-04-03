@@ -39,37 +39,37 @@ export default function RegulatoryTimelinePanel({ breachEvents, regulatoryState,
             <h3 className="text-base font-bold text-io-primary">
               {isAr ? "الحالة التنظيمية" : "Regulatory State"}
             </h3>
-            <span className={`px-3 py-1 rounded-full text-xs font-bold ${breachLevelColors[regulatoryState.breach_level] || breachLevelColors.none}`}>
-              {regulatoryState.breach_level.toUpperCase()}
+            <span className={`px-3 py-1 rounded-full text-xs font-bold ${breachLevelColors[regulatoryState.breach_level ?? "none"] || breachLevelColors.none}`}>
+              {(regulatoryState.breach_level ?? "none").toUpperCase()}
             </span>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             <div className="bg-io-bg rounded-lg p-3 text-center">
               <p className="text-[10px] text-io-secondary">LCR</p>
-              <p className={`text-lg font-bold tabular-nums ${regulatoryState.aggregate_lcr < 1.0 ? "text-red-600" : "text-green-600"}`}>
-                {(regulatoryState.aggregate_lcr * 100).toFixed(1)}%
+              <p className={`text-lg font-bold tabular-nums ${(regulatoryState.aggregate_lcr ?? 1.0) < 1.0 ? "text-red-600" : "text-green-600"}`}>
+                {((regulatoryState.aggregate_lcr ?? 0) * 100).toFixed(1)}%
               </p>
               <p className="text-[9px] text-io-secondary">min: 100%</p>
             </div>
             <div className="bg-io-bg rounded-lg p-3 text-center">
               <p className="text-[10px] text-io-secondary">NSFR</p>
-              <p className={`text-lg font-bold tabular-nums ${regulatoryState.aggregate_nsfr < 1.0 ? "text-red-600" : "text-green-600"}`}>
-                {(regulatoryState.aggregate_nsfr * 100).toFixed(1)}%
+              <p className={`text-lg font-bold tabular-nums ${(regulatoryState.aggregate_nsfr ?? 1.0) < 1.0 ? "text-red-600" : "text-green-600"}`}>
+                {((regulatoryState.aggregate_nsfr ?? 0) * 100).toFixed(1)}%
               </p>
               <p className="text-[9px] text-io-secondary">min: 100%</p>
             </div>
             <div className="bg-io-bg rounded-lg p-3 text-center">
               <p className="text-[10px] text-io-secondary">{isAr ? "الملاءة" : "Solvency"}</p>
-              <p className={`text-lg font-bold tabular-nums ${regulatoryState.aggregate_solvency_ratio < 1.0 ? "text-red-600" : "text-green-600"}`}>
-                {(regulatoryState.aggregate_solvency_ratio * 100).toFixed(1)}%
+              <p className={`text-lg font-bold tabular-nums ${(regulatoryState.aggregate_solvency_ratio ?? 1.0) < 1.0 ? "text-red-600" : "text-green-600"}`}>
+                {((regulatoryState.aggregate_solvency_ratio ?? 0) * 100).toFixed(1)}%
               </p>
               <p className="text-[9px] text-io-secondary">min: 100%</p>
             </div>
             <div className="bg-io-bg rounded-lg p-3 text-center">
               <p className="text-[10px] text-io-secondary">CAR</p>
-              <p className={`text-lg font-bold tabular-nums ${regulatoryState.aggregate_capital_adequacy_ratio < 0.13 ? "text-red-600" : "text-green-600"}`}>
-                {(regulatoryState.aggregate_capital_adequacy_ratio * 100).toFixed(2)}%
+              <p className={`text-lg font-bold tabular-nums ${(regulatoryState.aggregate_capital_adequacy_ratio ?? 0.13) < 0.13 ? "text-red-600" : "text-green-600"}`}>
+                {((regulatoryState.aggregate_capital_adequacy_ratio ?? 0) * 100).toFixed(2)}%
               </p>
               <p className="text-[9px] text-io-secondary">min: 13%</p>
             </div>
@@ -87,13 +87,13 @@ export default function RegulatoryTimelinePanel({ breachEvents, regulatoryState,
           </div>
 
           {/* Mandatory Actions */}
-          {regulatoryState.mandatory_actions.length > 0 && (
+          {(regulatoryState.mandatory_actions ?? []).length > 0 && (
             <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3">
               <p className="text-xs font-bold text-red-800 mb-2">
                 {isAr ? "إجراءات إلزامية" : "Mandatory Actions"}
               </p>
               <ul className="space-y-1">
-                {regulatoryState.mandatory_actions.map((action, i) => (
+                {(regulatoryState.mandatory_actions ?? []).map((action, i) => (
                   <li key={i} className="text-xs text-red-700 flex items-center gap-1.5">
                     <span className="w-1 h-1 rounded-full bg-red-400 flex-shrink-0" />
                     {action.replace(/_/g, " ")}

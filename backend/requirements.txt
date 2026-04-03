@@ -17,3 +17,4 @@ redis>=5.0.4
 fpdf2>=2.8.0
 python-dotenv>=1.0.0
 mesa>=2.3.0
+networkx>=3.3

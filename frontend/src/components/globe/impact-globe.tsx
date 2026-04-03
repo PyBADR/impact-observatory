@@ -103,7 +103,7 @@ export default function ImpactGlobe({
       entity_id: fi.entity_id,
       entity_label: fi.entity_label ?? fi.entity_id,
       loss_usd: fi.loss_usd,
-      stress_score: fi.stress_level ?? 0,
+      stress_score: fi.stress_score ?? 0,
       classification: fi.classification,
     })) as Array<Record<string, unknown>>;
   }, [runResult]);

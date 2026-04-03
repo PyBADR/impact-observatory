@@ -42,8 +42,8 @@ export default function BusinessImpactPanel({ data, lang }: Props) {
     );
   }
 
-  const { summary, loss_trajectory, time_to_failures } = data;
-  const maxLoss = Math.max(...loss_trajectory.map((p) => p.cumulative_loss), 1);
+  const { summary, loss_trajectory = [], time_to_failures = [] } = data;
+  const maxLoss = Math.max(...(loss_trajectory ?? []).map((p) => p.cumulative_loss), 1);
 
   return (
     <div className="space-y-6">

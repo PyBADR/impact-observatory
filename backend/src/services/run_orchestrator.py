@@ -146,7 +146,7 @@ def execute_run(params: ScenarioCreate) -> dict:
         for step in propagation_chain
     ]
 
-    total_ms = round((time.monotonic() - t_total) * 1000, 1)
+    total_ms = int(round((time.monotonic() - t_total) * 1000))
 
     # ── Assemble final unified response ───────────────────────────────────
     response = {

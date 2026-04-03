@@ -98,7 +98,8 @@ app = FastAPI(
     description=(
         "Decision Simulation Engine for GCC Financial Markets.\n\n"
         "Every output maps: Event → Math Models → Physics → Sector Stress → Decision.\n\n"
-        "**Model version:** 2.1.0 | **Architecture:** 9-layer deterministic pipeline\n\n"
+        "**Model version:** 2.1.0 | **Architecture:** 10-layer deterministic pipeline "
+        "(17 runtime stages in SimulationEngine + 1 audit stage = 18 pipeline stages total)\n\n"
         "**Mandatory outputs:** scenario_id · model_version · event_severity · peak_day · "
         "confidence_score · financial_impact · sector_analysis · propagation_score · "
         "unified_risk_score · risk_level · physical_system_status · bottlenecks · "
