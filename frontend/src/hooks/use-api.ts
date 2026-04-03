@@ -147,3 +147,23 @@ export function useRunsList(params?: { limit?: number; offset?: number }) {
     refetchInterval: 15_000,
   });
 }
+
+// ---- Run History (alias with observatory API) ----
+export function useRunHistory(limit = 20) {
+  return useQuery({
+    queryKey: ["run-history", limit],
+    queryFn: () => api.observatory.listRuns({ limit }),
+    staleTime: 5_000,
+    refetchInterval: 15_000,
+  });
+}
+
+// ---- Single Run Result ----
+export function useRunResult(runId: string | null) {
+  return useQuery({
+    queryKey: ["run-result", runId],
+    queryFn: () => api.observatory.getResult(runId!),
+    enabled: !!runId,
+    staleTime: 30_000,
+  });
+}

@@ -21,6 +21,12 @@ import type { RunSummary } from "@/types/observatory";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+/** Return auth headers for authenticated API calls. */
+function getAuthHeaders(): Record<string, string> {
+  const apiKey = process.env.NEXT_PUBLIC_API_KEY || "";
+  return apiKey ? { "X-API-Key": apiKey } : {};
+}
+
 async function fetchJSON<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     ...init,
@@ -34,6 +40,17 @@ async function fetchJSON<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(`API ${res.status}: ${body}`);
   }
   return res.json() as Promise<T>;
+}
+
+/** fetchJSON with automatic API key auth header injection. */
+async function fetchAuthJSON<T>(path: string, init?: RequestInit): Promise<T> {
+  return fetchJSON<T>(path, {
+    ...init,
+    headers: {
+      ...getAuthHeaders(),
+      ...init?.headers,
+    },
+  });
 }
 
 export const api = {
@@ -201,54 +218,68 @@ export const api = {
   /** List scenario templates */
   observatory: {
     templates: () =>
-      fetchJSON<{ count: number; templates: import("@/types/observatory").ScenarioTemplate[] }>(
+      fetchAuthJSON<{ count: number; templates: import("@/types/observatory").ScenarioTemplate[] }>(
         "/api/v1/scenarios"
       ),
 
     /** Execute a full run through all 12 services */
     run: (body: import("@/types/observatory").ScenarioCreate) =>
-      fetchJSON<import("@/types/observatory").RunResult>("/api/v1/runs", {
+      fetchAuthJSON<import("@/types/observatory").RunResult>("/api/v1/runs", {
         method: "POST",
         body: JSON.stringify(body),
       }),
 
     /** Get full run result */
     getResult: (runId: string) =>
-      fetchJSON<import("@/types/observatory").RunResult>(`/api/v1/runs/${runId}`),
+      fetchAuthJSON<import("@/types/observatory").RunResult>(`/api/v1/runs/${runId}`),
 
     /** Get financial impacts */
     financial: (runId: string) =>
-      fetchJSON<{ run_id: string; headline: import("@/types/observatory").RunHeadline; financial: import("@/types/observatory").FinancialImpact[] }>(
+      fetchAuthJSON<{ run_id: string; headline: import("@/types/observatory").RunHeadline; financial: import("@/types/observatory").FinancialImpact[] }>(
         `/api/v1/runs/${runId}/financial`
       ),
 
     /** Get banking stress */
     banking: (runId: string) =>
-      fetchJSON<import("@/types/observatory").BankingStress>(`/api/v1/runs/${runId}/banking`),
+      fetchAuthJSON<import("@/types/observatory").BankingStress>(`/api/v1/runs/${runId}/banking`),
 
     /** Get insurance stress */
     insurance: (runId: string) =>
-      fetchJSON<import("@/types/observatory").InsuranceStress>(`/api/v1/runs/${runId}/insurance`),
+      fetchAuthJSON<import("@/types/observatory").InsuranceStress>(`/api/v1/runs/${runId}/insurance`),
 
     /** Get fintech stress */
     fintech: (runId: string) =>
-      fetchJSON<import("@/types/observatory").FintechStress>(`/api/v1/runs/${runId}/fintech`),
+      fetchAuthJSON<import("@/types/observatory").FintechStress>(`/api/v1/runs/${runId}/fintech`),
 
     /** Get decision plan (top 3 actions) */
     decision: (runId: string) =>
-      fetchJSON<import("@/types/observatory").DecisionPlan>(`/api/v1/runs/${runId}/decision`),
+      fetchAuthJSON<import("@/types/observatory").DecisionPlan>(`/api/v1/runs/${runId}/decision`),
 
     /** Get explanation pack (bilingual) */
     explanation: (runId: string) =>
-      fetchJSON<import("@/types/observatory").ExplanationPack>(`/api/v1/runs/${runId}/explanation`),
+      fetchAuthJSON<import("@/types/observatory").ExplanationPack>(`/api/v1/runs/${runId}/explanation`),
 
     /** Get report in mode: executive | analyst | regulatory */
     report: (runId: string, mode: string, lang: string = "en") =>
-      fetchJSON<Record<string, unknown>>(`/api/v1/runs/${runId}/report/${mode}?lang=${lang}`),
+      fetchAuthJSON<Record<string, unknown>>(`/api/v1/runs/${runId}/report/${mode}?lang=${lang}`),
 
     /** Get bilingual labels */
     labels: (lang: string = "en") =>
-      fetchJSON<Record<string, string>>(`/api/v1/runs/labels?lang=${lang}`),
+      fetchAuthJSON<Record<string, string>>(`/api/v1/runs/labels?lang=${lang}`),
+
+    /** Get run history (paginated) */
+    listRuns: (params?: { limit?: number; offset?: number }) => {
+      const qs = new URLSearchParams();
+      if (params?.limit) qs.set("limit", String(params.limit));
+      if (params?.offset) qs.set("offset", String(params.offset));
+      return fetchAuthJSON<{ runs: RunSummary[]; count: number; limit: number; offset: number }>(
+        `/api/v1/runs?${qs}`
+      );
+    },
+
+    /** Export a run as a PDF report. Returns a blob URL for download. */
+    exportPdf: (runId: string, mode: "executive" | "analyst" | "regulatory" = "executive", lang: string = "en") =>
+      `${BASE}/api/v1/runs/${runId}/report/${mode}/pdf?lang=${lang}`,
   },
 
   // ---- Runs List (v1) ----
@@ -256,12 +287,8 @@ export const api = {
     const qs = new URLSearchParams();
     if (params?.limit) qs.set("limit", String(params.limit));
     if (params?.offset) qs.set("offset", String(params.offset));
-    const headers: Record<string, string> = {};
-    const apiKey = process.env.NEXT_PUBLIC_API_KEY || "observatory-dev-key";
-    if (apiKey) headers["X-API-Key"] = apiKey;
-    return fetchJSON<{ runs: RunSummary[]; count: number; limit: number; offset: number }>(
-      `/api/v1/runs?${qs}`,
-      { headers }
+    return fetchAuthJSON<{ runs: RunSummary[]; count: number; limit: number; offset: number }>(
+      `/api/v1/runs?${qs}`
     );
   },
 };
