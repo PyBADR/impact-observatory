@@ -49,8 +49,8 @@ def execute_run(params: ScenarioCreate) -> dict:
     scenario_meta = SCENARIO_CATALOG[scenario_id]
     severity = float(params.severity)
     horizon_hours = int(params.horizon_hours or 336)
-    label = params.label or scenario_meta.get("label_en", scenario_id)
-    label_ar = scenario_meta.get("label_ar", "")
+    label = params.label or scenario_meta.get("label_en") or scenario_meta.get("name", scenario_id)
+    label_ar = scenario_meta.get("label_ar") or scenario_meta.get("name_ar", "")
     stage_timings: dict[str, float] = {}
     stage_timings["scenario"] = round((time.monotonic() - t0) * 1000, 1)
 
