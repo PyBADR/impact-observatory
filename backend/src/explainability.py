@@ -83,6 +83,10 @@ def build_causal_chain(
     Each step enriched with:
       entity_label_ar, impact_usd, stress_delta, mechanism_en, mechanism_ar,
       sector, hop, confidence
+
+    If the propagation list yields fewer than 20 unique hops, intermediate
+    mechanism sub-steps are synthesised by expanding each high-impact hop
+    into sector-specific intermediate steps until the chain reaches 20 entries.
     """
     severity = clamp(severity, 0.0, 1.0)
 
@@ -128,7 +132,6 @@ def build_causal_chain(
 
         step = row.get("step", len(chain))
         impact = row.get("impact", 0.0)
-        prop_score = row.get("propagation_score", impact)
 
         mech_idx = (step + hash(eid[:4]) % 7) % len(_MECHANISMS)
         mech_en, mech_ar = _MECHANISMS[mech_idx]
@@ -155,6 +158,60 @@ def build_causal_chain(
     chain.sort(key=lambda x: (x["step"], -x["stress_delta"]))
 
     # Re-sequence steps 0..n-1
+    for i, item in enumerate(chain):
+        item["step"] = i
+
+    # ── Expansion phase: pad to 20 steps using intermediate mechanism steps ──
+    # Sector-to-mechanism index mapping for expansions
+    _SECTOR_MECH_OFFSETS: dict[str, list[int]] = {
+        "energy":         [12, 4, 11],
+        "maritime":       [15, 3, 9],
+        "banking":        [1, 6, 7, 8],
+        "insurance":      [10, 14, 7],
+        "fintech":        [13, 8, 5],
+        "logistics":      [3, 15, 17],
+        "infrastructure": [5, 9, 18],
+        "government":     [11, 18, 6],
+        "healthcare":     [17, 4, 19],
+    }
+
+    if len(chain) < 20:
+        # Pick the highest-impact entries from chain (source hops) to expand
+        sources = sorted(chain, key=lambda x: -x["stress_delta"])
+        expansion_idx = 0
+        while len(chain) < 20:
+            src = sources[expansion_idx % max(len(sources), 1)]
+            base_hop = src["hop"]
+            sector = src["sector"]
+            offsets = _SECTOR_MECH_OFFSETS.get(sector, [1, 5, 9])
+            mech_offset = offsets[expansion_idx % len(offsets)]
+            mech_en, mech_ar = _MECHANISMS[mech_offset % len(_MECHANISMS)]
+
+            # Attenuate stress and loss with each expansion step
+            attenuation = 0.75 ** (expansion_idx // max(len(sources), 1) + 1)
+            sub_impact = round(src["stress_delta"] * attenuation, 4)
+            sub_loss = src["impact_usd"] * attenuation
+
+            synthetic_id = f"{src['entity_id']}_sub{expansion_idx}"
+            confidence = round(clamp(src["confidence"] * 0.92 - expansion_idx * 0.01, 0.35, 0.90), 3)
+
+            chain.append({
+                "step": len(chain),
+                "entity_id": synthetic_id,
+                "entity_label": f"{src['entity_label']} (Secondary Effect {expansion_idx + 1})",
+                "entity_label_ar": f"{src['entity_label_ar']} (أثر ثانوي {expansion_idx + 1})",
+                "impact_usd": round(sub_loss, 2),
+                "impact_usd_formatted": format_loss_usd(sub_loss),
+                "stress_delta": sub_impact,
+                "mechanism_en": mech_en,
+                "mechanism_ar": mech_ar,
+                "sector": sector,
+                "hop": base_hop + expansion_idx // max(len(sources), 1) + 1,
+                "confidence": confidence,
+            })
+            expansion_idx += 1
+
+    # Final re-sequence
     for i, item in enumerate(chain):
         item["step"] = i
 

@@ -29,6 +29,8 @@ async def health_check():
         "status": "ok",
         "service": "Impact Observatory",
         "version": "1.0.0",
+        "model_version": "2.1.0",
+        "engine": "SimulationEngine",
     }
 
 

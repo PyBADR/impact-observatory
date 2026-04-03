@@ -102,12 +102,11 @@ def check_flow_conservation(
     """
     Inflow_i - Outflow_i = delta_storage_i  (must balance within 1%)
 
-    PhysicsViolationError if any node imbalance exceeds 5%.
+    PhysicsViolationError is raised when abs(imbalance) > 1% for any node.
 
     Returns {balanced: bool, violations: list, net_accumulation: float}
     """
     TOLERANCE = 0.01   # 1% balance tolerance
-    VIOLATION_THRESHOLD = 0.05
 
     node_ids = {n.get("id") for n in nodes}
     inflow: dict[str, float] = {nid: 0.0 for nid in node_ids}
@@ -129,7 +128,7 @@ def check_flow_conservation(
         net = inflow[nid] - outflow[nid]
         total_net += net
         imbalance = abs(net) / max(inflow[nid] + outflow[nid], 1.0)
-        if imbalance > VIOLATION_THRESHOLD:
+        if imbalance > TOLERANCE:
             violations.append({
                 "node_id": nid,
                 "inflow": round(inflow[nid], 2),
@@ -139,10 +138,10 @@ def check_flow_conservation(
 
     balanced = len(violations) == 0 and abs(total_net) / max(abs(total_net) + 1, 1) < TOLERANCE
 
-    if len(violations) > len(node_ids) * 0.20:
+    if violations:
         raise PhysicsViolationError(
-            f"Flow conservation violated in {len(violations)} nodes "
-            f"(>{len(node_ids) * 0.20:.0f} threshold)"
+            f"Flow conservation violated in {len(violations)} node(s); "
+            f"imbalances exceed {TOLERANCE * 100:.0f}% tolerance."
         )
 
     return {

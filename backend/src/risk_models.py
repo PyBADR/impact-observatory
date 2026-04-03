@@ -66,16 +66,16 @@ def compute_event_severity(
     """
     S = base_severity * cascade_multiplier * (1 + regional_amplification)
 
-    cascade_multiplier  = 1 + 0.3*n_shock_nodes + 0.2*cross_sector_factor
-    regional_amplification = base_severity * 0.4   (GCC systemic interconnect)
+    cascade_multiplier  = 1 + 0.15*n_shock_nodes + 0.10*cross_sector_factor
+    regional_amplification = base_severity * 0.15  (GCC systemic interconnect)
 
     Returns float in [0, 1].
     """
     base_severity = clamp(base_severity, 0.0, 1.0)
     cross_sector_factor = 1.0 if cross_sector else 0.0
 
-    cascade_multiplier = 1.0 + 0.3 * n_shock_nodes + 0.2 * cross_sector_factor
-    regional_amplification = base_severity * 0.4
+    cascade_multiplier = 1.0 + 0.15 * n_shock_nodes + 0.10 * cross_sector_factor
+    regional_amplification = base_severity * 0.15
 
     severity = base_severity * cascade_multiplier * (1.0 + regional_amplification)
     return clamp(severity, 0.0, 1.0)
@@ -506,24 +506,29 @@ def compute_unified_risk_score(
     R_i(t) = w1*G + w2*P + w3*N + w4*L + w5*T + w6*U
 
     G = geopolitical   (severity proxy)
-    P = propagation
+    P = propagation    (attenuated to keep score proportional to input severity)
     N = network_centrality (avg sector exposure)
-    L = liquidity stress
+    L = liquidity stress   (attenuated)
     T = threat_field   (insurance * severity)
-    U = utilization    (max sector exposure)
+    U = utilization    (max sector exposure, attenuated)
 
-    Weights: [0.20, 0.25, 0.15, 0.20, 0.10, 0.10]
+    Calibrated weights ensure score spreads across [0,1] proportionally to
+    input severity so that:
+      sev=0.2 → NOMINAL/LOW, sev=0.5 → GUARDED/ELEVATED, sev=0.8 → HIGH/SEVERE.
     """
     severity = clamp(severity, 0.0, 1.0)
-    W = [0.20, 0.25, 0.15, 0.20, 0.10, 0.10]
+    W = [0.30, 0.25, 0.10, 0.15, 0.10, 0.10]
 
     G = severity
-    P = clamp(propagation_score, 0.0, 1.0)
+    # Attenuate propagation score: it tends to be high even at low severity
+    P = clamp(propagation_score * severity, 0.0, 1.0)
     exposures = list(sector_exposure.values()) or [0.0]
+    # Attenuate network: sector exposure is already scaled by severity internally
     N = clamp(float(np.mean(exposures)), 0.0, 1.0)
-    L = clamp(liquidity_stress, 0.0, 1.0)
-    T = clamp(insurance_stress * severity, 0.0, 1.0)
-    U = clamp(float(np.max(exposures)), 0.0, 1.0)
+    # Attenuate liquidity stress similarly
+    L = clamp(liquidity_stress * severity, 0.0, 1.0)
+    T = clamp(insurance_stress * severity * 0.5, 0.0, 1.0)
+    U = clamp(float(np.max(exposures)) * 0.8, 0.0, 1.0)
 
     components = {"G": G, "P": P, "N": N, "L": L, "T": T, "U": U}
     score = clamp(

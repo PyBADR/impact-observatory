@@ -188,7 +188,7 @@ async def _persist(run_id: str, result: dict) -> None:
 
         row = {
             "run_id": run_id,
-            "template_id": result.get("template_id", "unknown"),
+            "template_id": result.get("scenario_id", result.get("template_id", "unknown")),
             "severity": float(result.get("severity", 0.5)),
             "horizon_hours": int(result.get("horizon_hours", 336)),
             "status": "completed",
@@ -258,6 +258,7 @@ def _summarize_record(r: Any) -> dict:
     """Convert RunRecord ORM object to summary dict."""
     return {
         "run_id": r.run_id,
+        "scenario_id": r.template_id,
         "template_id": r.template_id,
         "severity": r.severity,
         "status": r.status,
@@ -288,9 +289,11 @@ def _summarize_many(results: list[dict]) -> list[dict]:
     for r in results:
         h = r.get("headline", {})
         severity_code = h.get("severity_code") or _derive_severity_code(h)
+        scenario_id = r.get("scenario_id", r.get("template_id", "unknown"))
         out.append({
             "run_id": r.get("run_id"),
-            "template_id": r.get("template_id", "unknown"),
+            "scenario_id": scenario_id,
+            "template_id": scenario_id,
             "severity": r.get("severity", 0.5),
             "status": "completed",
             "headline_loss_usd": h.get("total_loss_usd", 0),

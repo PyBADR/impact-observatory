@@ -29,6 +29,8 @@ from src.physics_intelligence_layer import (
     propagate_shock_wave,
     compute_congestion,
     compute_recovery_trajectory,
+    check_flow_conservation,
+    PhysicsViolationError,
 )
 from src.flow_models import simulate_all_flows
 from src.decision_layer import (
@@ -715,6 +717,26 @@ class SimulationEngine:
             n_steps=min(horizon_days, 14),
         )
 
+        # ── Stage 12b: Flow conservation check ───────────────────────────
+        import logging as _logging
+        _logger = _logging.getLogger(__name__)
+        flow_balance_status = "BALANCED"
+        # Build synthetic flows from adjacency for conservation check
+        _synthetic_flows = []
+        for src_node, neighbors in GCC_ADJACENCY.items():
+            src_util = next((n["utilization"] for n in node_util if n["node_id"] == src_node), 0.5)
+            for tgt in neighbors:
+                _synthetic_flows.append({
+                    "source": src_node,
+                    "target": tgt,
+                    "volume": src_util * event_severity,
+                })
+        try:
+            check_flow_conservation(GCC_NODES, _synthetic_flows)
+        except PhysicsViolationError as _pve:
+            _logger.warning("PhysicsViolationError: %s", _pve)
+            flow_balance_status = "VIOLATION_DETECTED"
+
         # ── Stage 13: Congestion ──────────────────────────────────────────
         congestion = compute_congestion(node_util)
         congestion_score = congestion["system_congestion_score"]
@@ -861,7 +883,7 @@ class SimulationEngine:
             "physical_system_status": {
                 "nodes_assessed": len(GCC_NODES),
                 "saturated_nodes": saturated_nodes,
-                "flow_balance_status": "BALANCED",
+                "flow_balance_status": flow_balance_status,
                 "system_utilization": round(system_utilization, 4),
             },
             "bottlenecks": top_bottlenecks,
