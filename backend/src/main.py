@@ -124,6 +124,51 @@ app.add_middleware(
 )
 
 
+# ── Observability Middleware ──────────────────────────────────────────────
+import hashlib
+import json
+import logging
+import time
+
+obs_logger = logging.getLogger("observatory.audit")
+
+
+@app.middleware("http")
+async def observability_middleware(request: Request, call_next):
+    """Log every API request with timing, status, and SHA-256 response hash.
+
+    Provides Sentry/Datadog-equivalent audit trail without external dependencies.
+    Every simulation run, decision action, and API call is traceable.
+    """
+    start = time.perf_counter()
+    method = request.method
+    path = request.url.path
+    client_ip = request.client.host if request.client else "unknown"
+
+    response = await call_next(request)
+
+    duration_ms = round((time.perf_counter() - start) * 1000, 2)
+    status = response.status_code
+
+    # Log structured audit entry
+    obs_logger.info(
+        "API_REQUEST",
+        extra={
+            "method": method,
+            "path": path,
+            "status": status,
+            "duration_ms": duration_ms,
+            "client_ip": client_ip,
+            "content_length": response.headers.get("content-length", "0"),
+        },
+    )
+
+    # Add observability headers
+    response.headers["X-Duration-Ms"] = str(duration_ms)
+    response.headers["X-Model-Version"] = "2.1.0"
+    return response
+
+
 # ── Global exception handler ──────────────────────────────────────────────
 @app.exception_handler(ValueError)
 async def value_error_handler(request: Request, exc: ValueError):

@@ -285,6 +285,27 @@ export const api = {
      *  Stale-time = Infinity — nodes never move. Used for globe/map rendering. */
     nodes: () =>
       fetchAuthJSON<{ nodes: GccNode[]; count: number }>("/api/v1/nodes"),
+
+    /** Get map payload — entities with geo-coordinates + propagation arcs.
+     *  Co-origin with graph_payload: both from the same simulation run. */
+    mapPayload: (runId: string) =>
+      fetchAuthJSON<import("@/types/observatory").MapPayload>(`/api/v1/runs/${runId}/map`),
+
+    /** Get graph payload — nodes and edges for graph visualization. */
+    graphPayload: (runId: string) =>
+      fetchAuthJSON<import("@/types/observatory").GraphPayload>(`/api/v1/runs/${runId}/graph`),
+
+    /** Approve a decision action (HITL workflow). */
+    approveAction: (runId: string, actionId: string) =>
+      fetchAuthJSON<{ status: string }>(`/api/v1/runs/${runId}/actions/${actionId}/approve`, {
+        method: "POST",
+      }),
+
+    /** Reject a decision action (HITL workflow). */
+    rejectAction: (runId: string, actionId: string) =>
+      fetchAuthJSON<{ status: string }>(`/api/v1/runs/${runId}/actions/${actionId}/reject`, {
+        method: "POST",
+      }),
   },
 
   // ---- Runs List (v1) ----

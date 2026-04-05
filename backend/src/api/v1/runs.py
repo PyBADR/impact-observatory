@@ -428,6 +428,148 @@ async def reject_action(run_id: str, action_id: str, request: Request):
     }
 
 
+@router.get("/{run_id}/map")
+async def get_run_map_payload(run_id: str, request: Request):
+    """Get map payload — geo-located entities with impact data + propagation arcs.
+
+    Co-origin with graph: both derive from the same SimulationEngine run.
+    This resolves the map_payload / graph_payload co-origin requirement.
+    """
+    enforce_permission(get_role_from_request(request), "run:read")
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+
+    from src.simulation_engine import GCC_NODES
+
+    # Build node lookup: id → {lat, lng, label, label_ar, sector}
+    node_map = {}
+    for n in GCC_NODES:
+        node_map[n["id"]] = n
+
+    # Build map entities from financial impacts
+    financial = result.get("financial", result.get("financial_impact", {}).get("top_entities", []))
+    if isinstance(financial, dict):
+        financial = financial.get("top_entities", [])
+
+    entities = []
+    bottleneck_ids = set()
+    for b in result.get("bottlenecks", []):
+        bid = b.get("node_id") if isinstance(b, dict) else getattr(b, "node_id", "")
+        if bid:
+            bottleneck_ids.add(bid)
+
+    for fi in (financial if isinstance(financial, list) else []):
+        eid = fi.get("entity_id", "") if isinstance(fi, dict) else getattr(fi, "entity_id", "")
+        node = node_map.get(eid)
+        if not node:
+            continue
+        entities.append({
+            "entity_id": eid,
+            "entity_label": fi.get("entity_label", eid) if isinstance(fi, dict) else getattr(fi, "entity_label", eid),
+            "entity_label_ar": node.get("label_ar", ""),
+            "lat": node["lat"],
+            "lng": node["lng"],
+            "sector": node["sector"],
+            "loss_usd": fi.get("loss_usd", 0) if isinstance(fi, dict) else getattr(fi, "loss_usd", 0),
+            "stress_score": fi.get("stress_score", 0) if isinstance(fi, dict) else getattr(fi, "stress_score", 0),
+            "classification": fi.get("classification", "MODERATE") if isinstance(fi, dict) else getattr(fi, "classification", "MODERATE"),
+            "is_bottleneck": eid in bottleneck_ids,
+        })
+
+    # Build arcs from propagation chain
+    arcs = []
+    seen = set()
+    for step in result.get("propagation_chain", result.get("propagation", [])):
+        if not isinstance(step, dict):
+            continue
+        path = step.get("path", [])
+        if len(path) >= 2:
+            from_id = path[-2]
+            to_id = path[-1]
+            key = f"{from_id}-{to_id}"
+            if key not in seen and from_id in node_map and to_id in node_map:
+                seen.add(key)
+                arcs.append({
+                    "from_id": from_id,
+                    "to_id": to_id,
+                    "from_lat": node_map[from_id]["lat"],
+                    "from_lng": node_map[from_id]["lng"],
+                    "to_lat": node_map[to_id]["lat"],
+                    "to_lng": node_map[to_id]["lng"],
+                    "impact": step.get("impact", 0),
+                    "hop": step.get("hop", 0),
+                })
+
+    headline = result.get("headline", {})
+    return {
+        "run_id": run_id,
+        "scenario_id": result.get("scenario_id", ""),
+        "entities": entities,
+        "arcs": arcs[:50],
+        "total_loss_usd": headline.get("total_loss_usd", 0),
+        "peak_day": headline.get("peak_day", 0),
+        "risk_level": result.get("risk_level", ""),
+        "node_count": len(entities),
+        "arc_count": len(arcs),
+    }
+
+
+@router.get("/{run_id}/graph")
+async def get_run_graph_payload(run_id: str, request: Request):
+    """Get graph payload — nodes and edges for graph/network visualization.
+
+    Co-origin with map: both derive from the same SimulationEngine run.
+    """
+    enforce_permission(get_role_from_request(request), "run:read")
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+
+    financial = result.get("financial", result.get("financial_impact", {}).get("top_entities", []))
+    if isinstance(financial, dict):
+        financial = financial.get("top_entities", [])
+
+    nodes = []
+    for fi in (financial if isinstance(financial, list) else []):
+        eid = fi.get("entity_id", "") if isinstance(fi, dict) else getattr(fi, "entity_id", "")
+        nodes.append({
+            "id": eid,
+            "label": fi.get("entity_label", eid) if isinstance(fi, dict) else getattr(fi, "entity_label", eid),
+            "sector": fi.get("sector", "") if isinstance(fi, dict) else getattr(fi, "sector", ""),
+            "risk_score": fi.get("stress_score", 0) if isinstance(fi, dict) else getattr(fi, "stress_score", 0),
+            "stress_score": fi.get("stress_score", 0) if isinstance(fi, dict) else getattr(fi, "stress_score", 0),
+            "classification": fi.get("classification", "MODERATE") if isinstance(fi, dict) else getattr(fi, "classification", "MODERATE"),
+            "loss_usd": fi.get("loss_usd", 0) if isinstance(fi, dict) else getattr(fi, "loss_usd", 0),
+        })
+
+    edges = []
+    seen = set()
+    for step in result.get("propagation_chain", result.get("propagation", [])):
+        if not isinstance(step, dict):
+            continue
+        path = step.get("path", [])
+        if len(path) >= 2:
+            source = path[-2]
+            target = path[-1]
+            key = f"{source}-{target}"
+            if key not in seen:
+                seen.add(key)
+                edges.append({
+                    "source": source,
+                    "target": target,
+                    "weight": step.get("impact", 0),
+                    "hop": step.get("hop", 0),
+                })
+
+    return {
+        "run_id": run_id,
+        "scenario_id": result.get("scenario_id", ""),
+        "nodes": nodes,
+        "edges": edges[:100],
+    }
+
+
 @router.get("/audit/log")
 async def get_audit_log(request: Request, run_id: str | None = Query(None), limit: int = Query(100, ge=1, le=1000)):
     """Get audit trail entries."""

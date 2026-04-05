@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 import type { ScenarioResult, GlobeLayer, GeoCoord } from "@/types";
 
 interface CameraPosition {
@@ -65,7 +66,9 @@ const GCC_CENTER: CameraPosition = {
   pitch: -90,
 };
 
-export const useAppStore = create<AppState>((set) => ({
+export const useAppStore = create<AppState>()(
+  persist(
+    (set) => ({
   // ---- Language ----
   language: "en",
   setLanguage: (lang) => set({ language: lang }),
@@ -126,4 +129,29 @@ export const useAppStore = create<AppState>((set) => ({
   // ---- Time Horizon ----
   timeHorizon: 72,
   setTimeHorizon: (h) => set({ timeHorizon: h }),
-}));
+    }),
+    {
+      name: "impact-observatory-store",
+      storage: createJSONStorage(() => {
+        if (typeof window === "undefined") {
+          // SSR fallback — no-op storage
+          return {
+            getItem: () => null,
+            setItem: () => {},
+            removeItem: () => {},
+          };
+        }
+        return localStorage;
+      }),
+      // Only persist user preferences, not transient state
+      partialize: (state) => ({
+        language: state.language,
+        severity: state.severity,
+        timeHorizon: state.timeHorizon,
+        selectedScenarioId: state.selectedScenarioId,
+        viewMode: state.viewMode,
+        insuranceViewOpen: state.insuranceViewOpen,
+      }),
+    }
+  )
+);

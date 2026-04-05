@@ -603,3 +603,85 @@ export interface GccNode {
   current_load: number;
   redundancy: number;
 }
+
+// ── Map Payload Types (co-origin with graph_payload) ─────────────
+
+/** A geo-located entity with impact data for map rendering. */
+export interface MapEntity {
+  entity_id: string;
+  entity_label: string;
+  entity_label_ar?: string;
+  lat: number;
+  lng: number;
+  sector: string;
+  loss_usd: number;
+  stress_score: number;
+  classification: string;
+  is_bottleneck: boolean;
+}
+
+/** Arc representing propagation between two geo-located entities. */
+export interface MapArc {
+  from_id: string;
+  to_id: string;
+  from_lat: number;
+  from_lng: number;
+  to_lat: number;
+  to_lng: number;
+  impact: number;
+  hop: number;
+}
+
+/**
+ * Map payload — combines GCC node positions with simulation entity impacts.
+ * Co-origin with graph_payload: both derive from the same SimulationEngine run.
+ * This type resolves BLOCKER-03 (graph_payload / map_payload co-origin).
+ */
+export interface MapPayload {
+  run_id: string;
+  scenario_id: string;
+  entities: MapEntity[];
+  arcs: MapArc[];
+  total_loss_usd: number;
+  peak_day: number;
+  risk_level: string;
+  node_count: number;
+  arc_count: number;
+}
+
+/** Graph payload — nodes and edges for graph visualization. */
+export interface GraphPayload {
+  run_id: string;
+  scenario_id: string;
+  nodes: Array<{
+    id: string;
+    label: string;
+    label_ar?: string;
+    sector: string;
+    risk_score: number;
+    stress_score: number;
+    classification: string;
+    loss_usd: number;
+  }>;
+  edges: Array<{
+    source: string;
+    target: string;
+    weight: number;
+    hop: number;
+  }>;
+}
+
+/**
+ * GraphScenarioTemplate extends ScenarioTemplate with optional
+ * graph/map-specific fields for production catalog shape.
+ */
+export interface GraphScenarioTemplate extends ScenarioTemplate {
+  /** Domain category (e.g. "maritime", "energy", "financial", "government") */
+  domain?: string;
+  /** Default severity for this scenario */
+  default_severity?: number;
+  /** Whether this scenario supports geographic map visualization */
+  map_capable?: boolean;
+  /** Pre-computed expected loss range for catalog display */
+  expected_loss_range?: { min_usd: number; max_usd: number };
+}
