@@ -335,30 +335,36 @@ export default function HomePage() {
     startFlow({ scenarioId: templateId, scenarioLabel, scenarioLabelAr, severity });
 
     try {
-      const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       const API_KEY = process.env.NEXT_PUBLIC_IO_API_KEY || "io_master_key_2026";
       const headers = {
         "Content-Type": "application/json",
         "X-IO-API-Key": API_KEY,
       };
 
+      function scenarioFetchError(status: number): string {
+        if (status === 422) return "The scenario configuration could not be processed. Please select a different scenario or adjust the severity.";
+        if (status === 404) return "The scenario template was not found. Please refresh and try again.";
+        if (status >= 500) return "The analysis service is temporarily unavailable. Please try again in a moment.";
+        return "The analysis could not be completed. Please try again.";
+      }
+
       advanceStage("reasoning", { templateId, severity });
 
-      const runRes = await fetch(`${BASE}/api/v1/runs`, {
+      const runRes = await fetch(`/api/v1/runs`, {
         method: "POST",
         headers,
         body: JSON.stringify({ template_id: templateId, severity }),
       });
-      if (!runRes.ok) throw new Error(`API error: ${runRes.status}`);
+      if (!runRes.ok) throw new Error(scenarioFetchError(runRes.status));
       const runData = await runRes.json();
       const runId = runData.data?.run_id;
-      if (!runId) throw new Error("No run_id returned");
-      if (runData.data?.status === "failed") throw new Error(runData.data?.error || "Run failed");
+      if (!runId) throw new Error("The analysis service did not return a run identifier. Please try again.");
+      if (runData.data?.status === "failed") throw new Error("The analysis pipeline encountered an error. Please try a different scenario.");
 
       advanceStage("simulation", { runId, status: "processing" });
 
-      const resultRes = await fetch(`${BASE}/api/v1/runs/${runId}`, { headers });
-      if (!resultRes.ok) throw new Error(`Result fetch failed: ${resultRes.status}`);
+      const resultRes = await fetch(`/api/v1/runs/${runId}`, { headers });
+      if (!resultRes.ok) throw new Error(scenarioFetchError(resultRes.status));
       const resultJson = await resultRes.json();
       const unifiedResult = resultJson.data;
       if (!unifiedResult) throw new Error("No result data returned");
@@ -893,9 +899,18 @@ export default function HomePage() {
         <div className="max-w-lg mx-auto mt-16 px-6">
           <div className="bg-io-surface border border-red-200 rounded-xl p-6">
             <p className="text-[10px] font-semibold text-red-600 uppercase tracking-widest mb-2">
-              {isAr ? "خطأ في التحليل" : "Analysis Error"}
+              {isAr ? "خطأ في التحليل" : "Analysis Unavailable"}
             </p>
-            <p className="text-sm font-medium text-io-primary mb-4">{error}</p>
+            <p className="text-sm font-medium text-io-primary mb-1">
+              {isAr
+                ? "تعذّر إتمام التحليل في هذه اللحظة."
+                : "The analysis could not be completed at this time."}
+            </p>
+            <p className="text-xs text-io-secondary mb-4">
+              {isAr
+                ? "يُرجى اختيار سيناريو مختلف أو المحاولة مرة أخرى."
+                : error}
+            </p>
             <button
               onClick={() => { setError(null); setAppView("scenarios"); }}
               className="px-4 py-2 text-sm font-medium bg-io-bg border border-io-border rounded-lg hover:bg-io-accent hover:text-white hover:border-io-accent transition-colors"

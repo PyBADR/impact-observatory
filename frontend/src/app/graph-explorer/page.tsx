@@ -84,7 +84,6 @@ function GraphErrorState({
             ? "تعذّر الاتصال بخدمة الرسم البياني. تحقق من تشغيل الخادم الخلفي."
             : "Unable to connect to the knowledge graph service. Verify the backend API is reachable."
         }
-        detail={error}
         lang={isAr ? "ar" : "en"}
         action={
           <a

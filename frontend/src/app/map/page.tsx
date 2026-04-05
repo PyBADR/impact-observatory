@@ -62,7 +62,6 @@ function MapUnavailableState({
                 ? "البيانات الجغرافية المباشرة غير متاحة حالياً. يظل تحليل السيناريوهات متاحاً."
                 : "Live geospatial data is currently unavailable. Scenario analysis remains accessible."
             }
-            detail={error}
             lang={isAr ? "ar" : "en"}
             action={
               <div className="flex gap-2">

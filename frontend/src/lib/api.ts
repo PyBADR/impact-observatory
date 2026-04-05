@@ -10,8 +10,16 @@
  * All section-fetch endpoints removed — unified payload replaces them.
  */
 
-const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const BASE = "";
 const API_KEY = process.env.NEXT_PUBLIC_IO_API_KEY || "io_master_key_2026";
+
+function apiErrorMessage(status: number): string {
+  if (status === 422) return "The request could not be processed. Please verify the inputs and try again.";
+  if (status === 404) return "The requested resource was not found. Please refresh or try a different selection.";
+  if (status === 401 || status === 403) return "Access to this resource is restricted. Please contact your administrator.";
+  if (status >= 500) return "The analysis service is temporarily unavailable. Please try again in a moment.";
+  return "An unexpected error occurred. Please try again.";
+}
 
 async function fetchJSON<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
@@ -23,8 +31,7 @@ async function fetchJSON<T>(path: string, init?: RequestInit): Promise<T> {
     },
   });
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`API ${res.status}: ${body}`);
+    throw new Error(apiErrorMessage(res.status));
   }
   return res.json() as Promise<T>;
 }
