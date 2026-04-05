@@ -151,6 +151,7 @@ _LABELS: dict[str, dict[str, str]] = {
         "trust":               "Audit",
         "model_version":       "Model Version",
         "dataset_version":     "Dataset Version",
+        "audit_ref":           "Audit Reference",
     },
     "ar": {
         "title":               "مرصد الأثر — تقرير المحاكاة",
@@ -181,6 +182,7 @@ _LABELS: dict[str, dict[str, str]] = {
         "trust":               "سجل المراجعة",
         "model_version":       "إصدار النموذج",
         "dataset_version":     "إصدار مجموعة البيانات",
+        "audit_ref":           "مرجع التدقيق",
     },
 }
 
@@ -356,7 +358,7 @@ def _build_pdf(result: dict, lang: str) -> bytes:
         _row(L["dataset_version"], _safe(trust.get("dataset_version", result.get("dataset_version", ""))))
         audit_hash = trust.get("audit_hash", "")
         if audit_hash:
-            _row("audit_hash", _safe(audit_hash)[:64])
+            _row(L.get("audit_ref", "Audit Reference"), _safe(audit_hash)[:64])
 
     buf = BytesIO()
     pdf.output(buf)

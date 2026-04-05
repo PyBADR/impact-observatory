@@ -35,14 +35,21 @@ import {
 } from "@/components/ui";
 import { formatUSD, formatHours, safeFixed, safePercent, safeArray } from "@/lib/format";
 
-const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const API_KEY = process.env.NEXT_PUBLIC_IO_API_KEY || "io_master_key_2026";
 
+function exportErrorMessage(status: number): string {
+  if (status === 404) return "Report not found. Please re-run the scenario and try again.";
+  if (status === 425) return "Report is still generating. Please wait a moment and try again.";
+  if (status === 403) return "Report export requires elevated permissions. Contact your administrator.";
+  if (status >= 500) return "The export service is temporarily unavailable. Please try again shortly.";
+  return "Report export could not be completed. Please try again.";
+}
+
 async function downloadRunPDF(runId: string, lang: string): Promise<void> {
-  const res = await fetch(`${BASE}/api/v1/runs/${runId}/export?lang=${lang}`, {
+  const res = await fetch(`/api/v1/runs/${runId}/export?lang=${lang}`, {
     headers: { "X-IO-API-Key": API_KEY },
   });
-  if (!res.ok) throw new Error(`Export failed: ${res.status}`);
+  if (!res.ok) throw new Error(exportErrorMessage(res.status));
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -330,7 +337,9 @@ export default function ExecutiveDashboard({
               {pdfLoading ? t.exporting : t.export_pdf}
             </button>
             {pdfError && (
-              <p className="text-[10px] text-red-600 max-w-[200px] text-end">{pdfError}</p>
+              <p className="text-[10px] text-red-600 max-w-[220px] text-end leading-tight">
+                {pdfError}
+              </p>
             )}
           </div>
         </div>
