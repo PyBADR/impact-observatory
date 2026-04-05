@@ -62,12 +62,21 @@ export const useRunState = create<RunState>((set, get) => ({
     } catch (e) {
       console.warn("[run-state] Failed to adapt unified result:", e);
     }
+    // Handle both v4 (template_id) and v2 (scenario_id) schemas
+    const u = result as unknown as Record<string, unknown>;
+    const rawScenario = (result.scenario ?? {}) as Record<string, unknown>;
+    const scenarioId =
+      (rawScenario.template_id as string)
+      ?? (rawScenario.scenario_id as string)
+      ?? (u.scenario_id as string)
+      ?? "";
+    const severity = (rawScenario.severity as number) ?? (u.severity as number) ?? 0.7;
     set({
       unifiedResult: result,
       adaptedResult: adapted,
       activeSource: "unified",
-      scenarioId: result.scenario.template_id,
-      severity: result.scenario.severity,
+      scenarioId,
+      severity,
       isRunning: false,
       error: null,
     });

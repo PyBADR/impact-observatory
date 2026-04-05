@@ -46,28 +46,73 @@ async function gql<T>(path: string, init?: RequestInit): Promise<T> {
   if (!res.ok) {
     throw new Error(graphErrorMessage(res.status));
   }
-  const envelope = (await res.json()) as Envelope<T>;
-  return envelope.data;
+  const json = await res.json();
+  // Handle both v4 success_response envelope ({ trace_id, data: T, warnings })
+  // and older backends that return raw data without an envelope wrapper.
+  if (typeof json?.trace_id === "string" && json?.data !== undefined) {
+    return json.data as T;
+  }
+  return json as T;
+}
+
+/**
+ * Normalise graph node fields from older backend schemas to the canonical shape.
+ *
+ * Older backends use: latitude, longitude, gdp_weight, criticality, risk_score
+ * Canonical schema:   lat,      lng,       weight,     sensitivity, stress
+ */
+function normalizeGraphNode(n: Record<string, unknown>): import("@/types/observatory").KnowledgeGraphNode {
+  return {
+    id: n.id as string,
+    label: n.label as string,
+    label_ar: (n.label_ar as string) ?? "",
+    layer: n.layer as import("@/types/observatory").GraphLayer,
+    type: (n.type as string) ?? "",
+    weight: (n.weight as number) ?? (n.gdp_weight as number) ?? 0,
+    lat: (n.lat as number) ?? (n.latitude as number) ?? 0,
+    lng: (n.lng as number) ?? (n.longitude as number) ?? 0,
+    sensitivity: (n.sensitivity as number) ?? (n.criticality as number) ?? 0.5,
+    stress: (n.stress as number) ?? (n.risk_score as number) ?? undefined,
+    classification: (n.classification as import("@/types/observatory").StressClassification) ?? undefined,
+  };
 }
 
 export const graphClient = {
-  /** GET /api/v1/graph/nodes — All 76 nodes, optional layer filter */
-  nodes: (layer?: GraphLayer) =>
-    gql<GraphNodesResponse>(
+  /** GET /api/v1/graph/nodes — All nodes, optional layer filter.
+   *  Normalises old-schema fields (latitude→lat, gdp_weight→weight, etc.)
+   *  so consumers always receive the canonical KnowledgeGraphNode shape. */
+  nodes: async (layer?: GraphLayer): Promise<GraphNodesResponse> => {
+    const raw = await gql<Record<string, unknown>>(
       `/api/v1/graph/nodes${layer ? `?layer=${layer}` : ""}`
-    ),
+    );
+    const rawNodes = (raw.nodes as Record<string, unknown>[] | undefined) ?? [];
+    const nodes = rawNodes.map(normalizeGraphNode);
+    return {
+      nodes,
+      total: (raw.total as number) ?? nodes.length,
+      layers: (raw.layers as string[]) ?? [],
+      total_graph_nodes: (raw.total_graph_nodes as number) ?? (raw.total as number) ?? nodes.length,
+      total_graph_edges: (raw.total_graph_edges as number) ?? 0,
+    };
+  },
 
   /** GET /api/v1/graph/edges — All edges, optional layer filter */
-  edges: (layer?: GraphLayer) =>
-    gql<GraphEdgesResponse>(
+  edges: async (layer?: GraphLayer): Promise<GraphEdgesResponse> => {
+    const raw = await gql<Record<string, unknown>>(
       `/api/v1/graph/edges${layer ? `?layer=${layer}` : ""}`
-    ),
+    );
+    const rawEdges = (raw.edges as import("@/types/observatory").KnowledgeGraphEdge[] | undefined) ?? [];
+    return {
+      edges: rawEdges,
+      total: (raw.total as number) ?? rawEdges.length,
+    };
+  },
 
   /** GET /api/v1/graph/nodes/{id} — Single node */
-  node: (nodeId: string) =>
-    gql<import("@/types/observatory").KnowledgeGraphNode>(
-      `/api/v1/graph/nodes/${nodeId}`
-    ),
+  node: async (nodeId: string): Promise<import("@/types/observatory").KnowledgeGraphNode> => {
+    const raw = await gql<Record<string, unknown>>(`/api/v1/graph/nodes/${nodeId}`);
+    return normalizeGraphNode(raw);
+  },
 
   /** GET /api/v1/graph/subgraph — Ego-network around center node */
   subgraph: (center: string, depth = 2) =>
@@ -75,11 +120,34 @@ export const graphClient = {
       `/api/v1/graph/subgraph?center=${encodeURIComponent(center)}&depth=${depth}`
     ),
 
-  /** GET /api/v1/graph/scenarios — Available scenario templates */
-  scenarios: () =>
-    gql<{ scenarios: GraphScenarioTemplate[]; total: number }>(
-      "/api/v1/graph/scenarios"
-    ),
+  /**
+   * GET /api/v1/graph/scenarios — Available scenario templates.
+   * Falls back to GET /api/v1/scenarios if the graph-specific route returns 404
+   * (older backends that pre-date the /graph/scenarios endpoint).
+   */
+  scenarios: async (): Promise<{ scenarios: GraphScenarioTemplate[]; total: number }> => {
+    try {
+      const raw = await gql<Record<string, unknown>>("/api/v1/graph/scenarios");
+      return {
+        scenarios: (raw.scenarios as GraphScenarioTemplate[]) ?? [],
+        total: (raw.total as number) ?? 0,
+      };
+    } catch {
+      // Fallback: /api/v1/scenarios (standard catalog on all backend versions)
+      const raw = await gql<Record<string, unknown>>("/api/v1/scenarios");
+      const templates = (raw.templates as Record<string, unknown>[] | undefined)
+        ?? (raw.scenarios as Record<string, unknown>[] | undefined)
+        ?? [];
+      const scenarios: GraphScenarioTemplate[] = templates.map((t) => ({
+        id: (t.id as string) ?? (t.template_id as string) ?? "",
+        label: (t.name as string) ?? (t.label as string) ?? "",
+        label_ar: (t.name_ar as string) ?? (t.label_ar as string) ?? "",
+        sector: ((t.sectors_affected as string[]) ?? [])[0] ?? "",
+        severity_range: [0, 1] as [number, number],
+      }));
+      return { scenarios, total: scenarios.length };
+    }
+  },
 
   /** POST /api/v1/graph/scenario/{id}/impacts — Graph-only impact */
   scenarioImpacts: (scenarioId: string, severity = 0.7) =>

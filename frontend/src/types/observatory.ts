@@ -570,7 +570,10 @@ export interface UnifiedRunResult {
 export interface GraphScenarioTemplate {
   id: string;
   label: string;
-  shock_count: number;
+  label_ar?: string;
+  sector?: string;
+  severity_range?: [number, number];
+  shock_count?: number;
 }
 
 // ── Live Signal Layer types ───────────────────────────────────────────────────

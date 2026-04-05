@@ -350,26 +350,34 @@ export default function HomePage() {
 
       advanceStage("reasoning", { templateId, severity });
 
+      // Send both template_id (new backend) and scenario_id (legacy backend)
       const runRes = await fetch(`/api/v1/runs`, {
         method: "POST",
         headers,
-        body: JSON.stringify({ template_id: templateId, severity }),
+        body: JSON.stringify({ template_id: templateId, scenario_id: templateId, severity }),
       });
       if (!runRes.ok) throw new Error(scenarioFetchError(runRes.status));
       const runData = await runRes.json();
-      const runId = runData.data?.run_id;
+
+      // Handle both v4 envelope ({ data: { run_id } }) and legacy direct response ({ run_id })
+      const runMeta: Record<string, unknown> = runData?.data ?? runData ?? {};
+      const runId = (runMeta.run_id as string) ?? "";
       if (!runId) throw new Error("The analysis service did not return a run identifier. Please try again.");
-      if (runData.data?.status === "failed") throw new Error("The analysis pipeline encountered an error. Please try a different scenario.");
+      if (runMeta.status === "failed") throw new Error("The analysis pipeline encountered an error. Please try a different scenario.");
 
       advanceStage("simulation", { runId, status: "processing" });
 
+      // Legacy backends return the full result from POST, so GET may just return the same.
+      // Always fetch to get the canonical result shape.
       const resultRes = await fetch(`/api/v1/runs/${runId}`, { headers });
       if (!resultRes.ok) throw new Error(scenarioFetchError(resultRes.status));
       const resultJson = await resultRes.json();
-      const unifiedResult = resultJson.data;
-      if (!unifiedResult) throw new Error("No result data returned");
 
-      useRunState.getState().setUnifiedResult(unifiedResult);
+      // Handle both v4 envelope ({ data: UnifiedRunResult }) and legacy ({ run_id, ... } directly)
+      const unifiedResult: Record<string, unknown> = resultJson?.data ?? resultJson ?? {};
+      if (!unifiedResult || !unifiedResult.run_id) throw new Error("No result data returned");
+
+      useRunState.getState().setUnifiedResult(unifiedResult as unknown as import("@/types/observatory").UnifiedRunResult);
 
       const adapted = useRunState.getState().getRunResult();
       if (!adapted) throw new Error("Adapter failed to convert unified result");

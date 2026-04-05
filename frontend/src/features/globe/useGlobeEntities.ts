@@ -7,8 +7,6 @@ import { useRunState } from "@/lib/run-state";
 import type {
   ImpactedEntity,
   UnifiedRunResult,
-  DecisionActionV2,
-  SectorRollup,
   GraphScenarioTemplate,
 } from "@/types/observatory";
 
@@ -31,17 +29,21 @@ export function useGlobeEntities() {
     error: null,
   });
 
-  // Load available scenarios
+  // Load available scenarios — falls back to /api/v1/scenarios via graphClient.scenarios()
   const loadScenarios = useCallback(async () => {
-    setState((s) => ({ ...s, scenariosLoading: true }));
+    setState((s) => ({ ...s, scenariosLoading: true, error: null }));
     try {
       const res = await graphClient.scenarios();
       setState((s) => ({ ...s, scenarios: res.scenarios, scenariosLoading: false }));
     } catch (err) {
+      // Non-fatal: scenarios list unavailable; map will show empty selector
       setState((s) => ({
         ...s,
         scenariosLoading: false,
-        error: err instanceof Error ? err.message : "Failed to load scenarios",
+        // Only surface error if no scenarios loaded at all
+        error: s.scenarios.length === 0
+          ? err instanceof Error ? err.message : "Failed to load scenarios"
+          : s.error,
       }));
     }
   }, []);
@@ -51,22 +53,64 @@ export function useGlobeEntities() {
     async (templateId: string, severity = 0.7, horizonHours = 168) => {
       setState((s) => ({ ...s, loading: true, error: null }));
       try {
-        // 1. POST /runs → 202 Accepted with run_meta
-        const runRes = await api.observatory.run({
-          template_id: templateId,
-          severity,
-          horizon_hours: horizonHours,
-        });
-        const runId = (runRes.data as any).run_id as string;
+        const API_KEY = process.env.NEXT_PUBLIC_IO_API_KEY || "io_master_key_2026";
+        const headers = {
+          "Content-Type": "application/json",
+          "X-IO-API-Key": API_KEY,
+        };
 
-        // 2. GET /runs/{id} → Full UnifiedRunResult
-        const resultRes = await api.observatory.result(runId);
-        const result = resultRes.data as unknown as UnifiedRunResult;
+        // 1. POST /runs — send both template_id (v4) and scenario_id (legacy)
+        const postRes = await fetch("/api/v1/runs", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            template_id: templateId,
+            scenario_id: templateId,
+            severity,
+            horizon_hours: horizonHours,
+          }),
+        });
+        if (!postRes.ok) {
+          throw new Error(
+            postRes.status >= 500
+              ? "The analysis service is temporarily unavailable."
+              : `Scenario run failed (${postRes.status})`
+          );
+        }
+        const postData = await postRes.json();
+
+        // Handle both v4 envelope ({ data: { run_id } }) and legacy direct ({ run_id })
+        const runMeta: Record<string, unknown> = postData?.data ?? postData ?? {};
+        const runId = (runMeta.run_id as string) ?? "";
+        if (!runId) throw new Error("Backend did not return a run ID.");
+
+        // 2. GET /runs/{id} → Full result (both backends support this)
+        const getRes = await fetch(`/api/v1/runs/${runId}`, { headers });
+        if (!getRes.ok) throw new Error("Failed to retrieve run result.");
+        const getData = await getRes.json();
+
+        // Handle both v4 envelope ({ data: UnifiedRunResult }) and legacy direct
+        const rawResult: Record<string, unknown> = getData?.data ?? getData ?? {};
+
+        // Derive typed UnifiedRunResult — works for both v4 and v2 schemas
+        const result = rawResult as unknown as UnifiedRunResult;
+
+        // Build impacted entities for the map.
+        // v4: map_payload.impacted_entities (with lat/lng)
+        // v2: top_impacted_entities is just node ID strings — no geolocation available.
+        let entities: ImpactedEntity[] = result.map_payload?.impacted_entities ?? [];
+        if (entities.length === 0) {
+          // Typed capability state: map data unavailable for this backend version
+          // Surface the information but don't block the result
+          console.info(
+            "[map] map_payload absent — geospatial layer unavailable for this backend schema"
+          );
+        }
 
         setState((s) => ({
           ...s,
           runResult: result,
-          entities: result.map_payload?.impacted_entities ?? [],
+          entities,
           loading: false,
         }));
         // Store in shared state for cross-page sync (Dashboard, etc.)
