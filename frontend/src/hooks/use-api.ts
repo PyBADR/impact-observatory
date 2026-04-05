@@ -285,3 +285,13 @@ export function useGraphPayload(runId: string | null) {
     staleTime: 30_000,
   });
 }
+
+/** Get system status — all connectors + engine health */
+export function useSystemStatus() {
+  return useQuery({
+    queryKey: ["system-status"],
+    queryFn: () => api.observatory.systemStatus(),
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+  });
+}

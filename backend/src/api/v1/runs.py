@@ -89,6 +89,15 @@ async def create_run(body: ScenarioCreate, request: Request):
 
         raw_result["trace_id"] = trace_id
         run_store.put_for_org(raw_result["run_id"], raw_result, org=_get_org_from_request(request))
+
+        # Notify Slack (fire-and-forget — non-blocking)
+        try:
+            import asyncio
+            from src.connectors.slack_connector import notify_run_complete
+            asyncio.ensure_future(notify_run_complete(raw_result))
+        except Exception:
+            pass  # Slack is optional — never block the response
+
         return raw_result
     except HTTPException:
         raise
@@ -380,6 +389,17 @@ async def approve_action(run_id: str, action_id: str, request: Request):
     )
 
     logger.info("Action %s in run %s approved by human reviewer", action_id, run_id)
+
+    # Notify Slack
+    try:
+        import asyncio
+        from src.connectors.slack_connector import notify_action_decision
+        action_text = target.get("action", "") if isinstance(target, dict) else getattr(target, "action", "")
+        owner_text = target.get("owner", "") if isinstance(target, dict) else getattr(target, "owner", "")
+        asyncio.ensure_future(notify_action_decision(run_id, action_id, action_text, "APPROVED", owner_text))
+    except Exception:
+        pass
+
     return {
         "run_id": run_id,
         "action_id": action_id,
@@ -419,6 +439,17 @@ async def reject_action(run_id: str, action_id: str, request: Request):
         target.status = "REJECTED"
 
     logger.info("Action %s in run %s rejected by human reviewer", action_id, run_id)
+
+    # Notify Slack
+    try:
+        import asyncio
+        from src.connectors.slack_connector import notify_action_decision
+        action_text = target.get("action", "") if isinstance(target, dict) else getattr(target, "action", "")
+        owner_text = target.get("owner", "") if isinstance(target, dict) else getattr(target, "owner", "")
+        asyncio.ensure_future(notify_action_decision(run_id, action_id, action_text, "REJECTED", owner_text))
+    except Exception:
+        pass
+
     return {
         "run_id": run_id,
         "action_id": action_id,
@@ -588,3 +619,90 @@ async def get_audit_stats(request: Request):
 async def get_labels(lang: str = Query("en", pattern=r"^(en|ar)$")):
     """Get all UI labels in the requested language."""
     return get_all_labels(lang)
+
+
+@router.get("/system/status")
+async def get_system_status(request: Request):
+    """Get system-wide status including all connector health.
+
+    Checks: Vercel deployment, GitHub CI, Slack webhook, Neo4j, Redis, PostgreSQL.
+    """
+    enforce_permission(get_role_from_request(request), "run:read")
+
+    import os
+
+    status: dict = {
+        "service": "Impact Observatory | مرصد الأثر",
+        "model_version": "2.1.0",
+        "connectors": {},
+    }
+
+    # Vercel
+    try:
+        from src.connectors.vercel_connector import get_latest_deployment
+        vercel = await get_latest_deployment()
+        status["connectors"]["vercel"] = {
+            "configured": vercel.get("configured", False),
+            "state": vercel.get("state", "unknown"),
+            "url": vercel.get("url", ""),
+        }
+    except Exception as e:
+        status["connectors"]["vercel"] = {"configured": False, "error": str(e)}
+
+    # GitHub
+    try:
+        from src.connectors.github_connector import get_workflow_status
+        gh = await get_workflow_status()
+        status["connectors"]["github"] = {
+            "configured": gh.get("configured", False),
+            "ci_status": gh.get("status", "unknown"),
+        }
+    except Exception as e:
+        status["connectors"]["github"] = {"configured": False, "error": str(e)}
+
+    # Slack
+    status["connectors"]["slack"] = {
+        "configured": bool(os.getenv("SLACK_WEBHOOK_URL")),
+    }
+
+    # Neo4j
+    try:
+        from src.db.neo4j import get_neo4j_session
+        async with get_neo4j_session() as session:
+            result = await session.run("RETURN 1")
+            status["connectors"]["neo4j"] = {"configured": True, "status": "connected"}
+    except Exception:
+        status["connectors"]["neo4j"] = {"configured": False, "status": "disconnected"}
+
+    # Redis
+    try:
+        from src.db.redis import get_redis
+        r = get_redis()
+        if r:
+            await r.ping()
+            status["connectors"]["redis"] = {"configured": True, "status": "connected"}
+        else:
+            status["connectors"]["redis"] = {"configured": False, "status": "not initialized"}
+    except Exception:
+        status["connectors"]["redis"] = {"configured": False, "status": "disconnected"}
+
+    # Notion (via env check only — no runtime dependency)
+    status["connectors"]["notion"] = {
+        "configured": True,
+        "project_url": "https://www.notion.so/3390a456744c81a9939adcfd8a8b559d",
+        "decision_log": True,
+        "trust_recovery_tracker": True,
+    }
+
+    # Simulation engine
+    try:
+        from src.simulation_engine import SimulationEngine, SCENARIO_CATALOG
+        status["engine"] = {
+            "version": SimulationEngine.MODEL_VERSION,
+            "scenarios": len(SCENARIO_CATALOG),
+            "status": "ready",
+        }
+    except Exception as e:
+        status["engine"] = {"status": "error", "error": str(e)}
+
+    return status

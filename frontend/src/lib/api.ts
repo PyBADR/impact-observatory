@@ -306,6 +306,15 @@ export const api = {
       fetchAuthJSON<{ status: string }>(`/api/v1/runs/${runId}/actions/${actionId}/reject`, {
         method: "POST",
       }),
+
+    /** Get system status — all connectors, engine health, deployment state. */
+    systemStatus: () =>
+      fetchAuthJSON<{
+        service: string;
+        model_version: string;
+        connectors: Record<string, { configured: boolean; status?: string; state?: string }>;
+        engine: { version: string; scenarios: number; status: string };
+      }>("/api/v1/runs/system/status"),
   },
 
   // ---- Runs List (v1) ----
