@@ -4,16 +4,20 @@ Impact Observatory | مرصد الأثر — Event Normalization (Stage 3)
 Maps validated events to canonical schema.
 Resolves sector aliases, standardizes severity scale, assigns geographic scope.
 
-Geographic scope is now derived from the canonical governance registry
-(app.governance.registry.get_geo_scope). The old TEMPLATE_GEO_SCOPE dict
-has been removed — it contained 17 dev-era scenario IDs that never matched
-the 8 canonical catalog IDs, causing every run to default to ["SA", "UAE"].
+Geographic scope is derived exclusively from the canonical governance registry
+(app.governance.registry.require_entry). There is NO fallback and NO alias logic.
+
+If template_id is absent or not in the canonical registry, normalize_event()
+raises ValueError — this is a HARD_FAIL. The pipeline must reject runs with
+unknown scenario IDs at Stage 3, not silently default to ["SA", "UAE"].
+
+Valid scenario IDs: see backend/app/governance/registry.py CANONICAL_REGISTRY.
 """
 
 import uuid
 from app.domain.models.raw_event import ValidatedEvent, NormalizedEvent
 from app.graph.bridge import get_scenario_shock_vector
-from app.governance.registry import get_geo_scope as _registry_geo_scope
+from app.governance.registry import require_entry as _require_registry_entry
 
 # Sector alias resolution
 SECTOR_ALIASES: dict[str, str] = {
@@ -86,10 +90,20 @@ def normalize_event(validated: ValidatedEvent) -> NormalizedEvent:
             for s in raw_shocks
         ]
 
-    # Geographic scope — derived from canonical governance registry.
-    # _registry_geo_scope() returns the correct multi-country scope for all 8
-    # canonical scenarios, and falls back to ["SA", "UAE"] only for unknown IDs.
-    geo_scope = _registry_geo_scope(validated.template_id or "", default=["SA", "UAE"])
+    # Geographic scope — STRICT, no fallback.
+    # require_entry() raises ValueError for any template_id not in CANONICAL_REGISTRY.
+    # This is a Stage 3 HARD_FAIL: a run with an unknown scenario ID must be
+    # rejected here, not silently assigned a wrong geographic scope.
+    try:
+        _registry_entry = _require_registry_entry(validated.template_id or "")
+        geo_scope = list(_registry_entry.geographic_scope)
+    except ValueError as _geo_err:
+        raise ValueError(
+            f"[Stage 3 HARD_FAIL] Geographic scope resolution failed: {_geo_err}. "
+            f"template_id must be one of the 8 canonical scenario IDs in "
+            f"backend/app/governance/registry.py CANONICAL_REGISTRY. "
+            f"There is no fallback. Register the scenario or correct the template_id."
+        ) from _geo_err
 
     # Initial confidence = validation_score (will be adjusted by enrich stage)
     confidence = validated.validation_score
