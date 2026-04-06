@@ -1,23 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { serverStore } from "@/lib/server-store";
 
-const EMPTY = { decisions: [], count: 0 };
+const EMPTY = { items: [], count: 0 };
 
 export async function GET(req: NextRequest) {
   const backend = process.env.NEXT_PUBLIC_API_URL;
   const url     = new URL(req.url);
   const qs      = url.search;
 
-  // Try backend first — prefer it if it returns real records
+  // Try backend first
   if (backend) {
     try {
-      const res = await fetch(`${backend}/api/v1/decisions${qs}`, {
+      const res = await fetch(`${backend}/api/v1/authority${qs}`, {
         headers: { "X-IO-API-Key": req.headers.get("X-IO-API-Key") ?? "" },
         cache: "no-store",
       });
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data?.decisions) && data.decisions.length > 0) {
+        if (Array.isArray(data?.items) && data.items.length > 0) {
           return NextResponse.json(data);
         }
       }
@@ -28,12 +28,12 @@ export async function GET(req: NextRequest) {
 
   // In-memory fallback
   const sp    = url.searchParams;
-  const items = serverStore.decisions.list({
-    status:        sp.get("status")        ?? undefined,
-    decision_type: sp.get("decision_type") ?? undefined,
-    limit:         sp.has("limit") ? Number(sp.get("limit")) : undefined,
+  const items = serverStore.authority.list({
+    status: sp.get("status")  ?? undefined,
+    limit:  sp.has("limit")   ? Number(sp.get("limit"))  : undefined,
+    offset: sp.has("offset")  ? Number(sp.get("offset")) : undefined,
   });
-  return NextResponse.json({ decisions: items, count: items.length });
+  return NextResponse.json({ items, count: items.length });
 }
 
 export async function POST(req: NextRequest) {
@@ -41,14 +41,13 @@ export async function POST(req: NextRequest) {
   let body: Record<string, unknown> = {};
   try { body = await req.json(); } catch { /* ignore */ }
 
-  // Try backend first
   if (backend) {
     try {
-      const res = await fetch(`${backend}/api/v1/decisions`, {
+      const res = await fetch(`${backend}/api/v1/authority/propose`, {
         method:  "POST",
         headers: {
-          "X-IO-API-Key": req.headers.get("X-IO-API-Key") ?? "",
-          "Content-Type": "application/json",
+          "X-IO-API-Key":  req.headers.get("X-IO-API-Key") ?? "",
+          "Content-Type":  "application/json",
         },
         body:  JSON.stringify(body),
         cache: "no-store",
@@ -57,9 +56,5 @@ export async function POST(req: NextRequest) {
     } catch { /* fall through */ }
   }
 
-  // In-memory create — also auto-creates authority envelope + outcome + value
-  const dec = serverStore.decisions.create(
-    body as Parameters<typeof serverStore.decisions.create>[0],
-  );
-  return NextResponse.json(dec, { status: 201 });
+  return NextResponse.json(EMPTY, { status: 200 });
 }

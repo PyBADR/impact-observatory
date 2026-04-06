@@ -26,6 +26,7 @@ import { useRunState } from "@/lib/run-state";
 import { useAppStore } from "@/store/app-store";
 import { useFlowStore } from "@/store/flow-store";
 import { useOutcomes, useDecisionValues } from "@/hooks/use-api";
+import { api } from "@/lib/api";
 import type { RunResult, Language } from "@/types/observatory";
 import type { Persona } from "@/lib/persona-view-model";
 import { DomainBadge } from "@/components/ui";
@@ -389,6 +390,61 @@ export default function HomePage() {
         totalLoss: adapted.headline?.total_loss_usd,
         decisionCount: adapted.decisions?.actions?.length ?? 0,
       });
+
+      // ── Auto-seed decision execution records ─────────────────────────────
+      // For each recommended action, create an OperatorDecision in the
+      // execution layer (POST /api/v1/decisions → in-memory server-store).
+      // This populates: operatorDecisions, authority queue, outcomes, values.
+      const actions = adapted.decisions?.actions ?? [];
+      if (actions.length > 0) {
+        const seeded: import("@/types/observatory").OperatorDecision[] = [];
+        await Promise.allSettled(
+          actions.slice(0, 8).map(async (a) => {
+            try {
+              const dec = await api.decisions.create({
+                decision_type:    "APPROVE_ACTION",
+                source_run_id:    runId,
+                decision_payload: {
+                  action_id:       a.id,
+                  action:          a.action,
+                  sector:          a.sector,
+                  owner:           a.owner,
+                  urgency:         a.urgency,
+                  loss_avoided_usd: a.loss_avoided_usd,
+                  cost_usd:        a.cost_usd,
+                  priority:        a.priority,
+                },
+                rationale:        a.action,
+                confidence_score: a.confidence,
+                created_by:       "system",
+              });
+              seeded.push(dec);
+            } catch {
+              /* ignore per-action errors — best-effort seeding */
+            }
+          }),
+        );
+        if (seeded.length > 0) {
+          useAppStore.getState().setOperatorDecisions(seeded);
+          // Immediately sync auto-created outcomes + values into the store
+          // so flow stage hooks fire without waiting for the polling interval.
+          try {
+            const [outRes, valRes] = await Promise.all([
+              api.outcomes.list({ run_id: runId }),
+              api.values.list({ run_id: runId }),
+            ]);
+            if (outRes.outcomes.length > 0) {
+              useAppStore.getState().setOutcomes(outRes.outcomes);
+            }
+            if (valRes.values.length > 0) {
+              useAppStore.getState().setDecisionValues(valRes.values);
+            }
+          } catch {
+            /* non-fatal — polling will catch up */
+          }
+        }
+      }
+      // ─────────────────────────────────────────────────────────────────────
 
       attachRunResult(adapted, runId);
       completeFlow();
