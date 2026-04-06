@@ -193,25 +193,35 @@ export default function BankingDetailPanel({
               </tr>
             </thead>
             <tbody>
-              {data.affected_institutions.map((inst) => (
-                <tr key={inst.id} className="border-b border-io-border/50">
-                  <td className="py-2.5 font-medium text-io-primary">
-                    {lang === "ar" ? inst.name_ar : inst.name}
-                  </td>
-                  <td className="py-2.5 text-io-secondary">{inst.country}</td>
-                  <td className="py-2.5 text-right tabular-nums font-medium">{formatUSD(inst.exposure_usd)}</td>
-                  <td className="py-2.5 text-right tabular-nums">
-                    <span className={inst.stress > 0.6 ? "text-io-danger font-semibold" : inst.stress > 0.4 ? "text-io-warning" : "text-io-primary"}>
-                      {safePercent(inst.stress)}
-                    </span>
-                  </td>
-                  <td className="py-2.5 text-right tabular-nums">
-                    <span className={inst.projected_car_pct < 10 ? "text-io-danger font-semibold" : "text-io-primary"}>
-                      {safeFixed(inst.projected_car_pct, 1)}%
-                    </span>
+              {(data.affected_institutions ?? []).length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-6 text-center text-xs text-io-secondary">
+                    {lang === "ar"
+                      ? "لا توجد بيانات مؤسسية لهذا السيناريو"
+                      : "No institution-level data available for this scenario"}
                   </td>
                 </tr>
-              ))}
+              ) : (
+                (data.affected_institutions ?? []).map((inst) => (
+                  <tr key={inst.id} className="border-b border-io-border/50">
+                    <td className="py-2.5 font-medium text-io-primary">
+                      {lang === "ar" ? inst.name_ar : inst.name}
+                    </td>
+                    <td className="py-2.5 text-io-secondary">{inst.country}</td>
+                    <td className="py-2.5 text-right tabular-nums font-medium">{formatUSD(inst.exposure_usd)}</td>
+                    <td className="py-2.5 text-right tabular-nums">
+                      <span className={inst.stress > 0.6 ? "text-io-danger font-semibold" : inst.stress > 0.4 ? "text-io-warning" : "text-io-primary"}>
+                        {safePercent(inst.stress)}
+                      </span>
+                    </td>
+                    <td className="py-2.5 text-right tabular-nums">
+                      <span className={inst.projected_car_pct < 10 ? "text-io-danger font-semibold" : "text-io-primary"}>
+                        {safeFixed(inst.projected_car_pct, 1)}%
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

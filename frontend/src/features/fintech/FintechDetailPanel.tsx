@@ -188,7 +188,16 @@ export default function FintechDetailPanel({
               </tr>
             </thead>
             <tbody>
-              {data.affected_platforms.map((platform) => (
+              {(data.affected_platforms ?? []).length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-6 text-center text-xs text-io-secondary">
+                    {lang === "ar"
+                      ? "لا توجد بيانات منصات لهذا السيناريو"
+                      : "No platform data available for this scenario"}
+                  </td>
+                </tr>
+              ) : (
+                (data.affected_platforms ?? []).map((platform) => (
                 <tr key={platform.id} className="border-b border-io-border/50">
                   <td className="py-2.5 font-medium text-io-primary">
                     {lang === "ar" ? platform.name_ar : platform.name}
@@ -208,7 +217,8 @@ export default function FintechDetailPanel({
                     </span>
                   </td>
                 </tr>
-              ))}
+              ))
+              )}
             </tbody>
           </table>
         </div>

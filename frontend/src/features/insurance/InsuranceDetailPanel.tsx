@@ -209,24 +209,34 @@ export default function InsuranceDetailPanel({
               </tr>
             </thead>
             <tbody>
-              {data.affected_lines.map((line) => (
-                <tr key={line.id} className="border-b border-io-border/50">
-                  <td className="py-2.5 font-medium text-io-primary">
-                    {lang === "ar" ? line.name_ar : line.name}
-                  </td>
-                  <td className="py-2.5 text-right tabular-nums font-medium">{formatUSD(line.exposure_usd)}</td>
-                  <td className="py-2.5 text-right tabular-nums">
-                    <span className={line.claims_surge > 2 ? "text-io-danger font-semibold" : line.claims_surge > 1.5 ? "text-io-warning" : "text-io-primary"}>
-                      {safeFixed(line.claims_surge, 2)}x
-                    </span>
-                  </td>
-                  <td className="py-2.5 text-right tabular-nums">
-                    <span className={line.stress > 0.6 ? "text-io-danger font-semibold" : line.stress > 0.4 ? "text-io-warning" : "text-io-primary"}>
-                      {safePercent(line.stress)}
-                    </span>
+              {(data.affected_lines ?? []).length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="py-6 text-center text-xs text-io-secondary">
+                    {lang === "ar"
+                      ? "لا توجد بيانات خطوط التأمين لهذا السيناريو"
+                      : "No insurance line data available for this scenario"}
                   </td>
                 </tr>
-              ))}
+              ) : (
+                (data.affected_lines ?? []).map((line) => (
+                  <tr key={line.id} className="border-b border-io-border/50">
+                    <td className="py-2.5 font-medium text-io-primary">
+                      {lang === "ar" ? line.name_ar : line.name}
+                    </td>
+                    <td className="py-2.5 text-right tabular-nums font-medium">{formatUSD(line.exposure_usd)}</td>
+                    <td className="py-2.5 text-right tabular-nums">
+                      <span className={line.claims_surge > 2 ? "text-io-danger font-semibold" : line.claims_surge > 1.5 ? "text-io-warning" : "text-io-primary"}>
+                        {safeFixed(line.claims_surge, 2)}x
+                      </span>
+                    </td>
+                    <td className="py-2.5 text-right tabular-nums">
+                      <span className={line.stress > 0.6 ? "text-io-danger font-semibold" : line.stress > 0.4 ? "text-io-warning" : "text-io-primary"}>
+                        {safePercent(line.stress)}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
