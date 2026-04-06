@@ -14,6 +14,7 @@
 import { useState, useEffect, useCallback } from "react";
 import AppShell from "@/components/shell/AppShell";
 import { useAppStore } from "@/store/app-store";
+import { useRunState } from "@/lib/run-state";
 import { useGlobeEntities } from "@/features/globe/useGlobeEntities";
 import { EntityLayer } from "@/features/globe/EntityLayer";
 import { ImpactOverlay } from "@/features/globe/ImpactOverlay";
@@ -137,6 +138,8 @@ function EntityDetailPanel({
 export default function MapPage() {
   const language = useAppStore((s) => s.language);
   const isAr = language === "ar";
+  const adaptedResult = useRunState((s) => s.adaptedResult);
+  const scenarioLabel = adaptedResult?.scenario?.label ?? undefined;
 
   const {
     entities,
@@ -172,7 +175,7 @@ export default function MapPage() {
   }, []);
 
   return (
-    <AppShell activeRoute="map">
+    <AppShell activeRoute="map" scenarioLabel={scenarioLabel}>
       <div className="flex h-[calc(100vh-56px)]" dir={isAr ? "rtl" : "ltr"}>
 
         {/* ── Left: Institutional controls panel ──────────────────── */}

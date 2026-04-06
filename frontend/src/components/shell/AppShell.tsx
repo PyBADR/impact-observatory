@@ -16,7 +16,7 @@ import type { Persona } from "@/lib/persona-view-model";
 interface AppShellProps {
   children: React.ReactNode;
   /** Active route for nav highlighting */
-  activeRoute?: "dashboard" | "graph" | "map" | "decision-room";
+  activeRoute?: "dashboard" | "graph" | "map" | "decisions";
   /** Scenario context label shown in breadcrumb */
   scenarioLabel?: string;
   /** Export action rendered in top bar */
@@ -27,6 +27,7 @@ const NAV_ITEMS = [
   { key: "dashboard", href: "/", en: "Dashboard", ar: "لوحة المعلومات" },
   { key: "graph", href: "/graph-explorer", en: "Propagation", ar: "الانتشار" },
   { key: "map", href: "/map", en: "Impact Map", ar: "خريطة الأثر" },
+  { key: "decisions", href: "/decisions", en: "Decision Room", ar: "غرفة القرار" },
 ] as const;
 
 const PERSONA_LABELS: Record<Persona, { en: string; ar: string; desc: string }> = {

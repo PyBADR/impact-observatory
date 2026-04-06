@@ -13,6 +13,7 @@
 import { useState, useCallback } from "react";
 import AppShell from "@/components/shell/AppShell";
 import { useAppStore } from "@/store/app-store";
+import { useRunState } from "@/lib/run-state";
 import { useGraphData } from "@/features/graph/useGraphData";
 import { GraphCanvas } from "@/features/graph/GraphCanvas";
 import {
@@ -275,6 +276,8 @@ function GraphContextPanel({
 export default function GraphExplorerPage() {
   const language = useAppStore((s) => s.language);
   const isAr = language === "ar";
+  const adaptedResult = useRunState((s) => s.adaptedResult);
+  const scenarioLabel = adaptedResult?.scenario?.label ?? undefined;
   const {
     nodes,
     edges,
@@ -307,7 +310,7 @@ export default function GraphExplorerPage() {
   // Capability gate: only render shell + capability state — no canvas attempt
   if (!loading && graphSupported === false) {
     return (
-      <AppShell activeRoute="graph">
+      <AppShell activeRoute="graph" scenarioLabel={scenarioLabel}>
         <GraphCapabilityState isAr={isAr} />
       </AppShell>
     );
@@ -316,7 +319,7 @@ export default function GraphExplorerPage() {
   const ctx = GRAPH_CONTEXT[isAr ? "ar" : "en"];
 
   return (
-    <AppShell activeRoute="graph">
+    <AppShell activeRoute="graph" scenarioLabel={scenarioLabel}>
       <div className="flex h-[calc(100vh-56px)]" dir={isAr ? "rtl" : "ltr"}>
 
         {/* ── Left / Top: Controls panel ──────────────────────────── */}

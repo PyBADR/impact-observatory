@@ -264,11 +264,14 @@ export default function HomePage() {
   const [result, setResult] = useState<RunResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lang, setLang] = useState<Language>("en");
   const [detailView, setDetailView] = useState<DetailView>("dashboard");
 
   const persona = useAppStore((s) => s.persona);
   const setPersona = useAppStore((s) => s.setPersona);
+  // Language must live in useAppStore — not local state — so sub-pages
+  // (graph-explorer, map, decisions) receive the same language via AppShell.
+  const lang = useAppStore((s) => s.language);
+  const setLang = useAppStore((s) => s.setLanguage);
 
   useOutcomes();
   useDecisionValues();
