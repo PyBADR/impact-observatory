@@ -16,7 +16,7 @@
  * It renders the authority envelope only — the governance wrapper.
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useAuthorityStore } from "@/store/authority-store";
 import { useAppStore } from "@/store/app-store";
 import {
@@ -497,8 +497,17 @@ export function AuthorityQueuePanel({ lang }: AuthorityQueuePanelProps) {
   const loading = useAuthorityStore(selectLoading);
   const error   = useAuthorityStore(selectStoreError);
 
+  // Guard: prevent loadAll() from firing more than once per mount lifecycle.
+  // useRef persists across re-renders without triggering a render itself.
+  // Even if the component re-renders before the effect cleanup (e.g. due to
+  // parent re-renders or Strict Mode double-invocation in dev), the ref ensures
+  // only the first execution proceeds.
+  const loadAllCalledRef = useRef(false);
+
   // Hydrate authority store on mount
   useEffect(() => {
+    if (loadAllCalledRef.current) return;
+    loadAllCalledRef.current = true;
     loadAll();
   }, [loadAll]);
 
