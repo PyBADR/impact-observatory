@@ -399,6 +399,14 @@ interface AuthorityQueuePanelProps {
   lang: Language;
 }
 
+// ── BINARY ISOLATION STUB ──────────────────────────────────────────────────
+// Set AUTHORITY_QUEUE_STATIC_STUB=true to render a zero-effect placeholder.
+// If crash disappears with stub=true → trigger is inside effect/store interaction.
+// If crash persists with stub=true  → trigger is parent/remount path.
+// Re-enable one selector at a time (selectAuthorities first) to pinpoint exact trigger.
+// NOTE: must be placed AFTER all hooks to satisfy React's rules-of-hooks.
+const AUTHORITY_QUEUE_STATIC_STUB = false;
+
 export function AuthorityQueuePanel({ lang }: AuthorityQueuePanelProps) {
   const isAr = lang === "ar";
   const persona       = useAppStore(selectPersona_AQP);
@@ -667,6 +675,22 @@ export function AuthorityQueuePanel({ lang }: AuthorityQueuePanelProps) {
     },
     [actorRole, storeActions, activeRunId, adaptedResult]
   );
+
+  // BINARY ISOLATION: all hooks above have run. Return static content to prove
+  // the crash is store/effect-driven (not parent/remount).
+  // Set AUTHORITY_QUEUE_STATIC_STUB=true at the top of this file to activate.
+  if (AUTHORITY_QUEUE_STATIC_STUB) {
+    return (
+      <section className="bg-io-surface border border-io-border rounded-xl shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-io-border">
+          <h2 className="text-sm font-bold text-io-primary">⚖️ Authority Queue</h2>
+        </div>
+        <div className="px-5 py-8 text-center">
+          <p className="text-xs text-io-secondary">[isolation stub — no store interaction rendered]</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="bg-io-surface border border-io-border rounded-xl shadow-sm overflow-hidden">
