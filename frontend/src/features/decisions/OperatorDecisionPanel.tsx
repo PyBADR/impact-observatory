@@ -43,13 +43,55 @@ import type {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const DECISION_TYPES: { value: DecisionType; label: string; description: string }[] = [
-  { value: "APPROVE_ACTION",      label: "Approve Action",       description: "Approve a recommended action from a run decision plan" },
-  { value: "REJECT_ACTION",       label: "Reject Action",        description: "Reject a recommended action with rationale" },
-  { value: "ESCALATE",            label: "Escalate",             description: "Escalate situation to higher authority" },
-  { value: "IGNORE",              label: "Ignore",               description: "Consciously ignore this signal/seed/run" },
-  { value: "TRIGGER_RUN",         label: "Trigger Run",          description: "Manually trigger a new pipeline run" },
-  { value: "OVERRIDE_RUN_RESULT", label: "Override Run Result",  description: "Override automated assessment with manual judgment" },
+const DECISION_TYPES: {
+  value: DecisionType;
+  label: string;
+  label_ar: string;
+  description: string;
+  description_ar: string;
+}[] = [
+  {
+    value: "APPROVE_ACTION",
+    label: "Approve Action",
+    label_ar: "الموافقة على الإجراء",
+    description: "Approve a recommended action from a run decision plan",
+    description_ar: "الموافقة على إجراء موصى به من خطة قرارات التشغيل",
+  },
+  {
+    value: "REJECT_ACTION",
+    label: "Reject Action",
+    label_ar: "رفض الإجراء",
+    description: "Reject a recommended action with rationale",
+    description_ar: "رفض إجراء موصى به مع توضيح السبب",
+  },
+  {
+    value: "ESCALATE",
+    label: "Escalate",
+    label_ar: "تصعيد",
+    description: "Escalate situation to higher authority",
+    description_ar: "تصعيد الموقف إلى جهة أعلى",
+  },
+  {
+    value: "IGNORE",
+    label: "Ignore",
+    label_ar: "تجاهل",
+    description: "Consciously ignore this signal/seed/run",
+    description_ar: "تجاهل هذه الإشارة/البذرة/التشغيل بشكل واعٍ",
+  },
+  {
+    value: "TRIGGER_RUN",
+    label: "Trigger Run",
+    label_ar: "تشغيل جديد",
+    description: "Manually trigger a new pipeline run",
+    description_ar: "تشغيل دورة تحليل جديدة يدوياً",
+  },
+  {
+    value: "OVERRIDE_RUN_RESULT",
+    label: "Override Run Result",
+    label_ar: "تجاوز نتيجة التشغيل",
+    description: "Override automated assessment with manual judgment",
+    description_ar: "تجاوز التقييم الآلي بحكم يدوي",
+  },
 ];
 
 const STATUS_COLORS: Record<OperatorDecisionStatus, string> = {
@@ -78,17 +120,35 @@ const TYPE_ICONS: Record<DecisionType, string> = {
   OVERRIDE_RUN_RESULT: "⊘",
 };
 
-// ── User-safe error messages ─────────────────────────────────────────────────
+// ── User-safe error messages (bilingual) ─────────────────────────────────────
 
-const USER_ERROR_MESSAGES: Record<string, string> = {
-  create:  "Unable to create decision. Please check your inputs and retry.",
-  execute: "Unable to execute decision. It may have already been processed.",
-  close:   "Unable to close decision. It may not be in a closeable state.",
-  load:    "Unable to load decisions. Please retry or contact support.",
+const USER_ERROR_MESSAGES: Record<string, { en: string; ar: string }> = {
+  create:  {
+    en: "Unable to create decision. Please check your inputs and retry.",
+    ar: "تعذّر إنشاء القرار. يرجى مراجعة المدخلات والمحاولة مجدداً.",
+  },
+  execute: {
+    en: "Unable to execute decision. It may have already been processed.",
+    ar: "تعذّر تنفيذ القرار. قد يكون قد تمّت معالجته بالفعل.",
+  },
+  close:   {
+    en: "Unable to close decision. It may not be in a closeable state.",
+    ar: "تعذّر إغلاق القرار. قد لا يكون في حالة قابلة للإغلاق.",
+  },
+  load:    {
+    en: "Unable to load decisions. Please retry or contact support.",
+    ar: "تعذّر تحميل القرارات. يرجى المحاولة مجدداً أو التواصل مع الدعم.",
+  },
 };
 
-function safeErrorMessage(action: keyof typeof USER_ERROR_MESSAGES): string {
-  return USER_ERROR_MESSAGES[action] ?? "An unexpected error occurred. Please retry or contact support.";
+const FALLBACK_ERROR = {
+  en: "An unexpected error occurred. Please retry or contact support.",
+  ar: "حدث خطأ غير متوقع. يرجى المحاولة مجدداً أو التواصل مع الدعم.",
+};
+
+function safeErrorMessage(action: keyof typeof USER_ERROR_MESSAGES, lang: "en" | "ar" = "en"): string {
+  const msgs = USER_ERROR_MESSAGES[action] ?? FALLBACK_ERROR;
+  return msgs[lang];
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -180,30 +240,33 @@ function ImpactPreview({
   scenarioTitle,
   totalLoss,
   systemStress,
+  lang = "en",
 }: {
   scenarioTitle: string;
   totalLoss: number;
   systemStress: number;
+  lang?: Language;
 }) {
+  const isAr = lang === "ar";
   const stressColor =
     systemStress > 0.7 ? "text-red-600" : systemStress > 0.4 ? "text-orange-500" : "text-green-600";
 
   return (
     <div className="p-3 bg-io-bg border border-io-border rounded-lg">
       <p className="text-[10px] font-medium text-io-secondary uppercase tracking-wide mb-2">
-        Impact Preview
+        {isAr ? "معاينة الأثر" : "Impact Preview"}
       </p>
       <div className="grid grid-cols-3 gap-2 text-xs">
         <div>
-          <p className="text-[10px] text-io-secondary">Scenario</p>
+          <p className="text-[10px] text-io-secondary">{isAr ? "السيناريو" : "Scenario"}</p>
           <p className="font-medium text-io-primary">{truncate(scenarioTitle, 24)}</p>
         </div>
         <div>
-          <p className="text-[10px] text-io-secondary">Est. Loss</p>
+          <p className="text-[10px] text-io-secondary">{isAr ? "الخسارة المقدّرة" : "Est. Loss"}</p>
           <p className="font-bold text-io-danger tabular-nums">{formatUSD(totalLoss)}</p>
         </div>
         <div>
-          <p className="text-[10px] text-io-secondary">System Stress</p>
+          <p className="text-[10px] text-io-secondary">{isAr ? "إجهاد النظام" : "System Stress"}</p>
           <p className={`font-bold tabular-nums ${stressColor}`}>
             {(systemStress * 100).toFixed(0)}%
           </p>
@@ -259,11 +322,15 @@ function DecisionRow({
           </span>
           <div className="min-w-0">
             <span className={`text-xs font-semibold ${TYPE_COLORS[decision.decision_type]}`}>
-              {decision.decision_type.replace(/_/g, " ")}
+              {(isAr
+                ? DECISION_TYPES.find((t) => t.value === decision.decision_type)?.label_ar
+                : DECISION_TYPES.find((t) => t.value === decision.decision_type)?.label)
+                ?? decision.decision_type.replace(/_/g, " ")}
             </span>
             {decision.confidence_score != null && (
               <span className="ml-2 text-[10px] text-io-secondary">
-                {Math.round(decision.confidence_score * 100)}% confidence
+                {Math.round(decision.confidence_score * 100)}
+                {isAr ? "٪ ثقة" : "% confidence"}
               </span>
             )}
           </div>
@@ -278,13 +345,13 @@ function DecisionRow({
       {/* Source linkage — display only, no manual IDs */}
       <div className="flex flex-wrap gap-x-2 gap-y-1 mb-2">
         {decision.source_signal_id && (
-          <SourceChip label="signal" value={decision.source_signal_id} />
+          <SourceChip label={isAr ? "إشارة" : "signal"} value={decision.source_signal_id} />
         )}
         {decision.source_seed_id && (
-          <SourceChip label="seed" value={decision.source_seed_id} />
+          <SourceChip label={isAr ? "بذرة" : "seed"} value={decision.source_seed_id} />
         )}
         {decision.source_run_id && (
-          <SourceChip label="run" value={decision.source_run_id} />
+          <SourceChip label={isAr ? "تشغيل" : "run"} value={decision.source_run_id} />
         )}
       </div>
 
@@ -339,12 +406,19 @@ function DecisionDetail({ decision, lang = "en" }: { decision: OperatorDecision;
         <div>
           <span className="text-io-secondary">{isAr ? "النوع" : "Type"}</span>
           <p className="font-medium text-io-primary">
-            {decision.decision_type.replace(/_/g, " ")}
+            {(isAr
+              ? DECISION_TYPES.find((t) => t.value === decision.decision_type)?.label_ar
+              : DECISION_TYPES.find((t) => t.value === decision.decision_type)?.label)
+              ?? decision.decision_type.replace(/_/g, " ")}
           </p>
         </div>
         <div>
           <span className="text-io-secondary">{isAr ? "الحالة" : "Status"}</span>
-          <p className="font-medium text-io-primary">{decision.decision_status}</p>
+          <p className="font-medium text-io-primary">
+            {isAr
+              ? ({ CREATED: "تم الإنشاء", IN_REVIEW: "قيد المراجعة", EXECUTED: "تم التنفيذ", FAILED: "فشل", CLOSED: "مغلق" } as Record<string, string>)[decision.decision_status] ?? decision.decision_status
+              : decision.decision_status}
+          </p>
         </div>
         <div>
           <span className="text-io-secondary">{isAr ? "النتيجة" : "Outcome"}</span>
@@ -437,12 +511,16 @@ function CreateDecisionForm({ onClose, lang = "en" }: { onClose: () => void; lan
     setFormError(null);
 
     if (!hasSource) {
-      setFormError("No source context available. Select a scenario or signal first.");
+      setFormError(isAr
+        ? "لا يوجد سياق مرتبط. اختر سيناريو أو إشارة أولاً."
+        : "No source context available. Select a scenario or signal first.");
       return;
     }
 
     if (!rationale.trim()) {
-      setFormError("A rationale is required for audit traceability.");
+      setFormError(isAr
+        ? "المبرر مطلوب لضمان التتبع التدقيقي."
+        : "A rationale is required for audit traceability.");
       return;
     }
 
@@ -462,7 +540,7 @@ function CreateDecisionForm({ onClose, lang = "en" }: { onClose: () => void; lan
           onClose();
         },
         onError: () => {
-          setFormError(safeErrorMessage("create"));
+          setFormError(safeErrorMessage("create", lang));
         },
       }
     );
@@ -524,6 +602,7 @@ function CreateDecisionForm({ onClose, lang = "en" }: { onClose: () => void; lan
           scenarioTitle={adaptedResult.scenario.label}
           totalLoss={adaptedResult.headline.total_loss_usd}
           systemStress={adaptedResult.banking?.aggregate_stress ?? 0}
+          lang={lang}
         />
       )}
 
@@ -539,12 +618,14 @@ function CreateDecisionForm({ onClose, lang = "en" }: { onClose: () => void; lan
         >
           {DECISION_TYPES.map((t) => (
             <option key={t.value} value={t.value}>
-              {t.label}
+              {isAr ? t.label_ar : t.label}
             </option>
           ))}
         </select>
         <p className="text-[10px] text-io-secondary mt-0.5">
-          {DECISION_TYPES.find((t) => t.value === type)?.description}
+          {isAr
+            ? DECISION_TYPES.find((t) => t.value === type)?.description_ar
+            : DECISION_TYPES.find((t) => t.value === type)?.description}
         </p>
       </div>
 
@@ -660,7 +741,7 @@ export function OperatorDecisionPanel({ lang = "en" }: { lang?: Language }) {
     try {
       await executeDecision.mutateAsync({ decisionId: id });
     } catch {
-      setActionError(safeErrorMessage("execute"));
+      setActionError(safeErrorMessage("execute", lang));
     } finally {
       setExecutingId(null);
     }
@@ -673,7 +754,7 @@ export function OperatorDecisionPanel({ lang = "en" }: { lang?: Language }) {
       await closeDecision.mutateAsync({ decisionId: id });
       if (selectedDecisionId === id) setSelectedDecisionId(null);
     } catch {
-      setActionError(safeErrorMessage("close"));
+      setActionError(safeErrorMessage("close", lang));
     } finally {
       setClosingId(null);
     }
@@ -724,11 +805,20 @@ export function OperatorDecisionPanel({ lang = "en" }: { lang?: Language }) {
                 "FAILED",
                 "CLOSED",
               ] as OperatorDecisionStatus[]
-            ).map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
+            ).map((s) => {
+              const STATUS_LABELS_AR: Record<string, string> = {
+                CREATED:   "تم الإنشاء",
+                IN_REVIEW: "قيد المراجعة",
+                EXECUTED:  "تم التنفيذ",
+                FAILED:    "فشل",
+                CLOSED:    "مغلق",
+              };
+              return (
+                <option key={s} value={s}>
+                  {isAr ? (STATUS_LABELS_AR[s] ?? s) : s}
+                </option>
+              );
+            })}
           </select>
           <select
             value={typeFilter}
@@ -738,7 +828,7 @@ export function OperatorDecisionPanel({ lang = "en" }: { lang?: Language }) {
             <option value="">{isAr ? "جميع الأنواع" : "All Types"}</option>
             {DECISION_TYPES.map((t) => (
               <option key={t.value} value={t.value}>
-                {t.label}
+                {isAr ? t.label_ar : t.label}
               </option>
             ))}
           </select>
@@ -774,7 +864,7 @@ export function OperatorDecisionPanel({ lang = "en" }: { lang?: Language }) {
               </svg>
             </div>
             <p className="text-xs text-io-danger font-medium">
-              {safeErrorMessage("load")}
+              {safeErrorMessage("load", lang)}
             </p>
           </div>
         )}
