@@ -354,7 +354,7 @@ export const useAuthorityStore = create<AuthorityState>((set, get) => {
           status: params?.status,
           limit: params?.limit ?? 200,
         });
-        for (const raw of response.items) {
+        for (const raw of (response?.items ?? [])) {
           _upsert(raw as Record<string, unknown>);
         }
         // Always load authoritative metrics on full hydration
