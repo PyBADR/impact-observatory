@@ -17,8 +17,24 @@ function apiErrorMessage(status: number): string {
   if (status === 422) return "The request could not be processed. Please verify the inputs and try again.";
   if (status === 404) return "The requested resource was not found. Please refresh or try a different selection.";
   if (status === 401 || status === 403) return "Access to this resource is restricted. Please contact your administrator.";
+  if (status === 409) return "The request conflicts with the current state of the resource. It may have already been processed.";
   if (status >= 500) return "The analysis service is temporarily unavailable. Please try again in a moment.";
   return "An unexpected error occurred. Please try again.";
+}
+
+/**
+ * CRIT-03: Typed API error that preserves the HTTP status code so callers can
+ * branch on it (e.g. 409 Conflict vs 500 Server Error) rather than relying on
+ * message string matching.
+ */
+export class ApiError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
 }
 
 async function fetchJSON<T>(path: string, init?: RequestInit): Promise<T> {
@@ -31,7 +47,7 @@ async function fetchJSON<T>(path: string, init?: RequestInit): Promise<T> {
     },
   });
   if (!res.ok) {
-    throw new Error(apiErrorMessage(res.status));
+    throw new ApiError(res.status, apiErrorMessage(res.status));
   }
   return res.json() as Promise<T>;
 }

@@ -330,9 +330,68 @@ export function AuthorityQueuePanel({ lang }: AuthorityQueuePanelProps) {
   const isAr = lang === "ar";
   const persona = useAppStore((s) => s.persona);
 
-  // useShallow prevents infinite re-renders from unstable selector references
-  const queueSummary = useAuthorityStore(useShallow((s) => s.getQueueSummary()));
-  const allItems = useAuthorityStore(useShallow((s) => s.getQueueForPersona(persona)));
+  // CRIT-01 FIX: select stable primitives from the store; derive objects in useMemo.
+  // useShallow(s => s.getQueueForPersona(persona)) creates new object instances on every
+  // call — useShallow compares elements by Object.is, so new objects trigger re-renders
+  // indefinitely once the store is non-empty (infinite loop).
+  const authorities = useAuthorityStore((s) => s.authorities);
+  const storeMetrics = useAuthorityStore((s) => s.metrics);
+
+  const queueSummary = useMemo(
+    () =>
+      storeMetrics ?? {
+        proposed: 0,
+        under_review: 0,
+        approved_pending_execution: 0,
+        executed: 0,
+        rejected: 0,
+        failed: 0,
+        escalated: 0,
+        overdue: 0,
+        total_active: 0,
+      },
+    [storeMetrics],
+  );
+
+  // SW-01 FIX: filter by persona's visible_queues (authority items outside a persona's
+  // visible_queues must not be shown even in the "all" tab — prevents data exposure).
+  const personaVisibleQueues = useMemo(
+    () => new Set(PERSONA_AUTHORITY_CAPABILITIES[persona]?.visible_queues ?? []),
+    [persona],
+  );
+
+  const allItems = useMemo<AuthorityQueueItem[]>(() => {
+    const items: AuthorityQueueItem[] = [];
+    authorities.forEach((auth) => {
+      // Persona filter: skip items whose status is not visible to this persona
+      if (!personaVisibleQueues.has(auth.authority_status)) return;
+      items.push({
+        authority_id:          auth.authority_id,
+        decision_id:           auth.decision_id,
+        authority_status:      auth.authority_status,
+        decision_type:         auth.tags[0] ?? "UNKNOWN",
+        proposed_by:           auth.proposed_by,
+        proposed_by_role:      auth.proposed_by_role,
+        proposed_at:           auth.proposed_at,
+        priority:              auth.priority,
+        is_overdue:            auth.is_overdue,
+        rationale_preview:     auth.proposal_rationale?.slice(0, 120) ?? null,
+        source_run_id:         null,
+        source_scenario_label: null,
+        revision_number:       auth.revision_number,
+        escalation_level:      auth.escalation_level,
+        last_authority_actor:  auth.authority_actor_id,
+        last_authority_action: null,
+        last_authority_at:     auth.authority_decided_at,
+      });
+    });
+    items.sort((a, b) => {
+      if (a.is_overdue !== b.is_overdue) return a.is_overdue ? -1 : 1;
+      if (a.priority  !== b.priority)    return a.priority - b.priority;
+      return new Date(b.proposed_at).getTime() - new Date(a.proposed_at).getTime();
+    });
+    return items;
+  }, [authorities, personaVisibleQueues]);
 
   const { loadAll, loading, error } = useAuthorityStore((s) => ({
     loadAll: s.loadAll,

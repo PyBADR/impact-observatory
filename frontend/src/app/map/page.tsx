@@ -291,6 +291,7 @@ export default function MapPage() {
                     result={runResult}
                     selectedEntity={selectedEntity}
                     isAr={isAr}
+                    stagesCompleted={adaptedResult?.pipeline_stages_completed ?? 0}
                   />
                 </div>
               </div>

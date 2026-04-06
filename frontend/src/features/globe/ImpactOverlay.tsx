@@ -6,6 +6,10 @@ interface Props {
   result: UnifiedRunResult;
   selectedEntity?: ImpactedEntity | null;
   isAr?: boolean;
+  /** CV-01 FIX: explicit pipeline stage count from the adapted RunResult.
+   * UnifiedRunResult only carries stages_completed[] (always empty from backend);
+   * the correct count lives in RunResult.pipeline_stages_completed. Pass it here. */
+  stagesCompleted?: number;
 }
 
 const fmt = (n: number) =>
@@ -15,7 +19,7 @@ const fmt = (n: number) =>
     ? `$${(n / 1e6).toFixed(1)}M`
     : `$${n.toLocaleString()}`;
 
-export function ImpactOverlay({ result, selectedEntity, isAr = false }: Props) {
+export function ImpactOverlay({ result, selectedEntity, isAr = false, stagesCompleted }: Props) {
   const { headline, sector_rollups, decision_inputs, confidence, trust } = result;
 
   return (
@@ -105,7 +109,11 @@ export function ImpactOverlay({ result, selectedEntity, isAr = false }: Props) {
         <div className="bg-slate-900/90 backdrop-blur border border-slate-700 rounded-lg p-2 flex items-center gap-2 text-[10px]">
           <span className="text-emerald-400">SHA-256</span>
           <span className="text-slate-500 font-mono truncate">{trust.audit_hash?.slice(0, 16)}...</span>
-          <span className="text-slate-400 ml-auto">{trust.stages_completed?.length || 0} stages</span>
+          <span className="text-slate-400 ml-auto">
+            {/* CV-01 FIX: prefer the explicit prop count (from adaptedResult.pipeline_stages_completed),
+                then trust.stages_completed length, then 0 — never shows a wrong zero */}
+            {stagesCompleted ?? trust.stages_completed?.length ?? 0} stages
+          </span>
         </div>
       )}
     </div>

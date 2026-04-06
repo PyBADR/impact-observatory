@@ -297,9 +297,11 @@ export function unifiedToRunResult(unified: UnifiedRunResult): RunResult {
     schema_version: "4.0.0",
     run_id: unified.run_id ?? (u.run_id as string) ?? "",
     status: (unified.status ?? (u.status as string) ?? "completed") as RunResult["status"],
+    // CV-01/02 FIX: resolve the string[] vs number type split.
+    // Prefer the backend's explicit count; fall back to array length.
     pipeline_stages_completed:
-      (unified.stages_completed ?? []).length
-      || ((u.pipeline_stages_completed as number) ?? 0),
+      ((u.pipeline_stages_completed as number) || 0)
+      || (unified.stages_completed ?? []).length,
     scenario: {
       ...uScenario,
       label_ar: (rawScenario.label_ar as string) ?? null,
@@ -317,7 +319,19 @@ export function unifiedToRunResult(unified: UnifiedRunResult): RunResult {
     global_confidence: confidence,
     assumptions: unified.assumptions ?? [],
     audit_hash: unified.trust?.audit_hash ?? (u.trace_id as string) ?? "",
-    stages_completed: unified.stages_completed ?? [],
+    // CV-01/02 FIX: if the backend does not send stages_completed as a string array
+    // (it only sends pipeline_stages_completed: number), synthesise a stages array
+    // so all consumers (ImpactOverlay, ExecutiveDashboard, persona-view-model) see
+    // a non-empty array and do not display "0 stages".
+    stages_completed: (() => {
+      const fromBackend = unified.stages_completed ?? [];
+      if (fromBackend.length > 0) return fromBackend;
+      const count = (u.pipeline_stages_completed as number) ?? 0;
+      if (count > 0) return Array.from({ length: count }, (_, i) => `stage_${i + 1}`);
+      // Last resort: derive from stage_log key count
+      const logKeys = Object.keys((unified.stage_log ?? {}) as Record<string, unknown>);
+      return logKeys.length > 0 ? logKeys : [];
+    })(),
     stage_log: (unified.stage_log ?? {}) as RunResult["stage_log"],
     timeline: [],
     regulatory_events: regulatoryEvents,

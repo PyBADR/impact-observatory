@@ -61,20 +61,33 @@ function SystemHealthBadge({ health }: { health: "healthy" | "degraded" | "faile
 
 // ─── Flow Stage Summary Cards ───────────────────────────────────────────────
 
-function StageSummaryCards({ lang }: { lang: Language }) {
+function StageSummaryCards({
+  lang,
+  pipelineStagesCompleted,
+}: {
+  lang: Language;
+  // CRIT-02: pass the backend pipeline count (e.g. 18) so it shows in the card
+  // instead of the flow store's UI-stage count which maxes out at 7.
+  pipelineStagesCompleted: number;
+}) {
   const activeFlow = useFlowStore((s) => s.activeFlow);
   const isAr = lang === "ar";
 
   if (!activeFlow) return null;
 
-  const completedStages = activeFlow.stages.filter((s) => s.status === "completed");
   const activeStages = activeFlow.stages.filter((s) => s.status === "active");
   const failedStages = activeFlow.stages.filter((s) => s.status === "failed");
+  // Show the authoritative backend pipeline stage count when available;
+  // fall back to flow store UI stage count so the card is never empty.
+  const completedCount =
+    pipelineStagesCompleted > 0
+      ? pipelineStagesCompleted
+      : activeFlow.stages.filter((s) => s.status === "completed").length;
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 text-center">
-        <p className="text-2xl font-bold text-emerald-700">{completedStages.length}</p>
+        <p className="text-2xl font-bold text-emerald-700">{completedCount}</p>
         <p className="text-xs text-emerald-600 font-medium">
           {isAr ? "مراحل مكتملة" : "Stages Complete"}
         </p>
@@ -249,7 +262,10 @@ export function UnifiedControlTower({ result, lang }: UnifiedControlTowerProps) 
 
       {/* ── Flow Stage Summary ──────────────────────────────────────────── */}
       <ErrorBoundary section="Stage Summary">
-        <StageSummaryCards lang={lang} />
+        <StageSummaryCards
+          lang={lang}
+          pipelineStagesCompleted={result.pipeline_stages_completed ?? 0}
+        />
       </ErrorBoundary>
 
       {/* ── Cross-Layer Intelligence Summary ────────────────────────────── */}

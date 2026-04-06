@@ -33,6 +33,7 @@ import {
 } from "@/hooks/use-api";
 import { useAppStore } from "@/store/app-store";
 import { useRunState } from "@/lib/run-state";
+import { ApiError } from "@/lib/api";
 import type {
   OperatorDecision,
   DecisionType,
@@ -128,8 +129,21 @@ const USER_ERROR_MESSAGES: Record<string, { en: string; ar: string }> = {
     ar: "تعذّر إنشاء القرار. يرجى مراجعة المدخلات والمحاولة مجدداً.",
   },
   execute: {
-    en: "Unable to execute decision. It may have already been processed.",
-    ar: "تعذّر تنفيذ القرار. قد يكون قد تمّت معالجته بالفعل.",
+    en: "Unable to execute decision. The service is temporarily unavailable.",
+    ar: "تعذّر تنفيذ القرار. الخدمة غير متاحة مؤقتاً.",
+  },
+  // CRIT-03: HTTP-status-differentiated execute messages
+  execute_conflict: {
+    en: "Decision already processed or in a conflicting state. Refresh and retry.",
+    ar: "تمّت معالجة القرار مسبقاً أو هو في حالة متعارضة. حدّث الصفحة وأعد المحاولة.",
+  },
+  execute_not_found: {
+    en: "Decision not found. It may have been removed.",
+    ar: "لم يُعثر على القرار. ربما تمّ حذفه.",
+  },
+  execute_forbidden: {
+    en: "You do not have permission to execute this decision.",
+    ar: "لا تملك صلاحية تنفيذ هذا القرار.",
   },
   close:   {
     en: "Unable to close decision. It may not be in a closeable state.",
@@ -740,8 +754,22 @@ export function OperatorDecisionPanel({ lang = "en" }: { lang?: Language }) {
     setActionError(null);
     try {
       await executeDecision.mutateAsync({ decisionId: id });
-    } catch {
-      setActionError(safeErrorMessage("execute", lang));
+    } catch (err: unknown) {
+      // CRIT-03: differentiate error message by HTTP status so operators can
+      // distinguish a lifecycle conflict (409) from a server failure (5xx).
+      if (err instanceof ApiError) {
+        if (err.status === 409) {
+          setActionError(safeErrorMessage("execute_conflict", lang));
+        } else if (err.status === 404) {
+          setActionError(safeErrorMessage("execute_not_found", lang));
+        } else if (err.status === 401 || err.status === 403) {
+          setActionError(safeErrorMessage("execute_forbidden", lang));
+        } else {
+          setActionError(safeErrorMessage("execute", lang));
+        }
+      } else {
+        setActionError(safeErrorMessage("execute", lang));
+      }
     } finally {
       setExecutingId(null);
     }
