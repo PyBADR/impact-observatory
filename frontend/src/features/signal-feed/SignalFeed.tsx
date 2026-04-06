@@ -14,6 +14,10 @@ import { useAppStore } from "@/store/app-store";
 import { useSignalStream } from "@/hooks/use-api";
 import type { WsSignalScoredData, Language } from "@/types/observatory";
 
+// ─── Module-level stable selectors ───────────────────────────────────────────
+type AppS_SF = ReturnType<typeof useAppStore.getState>;
+const selectLiveSignals_SF = (s: AppS_SF) => s.liveSignals;
+
 function scoreLabel(score: number): { text: string; cls: string } {
   if (score >= 0.7) return { text: "HIGH", cls: "bg-red-100 text-red-700" };
   if (score >= 0.4) return { text: "MED",  cls: "bg-amber-100 text-amber-700" };
@@ -53,7 +57,7 @@ function SignalRow({ signal }: { signal: WsSignalScoredData }) {
 
 export function SignalFeed({ lang = "en" }: { lang?: Language }) {
   useSignalStream();
-  const liveSignals = useAppStore((s) => s.liveSignals);
+  const liveSignals = useAppStore(selectLiveSignals_SF);
   const isAr = lang === "ar";
 
   return (

@@ -28,6 +28,12 @@ import {
 } from "@/lib/persona-view-model";
 import { ExecutiveControlTower } from "@/features/personas/ExecutiveControlTower";
 
+// ─── Module-level stable selectors ───────────────────────────────────────────
+type AppS_EV = ReturnType<typeof useAppStore.getState>;
+const selectOutcomes_EV          = (s: AppS_EV) => s.outcomes;
+const selectDecisionValues_EV    = (s: AppS_EV) => s.decisionValues;
+const selectOperatorDecisions_EV = (s: AppS_EV) => s.operatorDecisions;
+
 // ─── Classification badge ────────────────────────────────────────────────────
 
 function Badge({ level }: { level: string }) {
@@ -320,9 +326,9 @@ interface ExecutiveViewProps {
 }
 
 export function ExecutiveView({ result, lang }: ExecutiveViewProps) {
-  const outcomes          = useAppStore((s) => s.outcomes);
-  const decisionValues    = useAppStore((s) => s.decisionValues);
-  const operatorDecisions = useAppStore((s) => s.operatorDecisions);
+  const outcomes          = useAppStore(selectOutcomes_EV);
+  const decisionValues    = useAppStore(selectDecisionValues_EV);
+  const operatorDecisions = useAppStore(selectOperatorDecisions_EV);
   const vm    = toExecutiveViewModel(result, outcomes, decisionValues);
   const tower = toControlTowerViewModel(operatorDecisions, outcomes, decisionValues);
   const isAr  = lang === "ar";

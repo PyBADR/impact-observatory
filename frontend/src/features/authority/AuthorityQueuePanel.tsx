@@ -64,6 +64,12 @@ const selectWithdraw               = (s: AS) => s.withdraw;
 const selectOverride               = (s: AS) => s.override;
 const selectAnnotate               = (s: AS) => s.annotate;
 
+type AppS_AQP = ReturnType<typeof useAppStore.getState>;
+type RS_AQP   = ReturnType<typeof useRunState.getState>;
+const selectPersona_AQP       = (s: AppS_AQP) => s.persona;
+const selectAdaptedResult_AQP = (s: RS_AQP)   => s.adaptedResult;
+const selectActiveRunId_AQP   = (s: RS_AQP)   => s.unifiedResult?.run_id ?? null;
+
 // ─── Safe helpers ─────────────────────────────────────────────────────────
 
 /**
@@ -395,9 +401,9 @@ interface AuthorityQueuePanelProps {
 
 export function AuthorityQueuePanel({ lang }: AuthorityQueuePanelProps) {
   const isAr = lang === "ar";
-  const persona = useAppStore((s) => s.persona);
-  const activeRunId    = useRunState((s) => s.unifiedResult?.run_id ?? null);
-  const adaptedResult  = useRunState((s) => s.adaptedResult);
+  const persona       = useAppStore(selectPersona_AQP);
+  const activeRunId   = useRunState(selectActiveRunId_AQP);
+  const adaptedResult = useRunState(selectAdaptedResult_AQP);
 
   // CRIT-01 FIX: select stable primitives from the store; derive objects in useMemo.
   // useShallow(s => s.getQueueForPersona(persona)) creates new object instances on every

@@ -20,6 +20,13 @@ import { useAuthorityStore } from "@/store/authority-store";
 import type { AuthorityEvent, AuthorityAction, AuthorityActor } from "@/types/authority";
 import type { Language } from "@/types/observatory";
 
+// ─── Module-level stable selectors ───────────────────────────────────────────
+type AS_AAT = ReturnType<typeof useAuthorityStore.getState>;
+const selectEvents_AAT      = (s: AS_AAT) => s.events;
+const selectGetAuthority_AAT = (s: AS_AAT) => s.getAuthority;
+const selectLoadEvents_AAT  = (s: AS_AAT) => s.loadEvents;
+const selectVerifyChain_AAT = (s: AS_AAT) => s.verifyChain;
+
 // ─── Action Icons ─────────────────────────────────────────────────────────
 
 const ACTION_ICONS: Record<AuthorityAction, string> = {
@@ -189,12 +196,16 @@ export function AuthorityAuditTimeline({
   showHashChain = false,
 }: AuthorityAuditTimelineProps) {
   const isAr = lang === "ar";
-  const allEvents = useAuthorityStore((s) => s.getAuditLog(authorityId));
-  const getAuthorityByIdDecisionId = useAuthorityStore((s) => s.getAuthority);
-  const loadEvents = useAuthorityStore((s) => s.loadEvents);
+  const eventsMap              = useAuthorityStore(selectEvents_AAT);
+  const getAuthorityByIdDecisionId = useAuthorityStore(selectGetAuthority_AAT);
+  const loadEvents             = useAuthorityStore(selectLoadEvents_AAT);
   const [expanded, setExpanded] = useState(false);
   const [chainValid, setChainValid] = useState<boolean | null>(null);
-  const verifyChain = useAuthorityStore((s) => s.verifyChain);
+  const verifyChain            = useAuthorityStore(selectVerifyChain_AAT);
+  const allEvents              = useMemo(
+    () => eventsMap.get(authorityId) ?? [],
+    [eventsMap, authorityId],
+  );
 
   // Load events from backend on mount
   useEffect(() => {

@@ -43,6 +43,14 @@ import type {
   Language,
 } from "@/types/observatory";
 
+// ─── Module-level stable selectors ───────────────────────────────────────────
+type AppS_ODP = ReturnType<typeof useAppStore.getState>;
+type RS_ODP   = ReturnType<typeof useRunState.getState>;
+const selectLiveSignals_ODP   = (s: AppS_ODP) => s.liveSignals;
+const selectPendingSeeds_ODP  = (s: AppS_ODP) => s.pendingSeeds;
+const selectAdaptedResult_ODP = (s: RS_ODP)   => s.adaptedResult;
+const selectActiveRunId_ODP   = (s: RS_ODP)   => s.unifiedResult?.run_id ?? null;
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const DECISION_TYPES: {
@@ -498,12 +506,12 @@ function CreateDecisionForm({ onClose, lang = "en" }: { onClose: () => void; lan
   const isAr = lang === "ar";
   // ── Store context (auto-linked sources) ──
   const selectedScenarioId = useAppStore((s) => s.selectedScenarioId);
-  const liveSignals = useAppStore((s) => s.liveSignals);
-  const pendingSeeds = useAppStore((s) => s.pendingSeeds);
+  const liveSignals = useAppStore(selectLiveSignals_ODP);
+  const pendingSeeds = useAppStore(selectPendingSeeds_ODP);
 
   // ── Active run context from unified pipeline (source of truth) ──
-  const activeRunId    = useRunState((s) => s.unifiedResult?.run_id ?? null);
-  const adaptedResult  = useRunState((s) => s.adaptedResult);
+  const activeRunId    = useRunState(selectActiveRunId_ODP);
+  const adaptedResult  = useRunState(selectAdaptedResult_ODP);
 
   // ── Local form state ──
   const [type, setType] = useState<DecisionType>("APPROVE_ACTION");
@@ -744,8 +752,8 @@ export function OperatorDecisionPanel({ lang = "en" }: { lang?: Language }) {
 
   const selectedDecisionId = useAppStore((s) => s.selectedDecisionId);
   const setSelectedDecisionId = useAppStore((s) => s.setSelectedDecisionId);
-  const activeRunId   = useRunState((s) => s.unifiedResult?.run_id ?? null);
-  const adaptedResult = useRunState((s) => s.adaptedResult);
+  const activeRunId   = useRunState(selectActiveRunId_ODP);
+  const adaptedResult = useRunState(selectAdaptedResult_ODP);
 
   const { data, isLoading, isError, refetch: refetchDecisions } = useDecisions({
     status: statusFilter || undefined,

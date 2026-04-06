@@ -20,6 +20,10 @@ import { OperatorDecisionPanel } from "@/features/decisions/OperatorDecisionPane
 import DecisionDetailPanel from "@/features/decisions/DecisionDetailPanel";
 import type { Language } from "@/types/observatory";
 
+// ─── Module-level stable selectors ───────────────────────────────────────────
+type RS_DP = ReturnType<typeof useRunState.getState>;
+const selectAdaptedResult_DP = (s: RS_DP) => s.adaptedResult;
+
 // ── Center state when decisions exist but no run is active this session ──────
 // The sidebar shows decisions from the backend (persisted across sessions).
 // The center normally shows the decision plan from the current session's run.
@@ -111,7 +115,7 @@ export default function DecisionsPage() {
   const isAr = language === "ar";
   const lang: Language = isAr ? "ar" : "en";
 
-  const adaptedResult = useRunState((s) => s.adaptedResult);
+  const adaptedResult = useRunState(selectAdaptedResult_DP);
   const scenarioLabel = adaptedResult?.scenario?.label ?? undefined;
 
   const hasRun = adaptedResult !== null;

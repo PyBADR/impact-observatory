@@ -23,6 +23,10 @@ import { useFlowStore, FLOW_STAGES_ORDERED, FLOW_STAGE_META } from "@/store/flow
 import type { FlowStage } from "@/store/flow-store";
 import type { Language } from "@/types/observatory";
 
+// ─── Module-level stable selectors ───────────────────────────────────────────
+type FlowS_FT = ReturnType<typeof useFlowStore.getState>;
+const selectFlowActiveFlow = (s: FlowS_FT) => s.activeFlow;
+
 // ─── Stage Status Colors ────────────────────────────────────────────────────
 
 const STATUS_STYLES = {
@@ -135,7 +139,7 @@ interface FlowTimelineProps {
 }
 
 export function FlowTimeline({ lang, onStageClick, compact = false }: FlowTimelineProps) {
-  const activeFlow = useFlowStore((s) => s.activeFlow);
+  const activeFlow = useFlowStore(selectFlowActiveFlow);
   const getFlowProgress = useFlowStore((s) => s.getFlowProgress);
   const isAr = lang === "ar";
 
@@ -182,7 +186,7 @@ export function FlowTimeline({ lang, onStageClick, compact = false }: FlowTimeli
 // ─── Compact Inline Version (for embedding in panels) ───────────────────────
 
 export function FlowTimelineInline({ lang }: { lang: Language }) {
-  const activeFlow = useFlowStore((s) => s.activeFlow);
+  const activeFlow = useFlowStore(selectFlowActiveFlow);
   const isAr = lang === "ar";
 
   if (!activeFlow) return null;

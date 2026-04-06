@@ -23,6 +23,10 @@ import {
 } from "@/components/ui";
 import type { GraphLayer, KnowledgeGraphNode } from "@/types/observatory";
 
+// ─── Module-level stable selectors ───────────────────────────────────────────
+type RS_GE = ReturnType<typeof useRunState.getState>;
+const selectAdaptedResult_GE = (s: RS_GE) => s.adaptedResult;
+
 const LAYER_META: Record<string, { label: string; labelAr: string; desc: string }> = {
   geography: { label: "Geography", labelAr: "الجغرافيا", desc: "Physical locations, corridors, chokepoints" },
   infrastructure: { label: "Infrastructure", labelAr: "البنية التحتية", desc: "Ports, airports, pipelines" },
@@ -276,7 +280,7 @@ function GraphContextPanel({
 export default function GraphExplorerPage() {
   const language = useAppStore((s) => s.language);
   const isAr = language === "ar";
-  const adaptedResult = useRunState((s) => s.adaptedResult);
+  const adaptedResult = useRunState(selectAdaptedResult_GE);
   const scenarioLabel = adaptedResult?.scenario?.label ?? undefined;
   const {
     nodes,

@@ -26,6 +26,14 @@ import {
   type AnalystViewModel,
 } from "@/lib/persona-view-model";
 
+// ─── Module-level stable selectors ───────────────────────────────────────────
+type AppS_AV = ReturnType<typeof useAppStore.getState>;
+const selectLiveSignals_AV       = (s: AppS_AV) => s.liveSignals;
+const selectPendingSeeds_AV      = (s: AppS_AV) => s.pendingSeeds;
+const selectOperatorDecisions_AV = (s: AppS_AV) => s.operatorDecisions;
+const selectOutcomes_AV          = (s: AppS_AV) => s.outcomes;
+const selectDecisionValues_AV    = (s: AppS_AV) => s.decisionValues;
+
 // ─── Classification badge ────────────────────────────────────────────────────
 
 function Badge({ level }: { level: string }) {
@@ -663,11 +671,11 @@ interface AnalystViewProps {
 }
 
 export function AnalystView({ result, lang }: AnalystViewProps) {
-  const liveSignals       = useAppStore((s) => s.liveSignals);
-  const pendingSeeds      = useAppStore((s) => s.pendingSeeds);
-  const operatorDecisions = useAppStore((s) => s.operatorDecisions);
-  const outcomes          = useAppStore((s) => s.outcomes);
-  const decisionValues    = useAppStore((s) => s.decisionValues);
+  const liveSignals       = useAppStore(selectLiveSignals_AV);
+  const pendingSeeds      = useAppStore(selectPendingSeeds_AV);
+  const operatorDecisions = useAppStore(selectOperatorDecisions_AV);
+  const outcomes          = useAppStore(selectOutcomes_AV);
+  const decisionValues    = useAppStore(selectDecisionValues_AV);
 
   const vm = toAnalystViewModel(result, liveSignals, pendingSeeds, operatorDecisions, outcomes, decisionValues);
   const isAr = lang === "ar";

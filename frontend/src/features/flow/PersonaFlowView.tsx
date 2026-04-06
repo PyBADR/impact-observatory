@@ -41,6 +41,12 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import type { RunResult, Language } from "@/types/observatory";
 import type { FlowStage } from "@/store/flow-store";
 
+// ─── Module-level stable selectors ───────────────────────────────────────────
+type FlowS_PF = ReturnType<typeof useFlowStore.getState>;
+type AppS_PF  = ReturnType<typeof useAppStore.getState>;
+const selectFlowActiveFlow_PF = (s: FlowS_PF) => s.activeFlow;
+const selectPersona_PF        = (s: AppS_PF)  => s.persona;
+
 // ─── Flow-Aware Executive View ──────────────────────────────────────────────
 
 function FlowExecutiveView({
@@ -138,7 +144,7 @@ function FlowRegulatorView({
   lang: Language;
   onStageClick?: (stage: FlowStage) => void;
 }) {
-  const activeFlow = useFlowStore((s) => s.activeFlow);
+  const activeFlow = useFlowStore(selectFlowActiveFlow_PF);
   const isAr = lang === "ar";
 
   return (
@@ -202,7 +208,7 @@ interface PersonaFlowViewProps {
 }
 
 export function PersonaFlowView({ result, lang, onStageClick }: PersonaFlowViewProps) {
-  const persona = useAppStore((s) => s.persona);
+  const persona = useAppStore(selectPersona_PF);
 
   switch (persona) {
     case "executive":
