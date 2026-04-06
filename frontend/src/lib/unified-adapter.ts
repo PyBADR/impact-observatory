@@ -66,114 +66,101 @@ export function unifiedToRunResult(unified: UnifiedRunResult): RunResult {
   const math = unified.math;
   const physics = unified.physics;
 
-  void decisionInputs; void math; void physics;
+  void decisionInputs; void graphPayload; void warnings; void math; void physics;
+
+  // ── v2 backend sector dicts (top-level keys: banking, insurance, fintech) ──
+  // Backend returns these as aliases for banking_stress / insurance_stress / fintech_stress.
+  // Adapter MUST prefer these over the v4 `sectors.*` paths which do not exist in v2.
+  const uBanking = ((u.banking ?? u.banking_stress ?? {}) as Record<string, unknown>);
+  const uInsurance = ((u.insurance ?? u.insurance_stress ?? {}) as Record<string, unknown>);
+  const uFintech = ((u.fintech ?? u.fintech_stress ?? {}) as Record<string, unknown>);
 
   // ── Financial Impacts ───────────────────────────────────
-  const financial: FinancialImpact[] = (sectors?.financial_impacts ?? []).map(
-    (fi) => ({
-      entity_id: fi.entity_id,
-      entity_label: fi.entity_id.replace(/_/g, " "),
-      sector: fi.entity_id.split("_")[0] ?? "finance",
-      loss_usd: fi.loss ?? 0,
-      loss_pct_gdp: fi.loss ? fi.loss / 2.1e12 : 0,
-      peak_day: 1,
-      recovery_days: 7,
-      confidence: confidence,
-      stress_level: fi.loss && fi.exposure ? fi.loss / fi.exposure : 0,
-      classification: _classifyStress(
-        fi.loss && fi.exposure ? fi.loss / fi.exposure : 0
-      ),
-    })
+  // v4: sectors.financial_impacts  |  v2: u.financial (= financial_impact.top_entities list)
+  // top_entities fields: entity_id, entity_label, loss_usd, stress_score, classification, peak_day, sector
+  const rawFinancialEntities: Record<string, unknown>[] =
+    (sectors?.financial_impacts as Record<string, unknown>[])
+    ?? (u.financial as Record<string, unknown>[])
+    ?? (u.financial_impacts as Record<string, unknown>[])
+    ?? [];
+  const financial: FinancialImpact[] = rawFinancialEntities.map(
+    (fi) => {
+      const lossUsd = (fi.loss_usd as number) ?? (fi.loss as number) ?? 0;
+      const stressLevel = (fi.stress_score as number) ?? (fi.loss && fi.exposure ? (fi.loss as number) / (fi.exposure as number) : 0);
+      return {
+        entity_id: (fi.entity_id as string) ?? "",
+        entity_label: (fi.entity_label as string) ?? (fi.entity_id as string ?? "").replace(/_/g, " "),
+        sector: (fi.sector as string) ?? (fi.entity_id as string ?? "").split("_")[0] ?? "finance",
+        loss_usd: lossUsd,
+        loss_pct_gdp: lossUsd ? lossUsd / 2.1e12 : 0,
+        peak_day: (fi.peak_day as number) ?? 1,
+        recovery_days: 7,
+        confidence: confidence,
+        stress_level: stressLevel,
+        classification: (fi.classification as Classification) ?? _classifyStress(stressLevel),
+      };
+    }
   );
 
   // ── Banking Stress ──────────────────────────────────────
-  const bankingAgg = sectors?.banking_aggregate ?? ({} as Record<string, unknown>);
+  // v4: sectors.banking_aggregate + sector_rollups.banking  |  v2: u.banking (top-level)
+  const bankingAggStress = (uBanking.aggregate_stress as number)
+    ?? (sectorRollups?.banking?.aggregate_stress as number)
+    ?? 0;
   const banking: BankingStress = {
     run_id: unified.run_id,
-    total_exposure_usd: totalLossUsd,
-    liquidity_stress:
-      1.0 - ((bankingAgg.aggregate_lcr as number) ?? 1.0),
-    credit_stress:
-      1.0 - ((bankingAgg.aggregate_cet1 as number) ?? 0.045),
-    fx_stress: 0.3,
-    interbank_contagion: confidence < 0.5 ? 0.7 : 0.3,
-    time_to_liquidity_breach_hours: 72,
-    capital_adequacy_impact_pct:
-      ((bankingAgg.aggregate_car as number) ?? 0.08) * 100,
-    aggregate_stress:
-      sectorRollups?.banking?.aggregate_stress ?? 0,
-    classification: _classifyStress(
-      sectorRollups?.banking?.aggregate_stress ?? 0
-    ),
-    affected_institutions: (sectors?.banking_stresses ?? []).map((bs) => ({
-      id: bs.entity_id,
-      name: bs.entity_id.replace(/_/g, " "),
-      name_ar: "",
-      country: "GCC",
-      exposure_usd: 0,
-      stress: 1.0 - bs.lcr,
-      projected_car_pct: bs.capital_adequacy_ratio * 100,
-    })),
+    total_exposure_usd: (uBanking.total_exposure_usd as number) ?? totalLossUsd,
+    liquidity_stress: (uBanking.liquidity_stress as number) ?? 0,
+    credit_stress: (uBanking.credit_stress as number) ?? 0,
+    fx_stress: (uBanking.fx_stress as number) ?? 0,
+    interbank_contagion: (uBanking.interbank_contagion as number) ?? 0,
+    time_to_liquidity_breach_hours: (uBanking.time_to_liquidity_breach_hours as number) ?? 9999,
+    capital_adequacy_impact_pct: (uBanking.capital_adequacy_impact_pct as number) ?? 0,
+    aggregate_stress: bankingAggStress,
+    classification: (uBanking.classification as Classification) ?? _classifyStress(bankingAggStress),
+    // affected_institutions: backend v2 engine hardcodes [] — not produced at source
+    affected_institutions: (uBanking.affected_institutions as any[]) ?? [],
   };
 
   // ── Insurance Stress ────────────────────────────────────
-  const insAgg = sectors?.insurance_aggregate ?? ({} as Record<string, unknown>);
+  // v4: sectors.insurance_aggregate + sector_rollups.insurance  |  v2: u.insurance (top-level)
+  const insAggStress = (uInsurance.aggregate_stress as number)
+    ?? (sectorRollups?.insurance?.aggregate_stress as number)
+    ?? 0;
   const insurance: InsuranceStress = {
     run_id: unified.run_id,
-    portfolio_exposure_usd: totalLossUsd * 0.15,
-    claims_surge_multiplier:
-      (insAgg.claims_spike as number) ?? 1.0,
-    severity_index: uScenario.severity,
-    loss_ratio: 0.75,
-    combined_ratio:
-      (insAgg.aggregate_combined_ratio as number) ?? 1.0,
-    underwriting_status: "stressed",
-    time_to_insolvency_hours: 168,
-    reinsurance_trigger: true,
-    ifrs17_risk_adjustment_pct: 15,
-    aggregate_stress:
-      sectorRollups?.insurance?.aggregate_stress ?? 0,
-    classification: _classifyStress(
-      sectorRollups?.insurance?.aggregate_stress ?? 0
-    ),
-    affected_lines: (sectors?.insurance_stresses ?? []).map((is_) => ({
-      id: is_.entity_id,
-      name: is_.entity_id.replace(/_/g, " "),
-      name_ar: "",
-      exposure_usd: 0,
-      claims_surge: 1.0 - is_.solvency_ratio,
-      stress: is_.combined_ratio,
-    })),
+    portfolio_exposure_usd: (uInsurance.portfolio_exposure_usd as number) ?? totalLossUsd * 0.15,
+    claims_surge_multiplier: (uInsurance.claims_surge_multiplier as number) ?? 1.0,
+    severity_index: (uInsurance.severity_index as number) ?? uScenario.severity,
+    loss_ratio: (uInsurance.loss_ratio as number) ?? 0,
+    combined_ratio: (uInsurance.combined_ratio as number) ?? 1.0,
+    underwriting_status: (uInsurance.underwriting_status as string) ?? "stable",
+    time_to_insolvency_hours: (uInsurance.time_to_insolvency_hours as number) ?? 9999,
+    reinsurance_trigger: (uInsurance.reinsurance_trigger as boolean) ?? false,
+    ifrs17_risk_adjustment_pct: (uInsurance.ifrs17_risk_adjustment_pct as number) ?? 0,
+    aggregate_stress: insAggStress,
+    classification: (uInsurance.classification as Classification) ?? _classifyStress(insAggStress),
+    // affected_lines: backend v2 engine hardcodes [] — not produced at source
+    affected_lines: (uInsurance.affected_lines as any[]) ?? [],
   };
 
   // ── Fintech Stress ──────────────────────────────────────
-  const ftAgg = sectors?.fintech_aggregate ?? ({} as Record<string, unknown>);
+  // v4: sectors.fintech_aggregate + sector_rollups.fintech  |  v2: u.fintech (top-level)
+  const ftAggStress = (uFintech.aggregate_stress as number)
+    ?? (sectorRollups?.fintech?.aggregate_stress as number)
+    ?? 0;
   const fintech: FintechStress = {
     run_id: unified.run_id,
-    payment_volume_impact_pct:
-      (1.0 - ((ftAgg.aggregate_service_availability as number) ?? 1.0)) * 100,
-    settlement_delay_hours:
-      ((ftAgg.aggregate_settlement_delay_min as number) ?? 0) / 60,
-    api_availability_pct:
-      ((ftAgg.aggregate_service_availability as number) ?? 1.0) * 100,
-    cross_border_disruption: 0.5,
-    digital_banking_stress:
-      sectorRollups?.fintech?.aggregate_stress ?? 0,
-    time_to_payment_failure_hours: 48,
-    aggregate_stress:
-      sectorRollups?.fintech?.aggregate_stress ?? 0,
-    classification: _classifyStress(
-      sectorRollups?.fintech?.aggregate_stress ?? 0
-    ),
-    affected_platforms: (sectors?.fintech_stresses ?? []).map((ft) => ({
-      id: ft.entity_id,
-      name: ft.entity_id.replace(/_/g, " "),
-      name_ar: "",
-      country: "GCC",
-      volume_impact_pct: (1.0 - ft.service_availability) * 100,
-      cross_border_stress: 0.5,
-      stress: 1.0 - ft.service_availability,
-    })),
+    payment_volume_impact_pct: (uFintech.payment_volume_impact_pct as number) ?? 0,
+    settlement_delay_hours: (uFintech.settlement_delay_hours as number) ?? 0,
+    api_availability_pct: (uFintech.api_availability_pct as number) ?? 100,
+    cross_border_disruption: (uFintech.cross_border_disruption as number) ?? 0,
+    digital_banking_stress: (uFintech.digital_banking_stress as number) ?? ftAggStress,
+    time_to_payment_failure_hours: (uFintech.time_to_payment_failure_hours as number) ?? 9999,
+    aggregate_stress: ftAggStress,
+    classification: (uFintech.classification as Classification) ?? _classifyStress(ftAggStress),
+    // affected_platforms: backend v2 engine hardcodes [] — not produced at source
+    affected_platforms: (uFintech.affected_platforms as any[]) ?? [],
   };
 
   // ── Decision Plan ───────────────────────────────────────
