@@ -106,7 +106,6 @@ export function useGlobeEntities() {
           headers,
           body: JSON.stringify({
             template_id: templateId,
-            scenario_id: templateId,
             severity,
             horizon_hours: horizonHours,
           }),

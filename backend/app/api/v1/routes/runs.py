@@ -127,7 +127,10 @@ async def create_run(
     now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     body = request_body or {}
 
-    template_id = body.get("template_id", "") or body.get("scenario_id", "")
+    # template_id is the sole canonical identifier — no legacy alias.
+    # Callers must send template_id; scenario_id is NOT accepted.
+    # The empty-string check below (line ~151) will reject requests missing template_id.
+    template_id = body.get("template_id", "")
     severity = min(1.0, max(0.0, float(body.get("severity", 0.7))))
     horizon_hours = max(1, min(8760, int(body.get("horizon_hours", 168))))
     label = body.get("label", "")
