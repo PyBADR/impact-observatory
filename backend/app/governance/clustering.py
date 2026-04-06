@@ -24,6 +24,8 @@ Cluster taxonomy (deterministic, ordered by severity):
   MISSING_GRAPH_CAPABILITY   RULE-004: graph_supported=True but edges=[]
   CONTRACT_MISMATCH          RULE-006: required fields absent in result
   MVOE_UNDERPERFORMANCE      RULE-007/008/009: below minimum thresholds
+  GRAPH_PAYLOAD_MISSING      RULE-010: graph_payload.nodes empty (graph_supported=True)
+  MAP_PAYLOAD_MISSING        RULE-011: map_payload.impacted_entities empty (map_supported=True)
   RENDERING_ONLY             No pipeline violations — symptom is UI/adapter only
   CLEAN                      No violations at all
   UNCLASSIFIED               Violations present but no cluster matched
@@ -45,6 +47,8 @@ class FailureCluster(str, Enum):
     MISSING_GRAPH_CAPABILITY  = "MISSING_GRAPH_CAPABILITY"
     CONTRACT_MISMATCH         = "CONTRACT_MISMATCH"
     MVOE_UNDERPERFORMANCE     = "MVOE_UNDERPERFORMANCE"
+    GRAPH_PAYLOAD_MISSING     = "GRAPH_PAYLOAD_MISSING"
+    MAP_PAYLOAD_MISSING       = "MAP_PAYLOAD_MISSING"
     RENDERING_ONLY            = "RENDERING_ONLY"
     CLEAN                     = "CLEAN"
     UNCLASSIFIED              = "UNCLASSIFIED"
@@ -107,7 +111,18 @@ def deterministic_cluster(
     if mvoe_rules and not silent_rules:
         matched.append((FailureCluster.MVOE_UNDERPERFORMANCE, sorted(mvoe_rules)))
 
-    # ── Priority 6: Clean states ──────────────────────────────────────────────
+    # ── Priority 6: Graph/map payload missing (cross-page sync failures) ──────
+    # Fired when graph_supported=True but graph_payload.nodes is empty (RULE-010),
+    # or map_supported=True but map_payload.impacted_entities is empty (RULE-011).
+    # These indicate the backend pipeline built the sector result correctly but
+    # did not produce graph or map payloads — causing blank pages in the frontend.
+    if "RULE-010" in violation_rule_ids:
+        matched.append((FailureCluster.GRAPH_PAYLOAD_MISSING, ["RULE-010"]))
+
+    if "RULE-011" in violation_rule_ids:
+        matched.append((FailureCluster.MAP_PAYLOAD_MISSING, ["RULE-011"]))
+
+    # ── Priority 7: Clean states ──────────────────────────────────────────────
     if not violation_rule_ids:
         if status == "completed" and total_loss > 0 and total_nodes > 0:
             matched.append((FailureCluster.CLEAN, []))

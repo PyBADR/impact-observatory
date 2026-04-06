@@ -21,6 +21,8 @@ Rules:
   RULE-007  total_loss_usd must meet MVOE floor scaled by run_severity
   RULE-008  total_nodes_impacted must meet MVOE floor
   RULE-009  decision_inputs.actions must meet MVOE minimum count
+  RULE-010  graph_payload.nodes must be non-empty when graph_supported=True
+  RULE-011  map_payload.impacted_entities must be non-empty when map_supported=True
 """
 
 from __future__ import annotations
@@ -290,6 +292,55 @@ def check_invariants(
                 f"below MVOE minimum of {min_actions}. "
                 f"Stage 11 decision engine may have failed, returned empty, or "
                 f"received an empty sector_rollup. Check _compute_decision_inputs()."
+            ),
+        ))
+
+    # ── RULE-010: graph_payload.nodes absent when graph_supported ─────────────
+    # Detects: Stage 8 builder returned 0 impacted nodes; or v2 backend deployment
+    # (no graph pipeline); or graph/registry.py NODES list is empty.
+    # Consequence: Graph Explorer will show blank capability state regardless of
+    # whether the scenario itself completed successfully.
+    graph_nodes = graph_payload.get("nodes") or []
+    if entry.graph_supported and is_completed and len(graph_nodes) == 0:
+        violations.append(InvariantViolation(
+            rule_id="RULE-010",
+            rule_name="GRAPH_PAYLOAD_NODES_ABSENT",
+            severity=Severity.SOFT_FAIL,
+            field="graph_payload.nodes",
+            expected=">= 1 node (scenario is graph_supported=True)",
+            actual=0,
+            message=(
+                f"Scenario '{scenario_id}' is graph_supported=True but graph_payload.nodes "
+                f"is empty on a completed run. Graph Explorer will show a blank capability state. "
+                f"Root cause: Stage 8 build_graph_snapshot() produced no impacted_nodes, "
+                f"the deployed backend is v2 (no graph pipeline), or "
+                f"GET /api/v1/graph/nodes is unreachable. "
+                f"Frontend fallback (run-state hydration) will activate if graph_payload "
+                f"is populated upstream. Check build_graph_snapshot() call in runner Stage 8."
+            ),
+        ))
+
+    # ── RULE-011: map_payload.impacted_entities absent when map_supported ─────
+    # Detects: map stage missing or failing silently; v2 backend (no map pipeline).
+    # Consequence: Impact Map page will initialize with mapSupported=false and
+    # show empty capability state. Frontend fallback subscribes to run-state but
+    # cannot synthesize entities from absent data.
+    map_payload_inner = run_result.get("map_payload", {}) or {}
+    map_entities = map_payload_inner.get("impacted_entities") or []
+    if entry.map_supported and is_completed and len(map_entities) == 0:
+        violations.append(InvariantViolation(
+            rule_id="RULE-011",
+            rule_name="MAP_PAYLOAD_ENTITIES_ABSENT",
+            severity=Severity.SOFT_FAIL,
+            field="map_payload.impacted_entities",
+            expected=">= 1 entity (scenario is map_supported=True)",
+            actual=0,
+            message=(
+                f"Scenario '{scenario_id}' is map_supported=True but map_payload.impacted_entities "
+                f"is empty on a completed run. Impact Map will show an empty capability state. "
+                f"Root cause: map generation stage is not implemented in current deployment "
+                f"(v2 backend), or the map stage failed silently. "
+                f"Impact Map requires impacted_entities with lat/lng coordinates to render."
             ),
         ))
 
