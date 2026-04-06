@@ -354,8 +354,30 @@ export const useAuthorityStore = create<AuthorityState>((set, get) => {
           status: params?.status,
           limit: params?.limit ?? 200,
         });
-        for (const raw of (response?.items ?? [])) {
-          _upsert(raw as Record<string, unknown>);
+        // CRIT-185 FIX: batch all items into ONE set() call instead of calling
+        // _upsert() (and therefore set()) N times in a loop.
+        //
+        // Each _upsert() calls set() which synchronously fires all Zustand
+        // listeners. Each listener calls React's forceStoreRerender(fiber) →
+        // scheduleUpdateOnFiber(root, fiber, SyncLane). In React 19, SyncLane
+        // work is processed synchronously — so N items = up to N sequential
+        // render passes of AuthorityQueuePanel. Each pass sees a new Map
+        // snapshot from the next _upsert, marks the fiber, and re-renders.
+        // After 25 rapid re-entries React's numberOfReRenders overflows
+        // RE_RENDER_LIMIT and throws error #185.
+        //
+        // Collapsing to one set() call → one listener notification → one
+        // render pass eliminates the cascade regardless of item count.
+        const rawItems = response?.items ?? [];
+        if (rawItems.length > 0) {
+          const newAuth  = new Map(get().authorities);
+          const newIndex = new Map(get().decisionIndex);
+          for (const raw of rawItems) {
+            const authority = rawToAuthority(raw as Record<string, unknown>);
+            newAuth.set(authority.authority_id, authority);
+            newIndex.set(authority.decision_id, authority.authority_id);
+          }
+          set({ authorities: newAuth, decisionIndex: newIndex });
         }
         // Always load authoritative metrics on full hydration
         await get().loadMetrics();
