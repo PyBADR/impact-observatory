@@ -35,6 +35,7 @@ import { FlowTimelineInline } from "@/features/flow/FlowTimeline";
 import { ExecutiveView } from "@/features/personas/ExecutiveView";
 import { AnalystView } from "@/features/personas/AnalystView";
 import { RegulatorView } from "@/features/personas/RegulatorView";
+import ExecutiveDashboard from "@/features/dashboard/ExecutiveDashboard";
 import { AuthorityQueuePanel } from "@/features/authority/AuthorityQueuePanel";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import type { RunResult, Language } from "@/types/observatory";
@@ -62,6 +63,14 @@ function FlowExecutiveView({
       <div className="max-w-6xl mx-auto px-6 lg:px-10 py-8">
         <ErrorBoundary section="Unified Control Tower">
           <UnifiedControlTower result={result} lang={lang} />
+        </ErrorBoundary>
+      </div>
+
+      {/* Executive Dashboard — boardroom-grade panels below control tower:
+          KPI strip, sector stress, decision action cards, timelines, PDF export */}
+      <div className="border-t border-io-border">
+        <ErrorBoundary section="Executive Dashboard">
+          <ExecutiveDashboard data={result} lang={lang} />
         </ErrorBoundary>
       </div>
     </div>
