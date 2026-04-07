@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 # In-process cache: value_id → value dict
 _cache: dict[str, dict] = {}
+_warmed: bool = False
 
 
 def _uid() -> str:
@@ -174,8 +175,10 @@ async def alist_values(
     limit: int = 100,
     offset: int = 0,
 ) -> list[dict]:
-    """Async list with DB cache warmup when cache is empty (handles cold-start / restart)."""
-    if not _cache:
+    """Async list with DB cache warmup on first call after process start."""
+    global _warmed
+    if not _warmed:
+        _warmed = True
         rows = await _load_all_from_db()
         for val in rows:
             val_id = val.get("value_id")
@@ -203,19 +206,27 @@ def clear() -> None:
 # ── DB persistence helpers ───────────────────────────────────────────────────
 
 def _fire_persist(value_id: str, val: dict) -> None:
+    """Persist to DB: async fire-and-forget when inside a running loop,
+    synchronous asyncio.run() fallback when no loop is active."""
     import asyncio
     try:
         loop = asyncio.get_event_loop()
         if loop.is_running():
             asyncio.ensure_future(_persist(value_id, val))
+            return
     except RuntimeError:
         pass
+    try:
+        asyncio.run(_persist(value_id, val))
+    except Exception as e:
+        logger.warning("Sync DB persist fallback failed for value %s: %s", value_id, e)
 
 
-async def _load_all_from_db(limit: int = 500) -> list[dict]:
+async def _load_all_from_db() -> list[dict]:
     """Load recent values from DB to warm the in-memory cache."""
     try:
         from sqlalchemy import select, desc
+        from src.core.config import settings
         from src.db.postgres import async_session_factory
         from src.models.orm import DecisionValueRecord
 
@@ -223,7 +234,7 @@ async def _load_all_from_db(limit: int = 500) -> list[dict]:
             result = await session.execute(
                 select(DecisionValueRecord)
                 .order_by(desc(DecisionValueRecord.created_at))
-                .limit(limit)
+                .limit(settings.cache_warmup_limit)
             )
             records = result.scalars().all()
             return [r.result_json for r in records if r.result_json]

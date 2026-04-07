@@ -18,6 +18,10 @@ logger = logging.getLogger(__name__)
 
 # In-process cache: decision_id → decision dict
 _cache: dict[str, dict] = {}
+# Process-level warmup flag: True once the first alist_* call has loaded from DB.
+# Using a flag (not `if not _cache`) ensures warmup fires even if cache already has
+# entries written in the same process before the first list request.
+_warmed: bool = False
 
 
 def _uid() -> str:
@@ -170,8 +174,10 @@ async def alist_decisions(
     limit: int = 100,
     offset: int = 0,
 ) -> list[dict]:
-    """Async list with DB cache warmup when cache is empty (handles cold-start / restart)."""
-    if not _cache:
+    """Async list with DB cache warmup on first call after process start."""
+    global _warmed
+    if not _warmed:
+        _warmed = True
         rows = await _load_all_from_db()
         for dec in rows:
             dec_id = dec.get("decision_id")
@@ -200,20 +206,28 @@ def clear() -> None:
 # ── DB persistence helpers ───────────────────────────────────────────────────
 
 def _fire_persist(decision_id: str, dec: dict) -> None:
-    """Fire-and-forget DB write."""
+    """Persist to DB: async fire-and-forget when inside a running loop,
+    synchronous asyncio.run() fallback when no loop is active."""
     import asyncio
     try:
         loop = asyncio.get_event_loop()
         if loop.is_running():
             asyncio.ensure_future(_persist(decision_id, dec))
+            return
     except RuntimeError:
         pass
+    # No running loop — synchronous fallback so the write is not silently dropped.
+    try:
+        asyncio.run(_persist(decision_id, dec))
+    except Exception as e:
+        logger.warning("Sync DB persist fallback failed for decision %s: %s", decision_id, e)
 
 
-async def _load_all_from_db(limit: int = 500) -> list[dict]:
+async def _load_all_from_db() -> list[dict]:
     """Load recent decisions from DB to warm the in-memory cache."""
     try:
         from sqlalchemy import select, desc
+        from src.core.config import settings
         from src.db.postgres import async_session_factory
         from src.models.orm import OperatorDecisionRecord
 
@@ -221,7 +235,7 @@ async def _load_all_from_db(limit: int = 500) -> list[dict]:
             result = await session.execute(
                 select(OperatorDecisionRecord)
                 .order_by(desc(OperatorDecisionRecord.created_at))
-                .limit(limit)
+                .limit(settings.cache_warmup_limit)
             )
             records = result.scalars().all()
             return [r.result_json for r in records if r.result_json]

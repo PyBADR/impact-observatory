@@ -60,9 +60,24 @@ async def create_decision(body: CreateOperatorDecisionRequest):
     })
 
     # 3. Bidirectional linkage: write outcome_id back to decision
-    decision_operator_store.update(dec["decision_id"], {
+    linked = decision_operator_store.update(dec["decision_id"], {
         "outcome_id": outcome["outcome_id"],
     })
+    if linked is None:
+        logger.error(
+            "Linkage write failed: outcome_id=%s not written to decision=%s — retrying",
+            outcome["outcome_id"], dec["decision_id"],
+        )
+        # Retry once: re-fetch from DB in case cache was stale, then update again
+        retried = await decision_operator_store.aget(dec["decision_id"])
+        if retried is not None:
+            decision_operator_store.update(dec["decision_id"], {"outcome_id": outcome["outcome_id"]})
+            logger.info("Linkage retry succeeded for decision=%s", dec["decision_id"])
+        else:
+            logger.error(
+                "Linkage retry failed: decision=%s not found in cache or DB — outcome linkage incomplete",
+                dec["decision_id"],
+            )
     dec["outcome_id"] = outcome["outcome_id"]
 
     logger.info(
@@ -119,6 +134,19 @@ async def execute_decision(decision_id: str, body: ExecuteDecisionRequest | None
         executed_by=body.executed_by if body else None,
         notes=body.notes if body else None,
     )
+
+    # Keep outcome state consistent with decision state after execute.
+    outcome_id = dec.get("outcome_id")
+    if outcome_id:
+        synced = outcome_store.update(outcome_id, {"outcome_status": "OBSERVED"})
+        if synced is None:
+            logger.warning(
+                "Outcome sync skipped: outcome_id=%s not found in cache (decision=%s)",
+                outcome_id, decision_id,
+            )
+        else:
+            logger.debug("Synced outcome %s → OBSERVED on decision execute", outcome_id)
+
     return updated
 
 

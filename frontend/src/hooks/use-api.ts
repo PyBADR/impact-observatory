@@ -354,11 +354,14 @@ export function useOutcomes(params?: { decision_id?: string; run_id?: string; st
     refetchInterval: 30_000,
   });
 
+  // Sync into store only for top-level (unfiltered) fetches.
+  // Filtered calls (e.g. by decision_id or run_id) must not clobber the full list.
+  // Pattern mirrors useDecisions.
   useEffect(() => {
-    if (query.data) {
+    if (!params && query.data) {
       setOutcomes(query.data.outcomes);
     }
-  }, [query.data, setOutcomes]);
+  }, [params, query.data, setOutcomes]);
 
   return query;
 }
