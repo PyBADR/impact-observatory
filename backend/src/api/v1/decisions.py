@@ -39,6 +39,12 @@ async def create_decision(body: CreateOperatorDecisionRequest):
     """
     body_dict = body.model_dump(exclude_unset=True)
 
+    if not body_dict.get("source_run_id"):
+        logger.warning(
+            "Decision created without source_run_id — lineage incomplete (type=%s)",
+            body_dict.get("decision_type", "UNKNOWN"),
+        )
+
     # 1. Create the decision
     dec = decision_operator_store.create(body_dict)
 

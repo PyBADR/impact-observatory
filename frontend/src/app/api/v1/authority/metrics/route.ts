@@ -10,21 +10,17 @@ const ZERO = {
 export async function GET(req: NextRequest) {
   const backend = process.env.NEXT_PUBLIC_API_URL;
 
+  // Backend is primary source of truth — trust its response (including zero counts).
+  // Only fall through to in-memory store if backend is unreachable or returns an error.
   if (backend) {
     try {
       const res = await fetch(`${backend}/api/v1/authority/metrics`, {
         headers: { "X-IO-API-Key": req.headers.get("X-IO-API-Key") ?? "" },
         cache: "no-store",
       });
-      if (res.ok) {
-        const data = await res.json();
-        // Only use backend metrics if they have real data
-        if (typeof data?.total === "number" && data.total > 0) {
-          return NextResponse.json(data);
-        }
-      }
+      if (res.ok) return NextResponse.json(await res.json());
     } catch {
-      // fall through to in-memory
+      // backend unreachable — fall through to in-memory
     }
   }
 
