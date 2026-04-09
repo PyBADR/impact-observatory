@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "lib": ["ES2022"],
+    "outDir": "./dist",
+    "rootDir": ".",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "declaration": false,
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "baseUrl": "."
+  },
+  "include": [
+    "scripts/**/*.ts",
+    "src/lib/events/**/*.ts",
+    "src/lib/engines/**/*.ts",
+    "src/lib/workers/**/*.ts",
+    "src/lib/persistence/**/*.ts",
+    "src/lib/adapters/**/*.ts",
+    "src/lib/tenant/**/*.ts",
+    "src/types/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist", ".next"]
+}
