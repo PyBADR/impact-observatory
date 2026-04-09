@@ -23,6 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.narrative.engine import NarrativeEngine
 from src.narrative.decision_authority import DecisionAuthorityEngine
+from src.narrative.decision_operating_layer import DecisionOperatingLayer
 from src.narrative.error_translator import translate_error
 from src.core.rbac import enforce_permission, get_role_from_request
 from src.db.postgres import get_session
@@ -70,6 +71,7 @@ router = APIRouter(prefix="/decision/authority", tags=["decision-authority"])
 # Module-level engines — stateless, safe to share
 _narrative_engine = NarrativeEngine()
 _authority_engine = DecisionAuthorityEngine()
+_operating_layer = DecisionOperatingLayer()
 
 # In-memory directive cache (hot fallback when Redis is down)
 _directive_cache: dict[str, dict] = {}
@@ -281,17 +283,25 @@ async def _execute_authority_pipeline(
             trace_id=trace_id,
         )
 
+    # ── Generate operating layer ───────────────────────────────────────
+    try:
+        operating = _operating_layer.generate(simulation, authority)
+    except Exception as e:
+        logger.warning(f"[{trace_id}] DecisionOperatingLayer.generate() failed: {e}")
+        operating = {}  # Non-critical — degrade gracefully
+
     # ── Assemble response ────────────────────────────────────────────────
     duration_ms = round((time.perf_counter() - start) * 1000, 2)
     run_id = simulation.get("run_id", trace_id)
 
     response = {
         **authority,
+        **operating,
         "meta": {
             "trace_id": trace_id,
             "run_id": run_id,
             "tenant_id": tenant.tenant_id,
-            "pipeline": "SimulationEngine → NarrativeEngine → DecisionAuthorityEngine",
+            "pipeline": "SimulationEngine → NarrativeEngine → DecisionAuthorityEngine → DecisionOperatingLayer",
             "model_version": simulation.get("model_version", "2.1.0"),
             "duration_ms": duration_ms,
             "scenario_id": body.scenario_id,
@@ -400,14 +410,19 @@ async def get_authority_directive(
         result = stored.get("result", stored)
         narrative = _narrative_engine.generate(result)
         authority = _authority_engine.generate(result, narrative)
+        try:
+            operating = _operating_layer.generate(result, authority)
+        except Exception:
+            operating = {}
 
         response = {
             **authority,
+            **operating,
             "meta": {
                 "trace_id": run_id[:8],
                 "run_id": run_id,
                 "tenant_id": tenant.tenant_id,
-                "pipeline": "RunStore → NarrativeEngine → DecisionAuthorityEngine",
+                "pipeline": "RunStore → NarrativeEngine → DecisionAuthorityEngine → DecisionOperatingLayer",
                 "model_version": result.get("model_version", "2.1.0"),
                 "generated_on_demand": True,
             },

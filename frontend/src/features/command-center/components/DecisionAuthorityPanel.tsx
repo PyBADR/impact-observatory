@@ -37,10 +37,13 @@ import {
   Ban,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { OperatingLayerView } from "@/features/operating-layer/components";
+import type { OperatingLayer } from "@/features/operating-layer/types";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
 interface DecisionAuthorityData {
+  operating_layer?: OperatingLayer;
   decision_authority: {
     executive_directive: {
       headline_en: string;
@@ -803,6 +806,16 @@ export function DecisionAuthorityPanel({
           </div>
         </div>
       </Section>
+
+      {/* ── Decision Operating Layer ─────────────────────────────── */}
+      {data.operating_layer && (
+        <div className="px-4 py-4 border-t border-white/[0.06]">
+          <OperatingLayerView
+            operatingLayer={data.operating_layer}
+            language={language}
+          />
+        </div>
+      )}
     </div>
   );
 }
