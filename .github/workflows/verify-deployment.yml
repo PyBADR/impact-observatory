@@ -1,0 +1,185 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Impact Observatory | مرصد الأثر — Deployment Auto-Verification Workflow
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Layer:      Governance (L7) — CI/CD Observability
+# Trigger:    Runs automatically on every push to main
+# Purpose:    Verifies that Vercel production deployment matches the pushed
+#             commit SHA, reaches READY state, and passes health checks.
+#
+# Required GitHub Secrets:
+#   VERCEL_TOKEN        — Vercel API bearer token
+#   VERCEL_PROJECT_ID   — Vercel project ID (from .vercel/project.json)
+#
+# Optional GitHub Secrets:
+#   VERCEL_TEAM_ID      — Vercel team/org ID (if using team scope)
+#   SLACK_WEBHOOK_URL   — Slack incoming webhook for notifications
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: Verify Production Deployment
+
+on:
+  push:
+    branches: [main]
+
+  # Allow manual trigger for on-demand verification
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: "Commit SHA to verify (defaults to HEAD)"
+        required: false
+        type: string
+      timeout:
+        description: "Timeout in seconds (default: 300)"
+        required: false
+        default: "300"
+        type: string
+
+concurrency:
+  group: deploy-verify-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PRODUCTION_URL: https://deevo-sim.vercel.app
+  NODE_VERSION: "20"
+
+jobs:
+  # ── Job 1: Wait for Vercel to finish building ─────────────────────────────
+  verify-deployment:
+    name: Verify Vercel Deployment
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    outputs:
+      verified: ${{ steps.verify.outputs.verified }}
+      deployment_id: ${{ steps.verify.outputs.deployment_id }}
+      deployed_sha: ${{ steps.verify.outputs.deployed_sha }}
+      deployment_state: ${{ steps.verify.outputs.deployment_state }}
+      deployment_url: ${{ steps.verify.outputs.deployment_url }}
+      audit_fingerprint: ${{ steps.verify.outputs.audit_fingerprint }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Resolve commit SHA
+        id: sha
+        run: |
+          if [ -n "${{ github.event.inputs.commit_sha }}" ]; then
+            echo "sha=${{ github.event.inputs.commit_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "sha=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Initial delay for Vercel webhook
+        run: |
+          echo "Waiting 30s for Vercel to receive the GitHub webhook and start building..."
+          sleep 30
+
+      - name: Run deployment verification
+        id: verify
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+          GITHUB_SHA: ${{ steps.sha.outputs.sha }}
+          PRODUCTION_URL: ${{ env.PRODUCTION_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          node scripts/verify-deployment.mjs \
+            --timeout ${{ github.event.inputs.timeout || '300' }} \
+            --poll 15
+
+      - name: Upload verification artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-verification-${{ github.run_id }}
+          path: |
+            scripts/verify-deployment.mjs
+          retention-days: 30
+
+  # ── Job 2: Post-deployment smoke test ──────────────────────────────────────
+  smoke-test:
+    name: Production Smoke Test
+    runs-on: ubuntu-latest
+    needs: verify-deployment
+    if: needs.verify-deployment.outputs.verified == 'true'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Run smoke tests
+        run: node scripts/smoke-test.mjs
+        env:
+          PRODUCTION_URL: ${{ env.PRODUCTION_URL }}
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Deployment Verification Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Check | Result |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-------|--------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Deployment Verified | ${{ needs.verify-deployment.outputs.verified }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Deployment ID | \`${{ needs.verify-deployment.outputs.deployment_id }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Deployed SHA | \`${{ needs.verify-deployment.outputs.deployed_sha }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Expected SHA | \`${{ github.sha }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| State | ${{ needs.verify-deployment.outputs.deployment_state }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| URL | ${{ needs.verify-deployment.outputs.deployment_url }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Audit Fingerprint | \`${{ needs.verify-deployment.outputs.audit_fingerprint }}\` |" >> "$GITHUB_STEP_SUMMARY"
+
+  # ── Job 3: Notify on failure ───────────────────────────────────────────────
+  notify-failure:
+    name: Notify Deployment Failure
+    runs-on: ubuntu-latest
+    needs: [verify-deployment, smoke-test]
+    if: failure()
+
+    steps:
+      - name: Post failure to GitHub Step Summary
+        run: |
+          echo "## 🚨 Deployment Verification FAILED" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "The production deployment did not pass verification." >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Expected SHA:** \`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Deployed SHA:** \`${{ needs.verify-deployment.outputs.deployed_sha || 'unknown' }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **State:** ${{ needs.verify-deployment.outputs.deployment_state || 'unknown' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Check the [Vercel Dashboard](https://vercel.com) for details." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Slack failure notification (if configured)
+        if: env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -s -X POST "$SLACK_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "text": "🚨 Impact Observatory deployment verification FAILED for commit `${{ github.sha }}`",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {"type": "plain_text", "text": "🚨 Deployment Verification Failed"}
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {"type": "mrkdwn", "text": "*Commit:*\n`'"${{ github.sha }}"'`"},
+                    {"type": "mrkdwn", "text": "*Branch:*\n`${{ github.ref_name }}`"},
+                    {"type": "mrkdwn", "text": "*Run:*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Logs>"}
+                  ]
+                }
+              ]
+            }'

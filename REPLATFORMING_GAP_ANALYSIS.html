@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deevo-Sim → Hud Hud Intelligence — Replatforming Gap Analysis</title>
+<style>
+:root{--bg:#FAFBFC;--card:#FFF;--border:#E2E8F0;--text:#1A202C;--muted:#718096;--accent:#1A365D;--blue:#2B6CB0;--critical:#C53030;--high:#C05621;--medium:#B7791F;--low:#276749;--done:#276749;--ported:#2C5282;--new:#6B46C1;--shadow:0 1px 3px rgba(0,0,0,.08)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'IBM Plex Sans Arabic','DM Sans',-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;padding:24px;max-width:1500px;margin:0 auto}
+.hdr{text-align:center;padding:36px 0 24px;border-bottom:3px solid var(--accent);margin-bottom:32px}
+.hdr h1{font-size:26px;font-weight:800;color:var(--accent)}
+.hdr .sub{font-size:14px;color:var(--muted);margin-top:6px}
+.hdr .arrow{display:flex;justify-content:center;gap:16px;align-items:center;margin:16px 0;font-size:15px;font-weight:700}
+.hdr .arrow .from{background:#FED7D7;padding:8px 20px;border-radius:8px;color:var(--critical)}
+.hdr .arrow .to{background:#C6F6D5;padding:8px 20px;border-radius:8px;color:var(--done)}
+.hdr .arrow .ar{font-size:24px;color:var(--accent)}
+
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:28px}
+.kpi{background:var(--card);border-radius:10px;padding:18px;box-shadow:var(--shadow);text-align:center;border-top:3px solid var(--accent)}
+.kpi .v{font-size:32px;font-weight:800}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:4px}
+.kpi.cr{border-top-color:var(--critical)}.kpi.cr .v{color:var(--critical)}
+.kpi.hi{border-top-color:var(--high)}.kpi.hi .v{color:var(--high)}
+.kpi.md{border-top-color:var(--medium)}.kpi.md .v{color:var(--medium)}
+.kpi.ok{border-top-color:var(--done)}.kpi.ok .v{color:var(--done)}
+.kpi.pr{border-top-color:var(--ported)}.kpi.pr .v{color:var(--ported)}
+
+.sec{margin-bottom:28px}
+.sec-t{font-size:18px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.sec-t .badge{font-size:11px;background:var(--accent);color:#fff;padding:2px 10px;border-radius:10px}
+
+/* Stack comparison */
+.stack-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:24px}
+.stack-table th{background:var(--accent);color:#fff;padding:12px 16px;text-align:right;font-size:13px;font-weight:600}
+.stack-table td{padding:10px 16px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:top}
+.stack-table tr:last-child td{border:none}
+.stack-table .status{font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;white-space:nowrap}
+.st-migrate{background:#FED7D7;color:var(--critical)}
+.st-port{background:#BEE3F8;color:var(--ported)}
+.st-build{background:#E9D8FD;color:var(--new)}
+.st-done{background:#C6F6D5;color:var(--done)}
+.st-partial{background:#FEFCBF;color:var(--medium)}
+
+/* Gap cards */
+.gap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:14px}
+.gc{background:var(--card);border-radius:10px;padding:18px;box-shadow:var(--shadow);border-right:4px solid var(--border);transition:transform .15s}
+.gc:hover{transform:translateY(-2px)}
+.gc.critical{border-right-color:var(--critical)}.gc.high{border-right-color:var(--high)}.gc.medium{border-right-color:var(--medium)}.gc.low{border-right-color:var(--low)}.gc.done{border-right-color:var(--done);opacity:.65}
+.gc .gh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.gc .gt{font-size:14px;font-weight:700}
+.gc .sev{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}
+.sev.critical{background:#FED7D7;color:var(--critical)}.sev.high{background:#FEEBC8;color:var(--high)}.sev.medium{background:#FEFCBF;color:var(--medium)}.sev.done{background:#C6F6D5;color:var(--done)}
+.gc .desc{font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.6}
+.gc .meta{display:flex;gap:8px;flex-wrap:wrap}
+.gc .tag{font-size:10px;background:#EDF2F7;padding:2px 7px;border-radius:5px;color:#4A5568}
+.gc .layer{font-size:10px;background:#EBF4FF;padding:2px 7px;border-radius:5px;color:var(--blue);font-weight:600}
+.gc .spec{font-size:10px;background:#E9D8FD;padding:2px 7px;border-radius:5px;color:var(--new);font-weight:600}
+
+/* Timeline */
+.timeline{position:relative;padding-right:32px;margin-bottom:24px}
+.timeline::before{content:'';position:absolute;right:12px;top:0;bottom:0;width:3px;background:var(--border);border-radius:2px}
+.tl-item{position:relative;margin-bottom:16px;padding:14px 18px;background:var(--card);border-radius:10px;box-shadow:var(--shadow)}
+.tl-item::before{content:'';position:absolute;right:-26px;top:18px;width:12px;height:12px;border-radius:50%;border:3px solid var(--accent);background:var(--bg)}
+.tl-item.active::before{background:var(--accent)}
+.tl-item .phase{font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px}
+.tl-item .title{font-size:14px;font-weight:700;margin:4px 0}
+.tl-item .details{font-size:12px;color:var(--muted);line-height:1.6}
+
+.filters{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
+.fbtn{padding:6px 14px;border-radius:16px;border:1px solid var(--border);background:var(--card);cursor:pointer;font-size:12px;font-weight:500;transition:all .2s}
+.fbtn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.fbtn:hover{box-shadow:var(--shadow)}
+
+@media(max-width:768px){.gap-grid{grid-template-columns:1fr}.kpi-row{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>Deevo-Sim → Hud Hud Intelligence</h1>
+  <p class="sub">تقرير فجوات إعادة المنصة | Replatforming Gap Analysis | 2 April 2026</p>
+  <div class="arrow">
+    <span class="from">deevo-sim<br/>FastAPI + Next.js + SQLAlchemy</span>
+    <span class="ar">←</span>
+    <span class="to">Hud Hud Intelligence<br/>Express + tRPC + Drizzle + React 19</span>
+  </div>
+</div>
+
+<!-- KPI Summary -->
+<div class="kpi-row">
+  <div class="kpi cr"><div class="v">12</div><div class="l">Stack Migration Items<br/>عناصر نقل التقنية</div></div>
+  <div class="kpi hi"><div class="v">14</div><div class="l">V4 Spec Gaps<br/>فجوات مواصفة V4</div></div>
+  <div class="kpi pr"><div class="v">18</div><div class="l">Portable Modules<br/>وحدات قابلة للنقل</div></div>
+  <div class="kpi md"><div class="v">8</div><div class="l">Hud Hud-Only Features<br/>ميزات جديدة</div></div>
+  <div class="kpi ok"><div class="v">~35%</div><div class="l">Logic Reusable<br/>منطق قابل لإعادة الاستخدام</div></div>
+</div>
+
+<!-- SECTION 1: Stack Migration Matrix -->
+<div class="sec">
+  <div class="sec-t">مصفوفة نقل التقنية — Stack Migration Matrix <span class="badge">12 items</span></div>
+  <table class="stack-table">
+    <thead><tr><th>Layer</th><th>deevo-sim (حالي)</th><th>Hud Hud (هدف)</th><th>Migration Effort</th><th>الحالة</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Backend Framework</strong></td><td>FastAPI (Python 3.12)</td><td>Express + tRPC (TypeScript)</td><td>Full rewrite — Python → TypeScript. الـ business logic يحتاج ترجمة كامل.</td><td><span class="status st-migrate">REWRITE</span></td></tr>
+      <tr><td><strong>ORM / DB Layer</strong></td><td>SQLAlchemy 2.0 + raw SQL init</td><td>Drizzle ORM + SQL migrations</td><td>Schema ترجمة + migration system جديد. الـ init.sql و 001_gcc_graph.sql يحتاجون Drizzle schema.</td><td><span class="status st-migrate">REWRITE</span></td></tr>
+      <tr><td><strong>API Contracts</strong></td><td>FastAPI Pydantic schemas</td><td>tRPC typed procedures + Zod</td><td>الـ v4 JSON contracts تبقى نفسها. الـ validation ينتقل من Pydantic → Zod.</td><td><span class="status st-port">PORT</span></td></tr>
+      <tr><td><strong>Frontend Framework</strong></td><td>Next.js 15 (App Router)</td><td>React 19 + Vite (SPA)</td><td>Components تنتقل. App Router routing → React Router. SSR → CSR.</td><td><span class="status st-port">PORT</span></td></tr>
+      <tr><td><strong>State Management</strong></td><td>Zustand 5 + React Query</td><td>Zustand + tRPC hooks</td><td>Store structure ينتقل. API hooks تتغير من fetch → tRPC.</td><td><span class="status st-partial">PARTIAL PORT</span></td></tr>
+      <tr><td><strong>Auth System</strong></td><td>Dev-mode API keys (JWT stub)</td><td>Manus OAuth + tenant sessions</td><td>Auth يُبنى من الصفر. Manus template يوفر الأساس.</td><td><span class="status st-build">BUILD NEW</span></td></tr>
+      <tr><td><strong>Graph Database</strong></td><td>Neo4j 5.18 (Cypher)</td><td>PostgreSQL + Drizzle relations</td><td>الـ GCC knowledge graph (76 nodes, 191 edges) ينتقل من Neo4j → relational model. كبير.</td><td><span class="status st-migrate">REWRITE</span></td></tr>
+      <tr><td><strong>Cache Layer</strong></td><td>Redis 7 (standalone)</td><td>Redis (if needed) or in-memory</td><td>يعتمد على الـ deployment target. Manus قد يوفر بديل.</td><td><span class="status st-partial">EVALUATE</span></td></tr>
+      <tr><td><strong>Geospatial</strong></td><td>PostGIS + CesiumJS + deck.gl</td><td>Map-linked overlays (Hud Hud spec)</td><td>CesiumJS components تنتقل. deck.gl layers تنتقل. PostGIS queries تتغير.</td><td><span class="status st-port">PORT</span></td></tr>
+      <tr><td><strong>Testing</strong></td><td>Pytest (backend) + none (frontend)</td><td>Vitest (full stack)</td><td>Backend tests تُترجم Python → TypeScript. Frontend tests تُبنى من الصفر.</td><td><span class="status st-build">BUILD NEW</span></td></tr>
+      <tr><td><strong>i18n</strong></td><td>Custom bilingual (Arabic + English)</td><td>Arabic-first RTL layout</td><td>الـ i18n system و labels dictionary تنتقل مباشرة.</td><td><span class="status st-done">PORTABLE</span></td></tr>
+      <tr><td><strong>Deployment</strong></td><td>Docker Compose + Railway + Vercel</td><td>Manus platform</td><td>الـ Dockerfiles و compose ما يُحتاجون. Manus يوفر الـ runtime.</td><td><span class="status st-build">NEW PLATFORM</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SECTION 2: What's Portable from deevo-sim -->
+<div class="sec">
+  <div class="sec-t">شنو ينتقل من deevo-sim — Portable Assets <span class="badge">18 modules</span></div>
+  <table class="stack-table">
+    <thead><tr><th>Module</th><th>Source</th><th>Port Strategy</th><th>Effort</th></tr></thead>
+    <tbody>
+      <tr><td>10-Stage Pipeline Logic</td><td>backend/app/orchestration/pipeline.py</td><td>ترجم الخوارزمية Python → TypeScript. الـ business rules نفسها.</td><td>Medium</td></tr>
+      <tr><td>Physics Core (7 modules)</td><td>backend/src/engines/physics/</td><td>Math translates 1:1. NumPy → native JS math أو mathjs.</td><td>Medium</td></tr>
+      <tr><td>Math Core (7 modules)</td><td>backend/src/engines/math_core/</td><td>Pure computation — direct port.</td><td>Low-Medium</td></tr>
+      <tr><td>Insurance Intelligence (4 modules)</td><td>backend/src/engines/insurance_intelligence/</td><td>Claims surge, portfolio exposure, severity, underwriting — direct port.</td><td>Low</td></tr>
+      <tr><td>Scenario Engine</td><td>backend/src/engines/scenario_engine/</td><td>Baseline, delta, explanation, inject, runner, mesa_sim.</td><td>Medium</td></tr>
+      <tr><td>SHA-256 Audit Trail</td><td>backend/app/services/audit/engine.py</td><td>crypto.createHash('sha256') في Node.js — سهل.</td><td>Low</td></tr>
+      <tr><td>RBAC Matrix (5 roles, 18 perms)</td><td>backend/app/core/rbac.py</td><td>Enum + permission map — direct TypeScript port.</td><td>Low</td></tr>
+      <tr><td>Regulatory Engine</td><td>backend/app/services/regulatory/engine.py</td><td>Breach detection logic — direct port.</td><td>Low</td></tr>
+      <tr><td>Decision Engine</td><td>backend/app/services/decision/engine.py</td><td>Priority formula + ranking — direct port.</td><td>Low</td></tr>
+      <tr><td>GCC Knowledge Graph Data</td><td>packages/@deevo/gcc-knowledge-graph/</td><td>Already TypeScript! Direct import. 76 nodes, 191 edges, 17 scenarios.</td><td><strong>Zero</strong></td></tr>
+      <tr><td>GCC Constants</td><td>packages/@deevo/gcc-constants/</td><td>Already TypeScript. Direct import.</td><td><strong>Zero</strong></td></tr>
+      <tr><td>i18n Labels & RTL System</td><td>frontend/src/lib/i18n.ts</td><td>Direct copy. Arabic + English dictionaries.</td><td><strong>Zero</strong></td></tr>
+      <tr><td>TypeScript Type Definitions (60+)</td><td>frontend/src/types/observatory.ts</td><td>Direct copy. 24,663 bytes of v4 contracts.</td><td><strong>Zero</strong></td></tr>
+      <tr><td>CesiumJS Globe Component</td><td>frontend/src/components/globe/</td><td>React component — adapts to new router. Cesium + Resium.</td><td>Low</td></tr>
+      <tr><td>deck.gl Overlay Layers</td><td>frontend/src/components/globe/deckgl-overlay.tsx</td><td>Layer configs portable. Integration point changes.</td><td>Low</td></tr>
+      <tr><td>Zustand Store Structure</td><td>frontend/src/store/app-store.ts</td><td>Store shape portable. API hooks change to tRPC.</td><td>Low</td></tr>
+      <tr><td>Tailwind Design Tokens</td><td>frontend/src/theme/tokens.ts + tailwind.config.ts</td><td>Tailwind 3 → 4 migration needed but tokens transfer.</td><td>Low</td></tr>
+      <tr><td>API Client Type Contracts</td><td>frontend/src/lib/api/client.ts</td><td>Endpoint shapes → tRPC procedure types. Logic changes, contracts stay.</td><td>Medium</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SECTION 3: V4 Spec Gaps (neither platform has these) -->
+<div class="sec">
+  <div class="sec-t">فجوات مواصفة V4 — V4 Spec Requirements Missing from Both <span class="badge">14 gaps</span></div>
+  <div class="filters">
+    <button class="fbtn active" onclick="filterCards('all')">الكل</button>
+    <button class="fbtn" onclick="filterCards('critical')">حرج</button>
+    <button class="fbtn" onclick="filterCards('high')">عالي</button>
+    <button class="fbtn" onclick="filterCards('medium')">متوسط</button>
+  </div>
+  <div class="gap-grid">
+
+    <div class="gc critical" data-sev="critical">
+      <div class="gh"><div class="gt">§23: Multi-Tenant Row-Level Isolation</div><span class="sev critical">CRITICAL</span></div>
+      <div class="desc">V4 §23 يتطلب tenant_id في كل row: scenarios, runs, results, audit logs, events. لا deevo-sim ولا Hud Hud handoff عندهم real tenant isolation. TEN-001 → TEN-005 كلها مفقودة.</div>
+      <div class="meta"><span class="spec">V4 §23</span><span class="layer">L1 Data</span><span class="tag">SaaS blocker</span></div>
+    </div>
+
+    <div class="gc critical" data-sev="critical">
+      <div class="gh"><div class="gt">§22: Real-Time WebSocket Streaming Layer</div><span class="sev critical">CRITICAL</span></div>
+      <div class="desc">V4 §22 يتطلب WebSocket gateway مع 5 channels: run-status, timeline, breaches, decision, audit. كل channel tenant-scoped. لا يوجد في أي من المشروعين. RT-VAL-001 → RT-VAL-004 كلها مفقودة.</div>
+      <div class="meta"><span class="spec">V4 §22</span><span class="layer">L5 APIs</span><span class="tag">streaming</span></div>
+    </div>
+
+    <div class="gc critical" data-sev="critical">
+      <div class="gh"><div class="gt">§21: Compliance Report Generation System</div><span class="sev critical">CRITICAL</span></div>
+      <div class="desc">V4 §21 يتطلب ComplianceReport model مع 4 report types و status workflow (draft→finalized→submitted). POST endpoint لـ generate reports. لا يوجد في deevo-sim. REG-REP-001 → REG-REP-005.</div>
+      <div class="meta"><span class="spec">V4 §21</span><span class="layer">L7 Governance</span><span class="tag">regulatory</span></div>
+    </div>
+
+    <div class="gc critical" data-sev="critical">
+      <div class="gh"><div class="gt">§17: Full Temporal Simulation Engine</div><span class="sev critical">CRITICAL</span></div>
+      <div class="desc">V4 §17 يتطلب time engine loop كامل: t0→tN مع recompute_full_state_each_step=true. TimeStepState, EntityTemporalImpact, shock decay, propagation delay. deevo-sim عنده skeleton فقط في pipeline_v4.py.</div>
+      <div class="meta"><span class="spec">V4 §17</span><span class="layer">L3 Models</span><span class="tag">simulation</span></div>
+    </div>
+
+    <div class="gc critical" data-sev="critical">
+      <div class="gh"><div class="gt">§21.1: Audit Log with tenant_id + Full Action Types</div><span class="sev critical">CRITICAL</span></div>
+      <div class="desc">V4 §21.1 يتطلب AuditLogEntry مع 8 action_types (scenario_create, run_create, override_apply, report_export, etc.) + request_fingerprint SHA-256 + trace_id. deevo-sim عنده audit hash بس مو الـ full model.</div>
+      <div class="meta"><span class="spec">V4 §21.1</span><span class="layer">L7 Governance</span><span class="tag">audit</span></div>
+    </div>
+
+    <div class="gc high" data-sev="high">
+      <div class="gh"><div class="gt">§18: Scenario DNA Layer</div><span class="sev high">HIGH</span></div>
+      <div class="desc">V4 §18 يتطلب ScenarioDna object مع trigger_event, sector_impact_chain, transmission_mode, severity_band. الـ create scenario endpoint لازم يقبل scenario_dna. DNA-VAL-001 → DNA-VAL-005. غير موجود بالكامل.</div>
+      <div class="meta"><span class="spec">V4 §18</span><span class="layer">L2 Features</span><span class="tag">scenario</span></div>
+    </div>
+
+    <div class="gc high" data-sev="high">
+      <div class="gh"><div class="gt">§19: Executive Decision Explanation</div><span class="sev high">HIGH</span></div>
+      <div class="desc">V4 §19 يتطلب ExecutiveDecisionExplanation مع cause_effect_chain, loss_translation, board_message, regulator_message. Endpoint GET /runs/{id}/executive-explanation. deevo-sim عنده basic explanation بس مو executive-level.</div>
+      <div class="meta"><span class="spec">V4 §19</span><span class="layer">L4 Agents</span><span class="tag">explainability</span></div>
+    </div>
+
+    <div class="gc high" data-sev="high">
+      <div class="gh"><div class="gt">§16: Business Impact Layer (Full)</div><span class="sev high">HIGH</span></div>
+      <div class="desc">V4 §16 يتطلب LossTrajectoryPoint مع loss_velocity + loss_acceleration, TimeToFailure per failure_type, RegulatoryBreachEvent timeline, BusinessImpactSummary. deevo-sim عنده partial implementation.</div>
+      <div class="meta"><span class="spec">V4 §16</span><span class="layer">L3 Models</span><span class="tag">business</span></div>
+    </div>
+
+    <div class="gc high" data-sev="high">
+      <div class="gh"><div class="gt">§1: Idempotency-Key Header on All Writes</div><span class="sev high">HIGH</span></div>
+      <div class="desc">V4 §1 يتطلب Idempotency-Key header (max 128 chars) على كل write request. لا يوجد في deevo-sim. يحتاج middleware layer.</div>
+      <div class="meta"><span class="spec">V4 §1</span><span class="layer">L5 APIs</span><span class="tag">resilience</span></div>
+    </div>
+
+    <div class="gc high" data-sev="high">
+      <div class="gh"><div class="gt">§1: Append-Only Run Immutability</div><span class="sev high">HIGH</span></div>
+      <div class="desc">V4 §1 يتطلب: once a run is created, scenario payload + reference dataset + model params are immutable. Result endpoints never recompute. يحتاج enforcement layer.</div>
+      <div class="meta"><span class="spec">V4 §1</span><span class="layer">L1 Data</span><span class="tag">data integrity</span></div>
+    </div>
+
+    <div class="gc medium" data-sev="medium">
+      <div class="gh"><div class="gt">§20.3: Risk Map UI State Contract</div><span class="sev medium">MEDIUM</span></div>
+      <div class="desc">V4 §20.3 يحدد exact layout: 24% left panel + 52% center canvas + 24% right panel + timestep scrubber footer. Layout modes: force, hierarchical, sector_clustered. Hud Hud handoff يذكر map لكن بدون هذا المستوى من التفصيل.</div>
+      <div class="meta"><span class="spec">V4 §20.3</span><span class="layer">L6 UI</span><span class="tag">risk map</span></div>
+    </div>
+
+    <div class="gc medium" data-sev="medium">
+      <div class="gh"><div class="gt">§20.5: Financial Impact Chart Series Contract</div><span class="sev medium">MEDIUM</span></div>
+      <div class="desc">V4 §20.5 يحدد 4 chart series: cumulative_loss (line), direct_loss (stacked bar), propagated_loss (stacked bar), loss_velocity (secondary axis). deevo-sim dashboard عنده basic chart بس.</div>
+      <div class="meta"><span class="spec">V4 §20.5</span><span class="layer">L6 UI</span><span class="tag">charts</span></div>
+    </div>
+
+    <div class="gc medium" data-sev="medium">
+      <div class="gh"><div class="gt">§2: Propagation Convergence + Numeric Stability</div><span class="sev medium">MEDIUM</span></div>
+      <div class="desc">V4 §2 يتطلب PROPAGATION_CONVERGENCE_EPSILON check + NUMERIC_STABILITY_ERROR on non-finite results. deevo-sim propagation engine ما عنده هذي الـ guards.</div>
+      <div class="meta"><span class="spec">V4 §2</span><span class="layer">L3 Models</span><span class="tag">math</span></div>
+    </div>
+
+    <div class="gc medium" data-sev="medium">
+      <div class="gh"><div class="gt">§1: UUIDv7 for All Identifiers</div><span class="sev medium">MEDIUM</span></div>
+      <div class="desc">V4 §1 يتطلب UUIDv7 (time-ordered) لكل IDs. deevo-sim يستخدم mixed UUID formats. يحتاج standardization.</div>
+      <div class="meta"><span class="spec">V4 §1</span><span class="layer">L1 Data</span><span class="tag">identifiers</span></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SECTION 4: Hud Hud-Only Requirements -->
+<div class="sec">
+  <div class="sec-t">متطلبات Hud Hud الجديدة — Hud Hud-Only Requirements <span class="badge">8 items</span></div>
+  <div class="gap-grid">
+
+    <div class="gc high" data-sev="high">
+      <div class="gh"><div class="gt">Manus OAuth + Session Management</div><span class="sev high">HIGH</span></div>
+      <div class="desc">Hud Hud يستخدم Manus OAuth template auth بدل JWT. يحتاج integration مع Manus platform session handling + tenant-aware access. هذا غير موجود في deevo-sim بالكامل.</div>
+      <div class="meta"><span class="layer">L5 APIs</span><span class="tag">auth</span><span class="tag">Manus</span></div>
+    </div>
+
+    <div class="gc high" data-sev="high">
+      <div class="gh"><div class="gt">Scenario → Map Synchronization Engine</div><span class="sev high">HIGH</span></div>
+      <div class="desc">Hud Hud handoff يتطلب: scenario selection يغيّر map center, zoom, layer visibility, opacity. Centralized في scenario-map.ts. deevo-sim ما عنده هذا الـ binding.</div>
+      <div class="meta"><span class="layer">L6 UI</span><span class="tag">scenario-map</span><span class="tag">geospatial</span></div>
+    </div>
+
+    <div class="gc high" data-sev="high">
+      <div class="gh"><div class="gt">Preview-Safe Mode (Unauthenticated)</div><span class="sev high">HIGH</span></div>
+      <div class="desc">Hud Hud يتطلب preview mode يشتغل بدون authentication مع mock data snapshots. preview-mode.ts contracts. deevo-sim ما عنده هذا المفهوم.</div>
+      <div class="meta"><span class="layer">L5 APIs</span><span class="tag">preview</span><span class="tag">UX</span></div>
+    </div>
+
+    <div class="gc medium" data-sev="medium">
+      <div class="gh"><div class="gt">Workspace-Based Navigation Model</div><span class="sev medium">MEDIUM</span></div>
+      <div class="desc">Hud Hud يستخدم workspace model: Executive Dashboard, Risk Map, Temporal Simulation, Decision, Alerts, Regulatory — كل واحد workspace مستقل مع shared state. بدل page-based routing.</div>
+      <div class="meta"><span class="layer">L6 UI</span><span class="tag">navigation</span><span class="tag">UX</span></div>
+    </div>
+
+    <div class="gc medium" data-sev="medium">
+      <div class="gh"><div class="gt">Arabic-First Executive Tone</div><span class="sev medium">MEDIUM</span></div>
+      <div class="desc">Hud Hud هو Arabic-first مو bilingual. RTL default، executive tone، command surface عربي. deevo-sim bilingual بس English-first.</div>
+      <div class="meta"><span class="layer">L6 UI</span><span class="tag">i18n</span><span class="tag">UX</span></div>
+    </div>
+
+    <div class="gc medium" data-sev="medium">
+      <div class="gh"><div class="gt">tRPC Typed Procedures (Backend)</div><span class="sev medium">MEDIUM</span></div>
+      <div class="desc">كل الـ API endpoints لازم تكون tRPC procedures مع Zod validation بدل REST + Pydantic. الـ v4 contracts نفسها بس الـ transport layer يتغير.</div>
+      <div class="meta"><span class="layer">L5 APIs</span><span class="tag">backend</span><span class="tag">tRPC</span></div>
+    </div>
+
+    <div class="gc medium" data-sev="medium">
+      <div class="gh"><div class="gt">Drizzle Schema + Migration System</div><span class="sev medium">MEDIUM</span></div>
+      <div class="desc">كل الـ DB models تُبنى بـ Drizzle ORM مع drizzle-kit generate للـ migrations. يحل مشكلة Alembic المفقود في deevo-sim.</div>
+      <div class="meta"><span class="layer">L1 Data</span><span class="tag">database</span><span class="tag">Drizzle</span></div>
+    </div>
+
+    <div class="gc low" data-sev="medium">
+      <div class="gh"><div class="gt">Vitest Test Coverage Contract</div><span class="sev medium">MEDIUM</span></div>
+      <div class="desc">Hud Hud handoff يقول: "Add tests with every meaningful logic change". Vitest for full stack. deevo-sim عنده pytest backend بس ولا frontend test.</div>
+      <div class="meta"><span class="layer">L7 Governance</span><span class="tag">testing</span><span class="tag">Vitest</span></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SECTION 5: Replatforming Timeline -->
+<div class="sec">
+  <div class="sec-t">خطة التنفيذ المقترحة — Replatforming Execution Plan</div>
+  <div class="timeline">
+
+    <div class="tl-item active">
+      <div class="phase">Phase 0 — Foundation (Week 1-2)</div>
+      <div class="title">Scaffold Hud Hud على Manus + Port Zero-Cost Assets</div>
+      <div class="details">
+        ① Manus project setup مع Express + tRPC + Drizzle<br/>
+        ② Copy packages/@deevo/gcc-knowledge-graph/ (already TS)<br/>
+        ③ Copy packages/@deevo/gcc-constants/ (already TS)<br/>
+        ④ Copy frontend/src/types/observatory.ts (60+ types)<br/>
+        ⑤ Copy frontend/src/lib/i18n.ts (bilingual labels)<br/>
+        ⑥ Setup Drizzle schema from v4 §3 canonical objects<br/>
+        ⑦ Setup Manus OAuth + tenant session
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="phase">Phase 1 — Core Pipeline (Week 3-4)</div>
+      <div class="title">Port Intelligence Engines Python → TypeScript</div>
+      <div class="details">
+        ① Port math_core/ (7 modules: calibration, confidence, disruption, exposure, propagation, risk, gcc_weights)<br/>
+        ② Port physics_core/ (7 modules: flow_field, friction, pressure, shockwave, threat_field, system_stress, potential_routing)<br/>
+        ③ Port insurance_intelligence/ (4 modules: claims_surge, portfolio_exposure, severity_projection, underwriting_watch)<br/>
+        ④ Port scenario_engine/ (baseline, delta, explanation, inject, runner)<br/>
+        ⑤ Build 10-stage pipeline orchestrator as tRPC procedure<br/>
+        ⑥ Add PROPAGATION_CONVERGENCE_EPSILON + NUMERIC_STABILITY_ERROR guards (v4 §2)
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="phase">Phase 2 — V4 Compliance Layer (Week 5-6)</div>
+      <div class="title">Build Missing V4 Spec Requirements</div>
+      <div class="details">
+        ① Build full Temporal Simulation Engine (v4 §17): t0→tN loop, TimeStepState, EntityTemporalImpact<br/>
+        ② Build Business Impact Layer (v4 §16): LossTrajectoryPoint, TimeToFailure, RegulatoryBreachEvent<br/>
+        ③ Build Scenario DNA (v4 §18): ScenarioDna, TriggerEvent, SectorImpactLink<br/>
+        ④ Build Executive Explanation (v4 §19): CauseEffectLink, LossTranslation, board/regulator messages<br/>
+        ⑤ Build Multi-Tenant isolation (v4 §23): tenant_id in all tables + row-level filtering<br/>
+        ⑥ Build Audit Log full model (v4 §21.1): 8 action types + fingerprint + trace_id
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="phase">Phase 3 — Arabic Command Surface (Week 7-8)</div>
+      <div class="title">Build Hud Hud UI + Scenario-Map Engine</div>
+      <div class="details">
+        ① Build workspace navigation model (6 workspaces)<br/>
+        ② Build scenario-map.ts: scenario → map center/zoom/layers synchronization<br/>
+        ③ Build preview-mode.ts: unauthenticated mock snapshots<br/>
+        ④ Port CesiumJS globe + deck.gl overlays from deevo-sim<br/>
+        ⑤ Build Arabic-first executive dashboard per v4 §20<br/>
+        ⑥ Build Decision Panel per v4 §20.4<br/>
+        ⑦ Build Financial Impact charts per v4 §20.5<br/>
+        ⑧ Build Regulatory Status per v4 §20.6
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="phase">Phase 4 — Enterprise & Streaming (Week 9-10)</div>
+      <div class="title">WebSocket + Compliance + Production Hardening</div>
+      <div class="details">
+        ① Build WebSocket gateway (v4 §22): 5 channels, tenant-scoped<br/>
+        ② Build Compliance Report system (v4 §21): 4 report types, status workflow<br/>
+        ③ Implement Idempotency-Key middleware (v4 §1)<br/>
+        ④ Implement UUIDv7 standardization<br/>
+        ⑤ Add Vitest coverage for all ported engines<br/>
+        ⑥ Integration testing: scenario → pipeline → result → UI flow<br/>
+        ⑦ Arabic UX polish + RTL validation
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SECTION 6: Decision Gate -->
+<div class="sec">
+  <div class="sec-t">بوابة القرار — Decision Gate</div>
+  <div style="background:var(--card);border-radius:10px;padding:20px;box-shadow:var(--shadow);border-right:4px solid var(--accent)">
+    <div style="font-size:14px;font-weight:700;margin-bottom:12px;color:var(--accent)">ما لازم يكون صحيح قبل ما تبدأ Phase 0:</div>
+    <div style="font-size:13px;line-height:2;color:var(--text)">
+      ☐ Manus project initialized مع Express + tRPC + Drizzle working locally<br/>
+      ☐ Manus OAuth integration confirmed working (login → session → tenant_id)<br/>
+      ☐ Drizzle schema for v4 §3 Scenario + Entity + Edge + Run validated against canonical_json_schema_v4.json<br/>
+      ☐ gcc-knowledge-graph package imports successfully في Manus environment<br/>
+      ☐ observatory.ts types compile cleanly في الـ new project<br/>
+      ☐ First tRPC procedure (health check) responds correctly<br/>
+      ☐ Vitest runs and passes at least one contract test<br/>
+    </div>
+    <div style="margin-top:16px;padding:12px;background:#EBF4FF;border-radius:8px;font-size:13px;color:var(--accent);font-weight:600">
+      ⚠️ لا تبدأ Phase 1 (pipeline port) إلا بعد ما كل الـ gates أعلاه خضراء. porting الـ Python engines بدون schema + auth foundation = وقت ضايع.
+    </div>
+  </div>
+</div>
+
+<!-- Risk Register -->
+<div class="sec">
+  <div class="sec-t">سجل المخاطر — Risk Register</div>
+  <table class="stack-table">
+    <thead><tr><th>Risk</th><th>Probability</th><th>Impact</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td>Python → TypeScript translation introduces math bugs</td><td>High</td><td>Critical</td><td>Golden test suite: run same inputs through Python + TS engines, compare outputs to 6 decimal places</td></tr>
+      <tr><td>Neo4j → Relational graph model loses query performance</td><td>Medium</td><td>High</td><td>Benchmark GCC graph queries before committing. Consider adjacency list + recursive CTE pattern.</td></tr>
+      <tr><td>Manus platform limitations block deployment requirements</td><td>Medium</td><td>High</td><td>Validate WebSocket, Redis, and PostgreSQL availability on Manus before Phase 2.</td></tr>
+      <tr><td>V4 temporal engine (§17) too complex for initial delivery</td><td>High</td><td>Medium</td><td>Ship with simplified time engine (10 steps) first, extend to 1000 steps in Phase 4.</td></tr>
+      <tr><td>Multi-tenant isolation (§23) breaks existing seed data</td><td>Medium</td><td>Medium</td><td>Create default tenant_id for all seed data. Migration script adds tenant_id retroactively.</td></tr>
+      <tr><td>Arabic-first UI requires design review cycles</td><td>Low</td><td>Low</td><td>Port deevo-sim RTL system first, iterate on Arabic tone after functional completion.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+function filterCards(f){
+  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  document.querySelectorAll('.gc').forEach(c=>{
+    if(f==='all'){c.style.display='';return}
+    c.style.display=c.dataset.sev===f?'':'none';
+  });
+}
+</script>
+
+</body>
+</html>

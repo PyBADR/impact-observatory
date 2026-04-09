@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Impact Observatory — Gap Analysis | تحليل الفجوات</title>
+<style>
+  :root {
+    --bg: #FAFBFC;
+    --card: #FFFFFF;
+    --border: #E2E8F0;
+    --text: #1A202C;
+    --muted: #718096;
+    --accent: #2B6CB0;
+    --critical: #E53E3E;
+    --high: #DD6B20;
+    --medium: #D69E2E;
+    --low: #38A169;
+    --done: #38A169;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-lg: 0 4px 14px rgba(0,0,0,0.1);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'IBM Plex Sans Arabic', 'DM Sans', -apple-system, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.6;
+    padding: 24px; max-width: 1400px; margin: 0 auto;
+  }
+  .header { text-align: center; margin-bottom: 32px; padding: 32px 0; border-bottom: 2px solid var(--border); }
+  .header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  .header p { color: var(--muted); font-size: 15px; }
+  .lang-toggle { position: absolute; top: 24px; left: 24px; cursor: pointer; background: var(--accent); color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; }
+
+  /* KPI Row */
+  .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .kpi { background: var(--card); border-radius: 12px; padding: 20px; box-shadow: var(--shadow); text-align: center; border-top: 3px solid var(--accent); }
+  .kpi .value { font-size: 36px; font-weight: 800; }
+  .kpi .label { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .kpi.critical { border-top-color: var(--critical); }
+  .kpi.critical .value { color: var(--critical); }
+  .kpi.high { border-top-color: var(--high); }
+  .kpi.high .value { color: var(--high); }
+  .kpi.medium { border-top-color: var(--medium); }
+  .kpi.done { border-top-color: var(--done); }
+  .kpi.done .value { color: var(--done); }
+
+  /* Filter Tabs */
+  .filters { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+  .filter-btn { padding: 8px 18px; border-radius: 20px; border: 1px solid var(--border); background: var(--card); cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.2s; }
+  .filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .filter-btn:hover { box-shadow: var(--shadow); }
+
+  /* Section */
+  .section { margin-bottom: 32px; }
+  .section-title { font-size: 20px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .section-title .badge { font-size: 12px; background: var(--accent); color: #fff; padding: 2px 10px; border-radius: 12px; font-weight: 600; }
+
+  /* Gap Cards */
+  .gap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px; }
+  .gap-card { background: var(--card); border-radius: 12px; padding: 20px; box-shadow: var(--shadow); border-right: 4px solid var(--border); transition: transform 0.15s, box-shadow 0.15s; }
+  .gap-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .gap-card.critical { border-right-color: var(--critical); }
+  .gap-card.high { border-right-color: var(--high); }
+  .gap-card.medium { border-right-color: var(--medium); }
+  .gap-card.low { border-right-color: var(--low); }
+  .gap-card.done { border-right-color: var(--done); opacity: 0.7; }
+  .gap-card .gap-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .gap-card .gap-title { font-size: 15px; font-weight: 700; }
+  .gap-card .severity { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .severity.critical { background: #FED7D7; color: var(--critical); }
+  .severity.high { background: #FEEBC8; color: var(--high); }
+  .severity.medium { background: #FEFCBF; color: var(--medium); }
+  .severity.low { background: #C6F6D5; color: var(--low); }
+  .severity.done { background: #C6F6D5; color: var(--done); }
+  .gap-card .desc { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+  .gap-card .meta { display: flex; gap: 12px; flex-wrap: wrap; }
+  .gap-card .tag { font-size: 11px; background: #EDF2F7; padding: 2px 8px; border-radius: 6px; color: #4A5568; }
+  .gap-card .layer { font-size: 11px; background: #EBF4FF; padding: 2px 8px; border-radius: 6px; color: var(--accent); font-weight: 600; }
+
+  /* Progress bar */
+  .progress-section { margin-bottom: 32px; }
+  .progress-bar-container { background: #E2E8F0; border-radius: 8px; height: 12px; overflow: hidden; margin-top: 8px; }
+  .progress-bar { height: 100%; border-radius: 8px; background: linear-gradient(90deg, var(--done), #48BB78); transition: width 0.6s ease; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-top: 6px; }
+
+  /* Layer Map */
+  .layer-map { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 32px; }
+  .layer-item { text-align: center; padding: 16px 8px; border-radius: 10px; background: var(--card); box-shadow: var(--shadow); font-size: 12px; font-weight: 600; position: relative; }
+  .layer-item .layer-num { font-size: 20px; font-weight: 800; display: block; margin-bottom: 4px; }
+  .layer-item .layer-status { font-size: 10px; margin-top: 6px; padding: 2px 6px; border-radius: 6px; display: inline-block; }
+  .layer-item .layer-status.ok { background: #C6F6D5; color: var(--done); }
+  .layer-item .layer-status.partial { background: #FEFCBF; color: var(--medium); }
+  .layer-item .layer-status.gap { background: #FED7D7; color: var(--critical); }
+
+  @media (max-width: 768px) {
+    .gap-grid { grid-template-columns: 1fr; }
+    .layer-map { grid-template-columns: repeat(4, 1fr); }
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Impact Observatory — تحليل الفجوات</h1>
+  <p>Gap Analysis Report &bull; مرصد الأثر &bull; Generated 2 April 2026</p>
+</div>
+
+<!-- KPI Summary -->
+<div class="kpi-row">
+  <div class="kpi critical">
+    <div class="value">7</div>
+    <div class="label">Critical Gaps<br/>فجوات حرجة</div>
+  </div>
+  <div class="kpi high">
+    <div class="value">9</div>
+    <div class="label">High Priority<br/>أولوية عالية</div>
+  </div>
+  <div class="kpi medium">
+    <div class="value">8</div>
+    <div class="label">Medium Priority<br/>أولوية متوسطة</div>
+  </div>
+  <div class="kpi done">
+    <div class="value">~65%</div>
+    <div class="label">Implemented<br/>مُنجَز</div>
+  </div>
+</div>
+
+<!-- 7-Layer Stack Status -->
+<div class="section">
+  <div class="section-title">7-Layer Intelligence Stack Status | حالة الطبقات السبع</div>
+  <div class="layer-map">
+    <div class="layer-item">
+      <span class="layer-num">L1</span>Data<br/>البيانات
+      <div class="layer-status partial">75%</div>
+    </div>
+    <div class="layer-item">
+      <span class="layer-num">L2</span>Features<br/>الخصائص
+      <div class="layer-status ok">90%</div>
+    </div>
+    <div class="layer-item">
+      <span class="layer-num">L3</span>Models<br/>النماذج
+      <div class="layer-status ok">85%</div>
+    </div>
+    <div class="layer-item">
+      <span class="layer-num">L4</span>Agents<br/>الوكلاء
+      <div class="layer-status gap">30%</div>
+    </div>
+    <div class="layer-item">
+      <span class="layer-num">L5</span>APIs<br/>الواجهات
+      <div class="layer-status partial">70%</div>
+    </div>
+    <div class="layer-item">
+      <span class="layer-num">L6</span>UI<br/>الواجهة
+      <div class="layer-status ok">80%</div>
+    </div>
+    <div class="layer-item">
+      <span class="layer-num">L7</span>Governance<br/>الحوكمة
+      <div class="layer-status gap">40%</div>
+    </div>
+  </div>
+</div>
+
+<!-- Filter Tabs -->
+<div class="filters">
+  <button class="filter-btn active" onclick="filterGaps('all')">الكل / All</button>
+  <button class="filter-btn" onclick="filterGaps('critical')">حرج / Critical</button>
+  <button class="filter-btn" onclick="filterGaps('high')">عالي / High</button>
+  <button class="filter-btn" onclick="filterGaps('medium')">متوسط / Medium</button>
+  <button class="filter-btn" onclick="filterGaps('backend')">Backend</button>
+  <button class="filter-btn" onclick="filterGaps('frontend')">Frontend</button>
+  <button class="filter-btn" onclick="filterGaps('infra')">Infra/DevOps</button>
+  <button class="filter-btn" onclick="filterGaps('governance')">Governance</button>
+</div>
+
+<!-- CRITICAL GAPS -->
+<div class="section" id="section-critical">
+  <div class="section-title">فجوات حرجة — Critical Gaps <span class="badge">7</span></div>
+  <div class="gap-grid">
+
+    <div class="gap-card critical" data-severity="critical" data-domain="infra">
+      <div class="gap-header">
+        <div class="gap-title">Secrets Management معدوم</div>
+        <span class="severity critical">CRITICAL</span>
+      </div>
+      <div class="desc">لا يوجد Vault أو AWS Secrets Manager أو أي نظام لإدارة الأسرار. الكريدنشلز مكشوفة في docker-compose.yml و .env.example. هذا مرفوض بالكامل لـ production.</div>
+      <div class="meta">
+        <span class="layer">L7 Governance</span>
+        <span class="tag">infra</span>
+        <span class="tag">PDPL violation risk</span>
+      </div>
+    </div>
+
+    <div class="gap-card critical" data-severity="critical" data-domain="backend">
+      <div class="gap-header">
+        <div class="gap-title">JWT Authentication غير موجود (Production)</div>
+        <span class="severity critical">CRITICAL</span>
+      </div>
+      <div class="desc">security.py يرمي NotImplementedError عند محاولة JWT validation. Dev-mode API keys تشتغل، لكن ما في أي production auth. بدون هذا مستحيل تنزل production.</div>
+      <div class="meta">
+        <span class="layer">L5 APIs</span>
+        <span class="tag">backend</span>
+        <span class="tag">security</span>
+      </div>
+    </div>
+
+    <div class="gap-card critical" data-severity="critical" data-domain="infra">
+      <div class="gap-header">
+        <div class="gap-title">Database Backup Strategy معدوم</div>
+        <span class="severity critical">CRITICAL</span>
+      </div>
+      <div class="desc">لا يوجد أي نظام backup لـ PostgreSQL أو Neo4j. بيانات الـ scenarios والـ audit logs والـ graph ممكن تضيع بالكامل. ما في point-in-time recovery.</div>
+      <div class="meta">
+        <span class="layer">L1 Data</span>
+        <span class="tag">infra</span>
+        <span class="tag">data sovereignty</span>
+      </div>
+    </div>
+
+    <div class="gap-card critical" data-severity="critical" data-domain="backend">
+      <div class="gap-header">
+        <div class="gap-title">Dual Entrypoint Conflict (app/ vs src/)</div>
+        <span class="severity critical">CRITICAL</span>
+      </div>
+      <div class="desc">عندك main.py في مكانين: backend/app/main.py و backend/src/main.py — كل واحد يحمّل routers مختلفة. docker-compose يستخدم app.main والـ Makefile يستخدم src.main. هذا يسبب سلوك غير متوقع.</div>
+      <div class="meta">
+        <span class="layer">L5 APIs</span>
+        <span class="tag">backend</span>
+        <span class="tag">architecture debt</span>
+      </div>
+    </div>
+
+    <div class="gap-card critical" data-severity="critical" data-domain="infra">
+      <div class="gap-header">
+        <div class="gap-title">Frontend مفقود من docker-compose</div>
+        <span class="severity critical">CRITICAL</span>
+      </div>
+      <div class="desc">docker-compose.yml ما فيه frontend service رغم وجود Dockerfile جاهز. nginx يوجه على frontend:3000 لكن ما في service definition. الـ stack مكسور.</div>
+      <div class="meta">
+        <span class="layer">L6 UI</span>
+        <span class="tag">infra</span>
+        <span class="tag">deployment blocker</span>
+      </div>
+    </div>
+
+    <div class="gap-card critical" data-severity="critical" data-domain="governance">
+      <div class="gap-header">
+        <div class="gap-title">PDPL Data Sovereignty Enforcement غير مفعّل</div>
+        <span class="severity critical">CRITICAL</span>
+      </div>
+      <div class="desc">الـ regulatory engine يسجّل PDPL كـ metadata لكن ما في enforcement فعلي: لا data residency checks، لا encryption-at-rest validation، لا consent tracking، لا data retention policies. GCC enterprise clients ما راح يقبلون.</div>
+      <div class="meta">
+        <span class="layer">L7 Governance</span>
+        <span class="tag">governance</span>
+        <span class="tag">GCC regulatory</span>
+      </div>
+    </div>
+
+    <div class="gap-card critical" data-severity="critical" data-domain="backend">
+      <div class="gap-header">
+        <div class="gap-title">Alembic Migrations غير موجود</div>
+        <span class="severity critical">CRITICAL</span>
+      </div>
+      <div class="desc">Makefile عنده target لـ alembic upgrade head لكن ما في alembic.ini ولا alembic/ directory. الـ schema يتحمّل من init.sql فقط. أي تغيير schema يكسر الداتابيس.</div>
+      <div class="meta">
+        <span class="layer">L1 Data</span>
+        <span class="tag">backend</span>
+        <span class="tag">schema versioning</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- HIGH PRIORITY GAPS -->
+<div class="section" id="section-high">
+  <div class="section-title">أولوية عالية — High Priority <span class="badge">9</span></div>
+  <div class="gap-grid">
+
+    <div class="gap-card high" data-severity="high" data-domain="backend">
+      <div class="gap-header">
+        <div class="gap-title">LangGraph Integration غير موجود</div>
+        <span class="severity high">HIGH</span>
+      </div>
+      <div class="desc">الـ README و user preferences يذكرون LangGraph كجزء من الـ stack، لكن ما في أي import أو integration. Pipeline يشتغل بـ sequential function calls مو agent-based orchestration.</div>
+      <div class="meta">
+        <span class="layer">L4 Agents</span>
+        <span class="tag">backend</span>
+        <span class="tag">AI pipeline</span>
+      </div>
+    </div>
+
+    <div class="gap-card high" data-severity="high" data-domain="backend">
+      <div class="gap-header">
+        <div class="gap-title">Ollama / LLM Integration غير موجود</div>
+        <span class="severity high">HIGH</span>
+      </div>
+      <div class="desc">ما في أي integration مع Ollama أو أي LLM. الـ explanation engine يبني نصوص بـ string templates مو AI generation. الـ decision engine يستخدم rule-based logic فقط.</div>
+      <div class="meta">
+        <span class="layer">L4 Agents</span>
+        <span class="tag">backend</span>
+        <span class="tag">AI/ML</span>
+      </div>
+    </div>
+
+    <div class="gap-card high" data-severity="high" data-domain="infra">
+      <div class="gap-header">
+        <div class="gap-title">CI/CD ناقص — لا Docker Build ولا Deploy</div>
+        <span class="severity high">HIGH</span>
+      </div>
+      <div class="desc">GitHub Actions يشغّل lint + test + build بس. ما في: Docker image publishing، container registry push، deployment triggers، environment promotion. كل deployment يدوي.</div>
+      <div class="meta">
+        <span class="layer">L7 Governance</span>
+        <span class="tag">infra</span>
+        <span class="tag">DevOps</span>
+      </div>
+    </div>
+
+    <div class="gap-card high" data-severity="high" data-domain="infra">
+      <div class="gap-header">
+        <div class="gap-title">Observability Stack معدوم</div>
+        <span class="severity high">HIGH</span>
+      </div>
+      <div class="desc">لا Prometheus metrics، لا Grafana dashboards، لا structured logging (JSON)، لا distributed tracing (Jaeger/Zipkin). في production ما راح تعرف شنو يصير.</div>
+      <div class="meta">
+        <span class="layer">L7 Governance</span>
+        <span class="tag">infra</span>
+        <span class="tag">monitoring</span>
+      </div>
+    </div>
+
+    <div class="gap-card high" data-severity="high" data-domain="backend">
+      <div class="gap-header">
+        <div class="gap-title">Multi-tenant Data Isolation غير موجود</div>
+        <span class="severity high">HIGH</span>
+      </div>
+      <div class="desc">الـ README يقول "multi-tenant SaaS" لكن ما في أي tenant isolation: لا row-level security، لا schema-per-tenant، لا tenant_id في الـ ORM models. كل الداتا مشتركة.</div>
+      <div class="meta">
+        <span class="layer">L1 Data</span>
+        <span class="tag">backend</span>
+        <span class="tag">SaaS architecture</span>
+      </div>
+    </div>
+
+    <div class="gap-card high" data-severity="high" data-domain="backend">
+      <div class="gap-header">
+        <div class="gap-title">Model Drift Detection غير موجود</div>
+        <span class="severity high">HIGH</span>
+      </div>
+      <div class="desc">ما في أي نظام يراقب model drift أو data drift. الـ Monte Carlo engine والـ physics models يشتغلون بدون validation ضد ground truth. ما في model versioning ولا A/B testing.</div>
+      <div class="meta">
+        <span class="layer">L3 Models</span>
+        <span class="tag">backend</span>
+        <span class="tag">ML ops</span>
+      </div>
+    </div>
+
+    <div class="gap-card high" data-severity="high" data-domain="frontend">
+      <div class="gap-header">
+        <div class="gap-title">Frontend Tests معدومة بالكامل</div>
+        <span class="severity high">HIGH</span>
+      </div>
+      <div class="desc">ما في ولا test file واحد في الـ frontend. لا unit tests، لا component tests، لا E2E (Cypress/Playwright). الـ CI يشغّل npm run build بس كـ "test".</div>
+      <div class="meta">
+        <span class="layer">L6 UI</span>
+        <span class="tag">frontend</span>
+        <span class="tag">quality</span>
+      </div>
+    </div>
+
+    <div class="gap-card high" data-severity="high" data-domain="infra">
+      <div class="gap-header">
+        <div class="gap-title">Resource Limits غير محددة</div>
+        <span class="severity high">HIGH</span>
+      </div>
+      <div class="desc">docker-compose ما فيه CPU/memory limits. Railway ما فيه resource constraints. Monte Carlo simulation ممكن تاخذ كل الـ resources وتسقط باقي الـ services.</div>
+      <div class="meta">
+        <span class="layer">L5 APIs</span>
+        <span class="tag">infra</span>
+        <span class="tag">reliability</span>
+      </div>
+    </div>
+
+    <div class="gap-card high" data-severity="high" data-domain="governance">
+      <div class="gap-header">
+        <div class="gap-title">IFRS 17 Compliance سطحي فقط</div>
+        <span class="severity high">HIGH</span>
+      </div>
+      <div class="desc">الـ regulatory engine يضيف "IFRS17_LOSS_RECOGNITION" كـ mandatory action string لكن ما في: loss component tracking، CSM (Contractual Service Margin) calculation، insurance contract grouping، أو actual IFRS 17 measurement models.</div>
+      <div class="meta">
+        <span class="layer">L7 Governance</span>
+        <span class="tag">governance</span>
+        <span class="tag">insurance compliance</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MEDIUM PRIORITY GAPS -->
+<div class="section" id="section-medium">
+  <div class="section-title">أولوية متوسطة — Medium Priority <span class="badge">8</span></div>
+  <div class="gap-grid">
+
+    <div class="gap-card medium" data-severity="medium" data-domain="infra">
+      <div class="gap-header">
+        <div class="gap-title">SSL/TLS Termination غير مهيأ</div>
+        <span class="severity medium">MEDIUM</span>
+      </div>
+      <div class="desc">nginx.conf يخدم HTTP فقط. ما في HTTPS configuration، لا Let's Encrypt، لا certificate management. يعتمد على reverse proxy خارجي.</div>
+      <div class="meta">
+        <span class="layer">L5 APIs</span>
+        <span class="tag">infra</span>
+      </div>
+    </div>
+
+    <div class="gap-card medium" data-severity="medium" data-domain="infra">
+      <div class="gap-header">
+        <div class="gap-title">API Rate Limiting غير موجود</div>
+        <span class="severity medium">MEDIUM</span>
+      </div>
+      <div class="desc">لا slowapi ولا nginx rate limiting. أي client يقدر يغرق الـ API. Monte Carlo endpoint خصوصاً حساس لأنه CPU-intensive.</div>
+      <div class="meta">
+        <span class="layer">L5 APIs</span>
+        <span class="tag">infra</span>
+        <span class="tag">security</span>
+      </div>
+    </div>
+
+    <div class="gap-card medium" data-severity="medium" data-domain="backend">
+      <div class="gap-header">
+        <div class="gap-title">Uvicorn Single Worker في Production</div>
+        <span class="severity medium">MEDIUM</span>
+      </div>
+      <div class="desc">CMD يشغّل uvicorn بدون --workers flag. Worker واحد يعني أي request بطيء يبلوك كل شي. يحتاج gunicorn مع multiple workers أو --workers 4.</div>
+      <div class="meta">
+        <span class="layer">L5 APIs</span>
+        <span class="tag">backend</span>
+        <span class="tag">performance</span>
+      </div>
+    </div>
+
+    <div class="gap-card medium" data-severity="medium" data-domain="backend">
+      <div class="gap-header">
+        <div class="gap-title">Health Check ما يفحص DB Connectivity</div>
+        <span class="severity medium">MEDIUM</span>
+      </div>
+      <div class="desc">الـ /health endpoint يرجع "ok" دايم حتى لو PostgreSQL أو Neo4j أو Redis ميتين. يحتاج liveness vs readiness probes حقيقية.</div>
+      <div class="meta">
+        <span class="layer">L5 APIs</span>
+        <span class="tag">backend</span>
+        <span class="tag">reliability</span>
+      </div>
+    </div>
+
+    <div class="gap-card medium" data-severity="medium" data-domain="frontend">
+      <div class="gap-header">
+        <div class="gap-title">Offline-First غير موجود</div>
+        <span class="severity medium">MEDIUM</span>
+      </div>
+      <div class="desc">الـ constraints تقول "offline-first mobile" لكن ما في Service Worker، ولا IndexedDB caching، ولا PWA manifest. الـ app يحتاج internet دايم.</div>
+      <div class="meta">
+        <span class="layer">L6 UI</span>
+        <span class="tag">frontend</span>
+        <span class="tag">mobile</span>
+      </div>
+    </div>
+
+    <div class="gap-card medium" data-severity="medium" data-domain="backend">
+      <div class="gap-header">
+        <div class="gap-title">Sync Conflict Resolution غير موجود</div>
+        <span class="severity medium">MEDIUM</span>
+      </div>
+      <div class="desc">الـ key risks تذكر "sync conflicts" لكن ما في CRDT أو conflict resolution strategy. لو two analysts عدّلوا نفس الـ scenario بنفس الوقت، last-write-wins بدون warning.</div>
+      <div class="meta">
+        <span class="layer">L1 Data</span>
+        <span class="tag">backend</span>
+      </div>
+    </div>
+
+    <div class="gap-card medium" data-severity="medium" data-domain="backend">
+      <div class="gap-header">
+        <div class="gap-title">Non-root Docker User (Backend)</div>
+        <span class="severity medium">MEDIUM</span>
+      </div>
+      <div class="desc">backend/Dockerfile يشغّل كـ root user. Frontend Dockerfile عنده non-root user (nextjs:nodejs). يحتاج تساوي security posture.</div>
+      <div class="meta">
+        <span class="layer">L7 Governance</span>
+        <span class="tag">infra</span>
+        <span class="tag">security</span>
+      </div>
+    </div>
+
+    <div class="gap-card medium" data-severity="medium" data-domain="backend">
+      <div class="gap-header">
+        <div class="gap-title">Duplicate Code: app/ و src/ Modules</div>
+        <span class="severity medium">MEDIUM</span>
+      </div>
+      <div class="desc">عندك physics_core، math_core، scenario_engine، insurance_intelligence في مكانين: backend/app/ و backend/src/. هذا code duplication يسبب confusion و bugs لما تعدّل واحد وتنسى الثاني.</div>
+      <div class="meta">
+        <span class="layer">L3 Models</span>
+        <span class="tag">backend</span>
+        <span class="tag">tech debt</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- WHAT'S WORKING WELL -->
+<div class="section">
+  <div class="section-title" style="color: var(--done);">شنو يشتغل زين — What's Working Well</div>
+  <div class="gap-grid">
+    <div class="gap-card done" data-severity="done" data-domain="backend">
+      <div class="gap-header">
+        <div class="gap-title">10-Stage Pipeline Orchestration</div>
+        <span class="severity done">DONE</span>
+      </div>
+      <div class="desc">Pipeline كامل: Scenario → Physics → Graph → Propagation → Financial → Sector → Regulatory → Decision → Explanation → Output. مع V4 version.</div>
+      <div class="meta"><span class="layer">L3 Models</span><span class="tag">backend</span></div>
+    </div>
+    <div class="gap-card done" data-severity="done" data-domain="backend">
+      <div class="gap-header">
+        <div class="gap-title">SHA-256 Audit Trail</div>
+        <span class="severity done">DONE</span>
+      </div>
+      <div class="desc">Deterministic JSON serialization + SHA-256 hashing مع provenance tracking لكل decision. Audit records كاملة.</div>
+      <div class="meta"><span class="layer">L7 Governance</span><span class="tag">backend</span></div>
+    </div>
+    <div class="gap-card done" data-severity="done" data-domain="backend">
+      <div class="gap-header">
+        <div class="gap-title">RBAC System (5 Roles, 18 Permissions)</div>
+        <span class="severity done">DONE</span>
+      </div>
+      <div class="desc">Viewer, Analyst, Operator, Admin, Regulator — كل واحد بصلاحيات محددة. Permission matrix كامل ومطابق لـ v4 §10.2.</div>
+      <div class="meta"><span class="layer">L5 APIs</span><span class="tag">backend</span></div>
+    </div>
+    <div class="gap-card done" data-severity="done" data-domain="frontend">
+      <div class="gap-header">
+        <div class="gap-title">CesiumJS + deck.gl + Recharts Integration</div>
+        <span class="severity done">DONE</span>
+      </div>
+      <div class="desc">Globe visualization، heatmaps، arc layers، scatter plots — كلها شغّالة مع real data binding و interaction handlers.</div>
+      <div class="meta"><span class="layer">L6 UI</span><span class="tag">frontend</span></div>
+    </div>
+    <div class="gap-card done" data-severity="done" data-domain="frontend">
+      <div class="gap-header">
+        <div class="gap-title">Bilingual i18n (Arabic + English)</div>
+        <span class="severity done">DONE</span>
+      </div>
+      <div class="desc">نظام ثنائي اللغة كامل مع RTL support، BilingualText types، domain/region/trigger labels، و 8+ category dictionaries.</div>
+      <div class="meta"><span class="layer">L6 UI</span><span class="tag">frontend</span></div>
+    </div>
+    <div class="gap-card done" data-severity="done" data-domain="backend">
+      <div class="gap-header">
+        <div class="gap-title">GCC Knowledge Graph (76 Nodes, 191 Edges)</div>
+        <span class="severity done">DONE</span>
+      </div>
+      <div class="desc">5-layer causal dependency graph مع 17 scenario templates و complete sector mapping لكل دول الخليج.</div>
+      <div class="meta"><span class="layer">L2 Features</span><span class="tag">backend</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Implementation Sequence -->
+<div class="section">
+  <div class="section-title">ترتيب التنفيذ المقترح — Recommended Fix Sequence</div>
+  <div style="background: var(--card); border-radius: 12px; padding: 24px; box-shadow: var(--shadow);">
+    <div style="display: grid; gap: 12px;">
+      <div style="display: flex; gap: 12px; align-items: center; padding: 12px; border-radius: 8px; background: #FED7D7;">
+        <span style="font-weight: 800; font-size: 18px; color: var(--critical); min-width: 36px;">P0</span>
+        <div>
+          <strong>Week 1-2:</strong> Resolve dual entrypoint conflict → Add Alembic migrations → Add frontend to docker-compose → Implement JWT auth
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: center; padding: 12px; border-radius: 8px; background: #FEEBC8;">
+        <span style="font-weight: 800; font-size: 18px; color: var(--high); min-width: 36px;">P1</span>
+        <div>
+          <strong>Week 3-4:</strong> Secrets management → Database backups → CI/CD with Docker publish → PDPL enforcement layer
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: center; padding: 12px; border-radius: 8px; background: #FEFCBF;">
+        <span style="font-weight: 800; font-size: 18px; color: var(--medium); min-width: 36px;">P2</span>
+        <div>
+          <strong>Week 5-6:</strong> Observability stack → Rate limiting → Resource limits → Frontend tests → Multi-worker uvicorn
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: center; padding: 12px; border-radius: 8px; background: #EBF4FF;">
+        <span style="font-weight: 800; font-size: 18px; color: var(--accent); min-width: 36px;">P3</span>
+        <div>
+          <strong>Week 7-8:</strong> LangGraph + Ollama integration → Multi-tenant isolation → IFRS 17 deep compliance → Model drift detection
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function filterGaps(filter) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  document.querySelectorAll('.gap-card').forEach(card => {
+    if (filter === 'all') { card.style.display = ''; return; }
+    const sev = card.dataset.severity;
+    const dom = card.dataset.domain;
+    if (filter === sev || filter === dom) { card.style.display = ''; }
+    else { card.style.display = 'none'; }
+  });
+}
+</script>
+
+</body>
+</html>

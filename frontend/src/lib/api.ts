@@ -219,6 +219,28 @@ export const api = {
       fetchJSON<import("@/types/observatory").DecisionValue>(`/api/v1/values/${valueId}`),
   },
 
+  /** Executive Narrative Layer — simulation + intelligence brief */
+  narrative: {
+    /** POST /api/v1/narrative/run — Execute simulation + generate executive narrative */
+    run: (body: { scenario_id: string; severity: number; horizon_hours?: number; language?: string }) =>
+      fetchJSON<{ simulation: Record<string, unknown>; narrative: Record<string, unknown>; meta: Record<string, unknown> }>(
+        "/api/v1/narrative/run",
+        { method: "POST", body: JSON.stringify(body) },
+      ),
+
+    /** GET /api/v1/narrative/{run_id} — Retrieve narrative for existing run */
+    get: (runId: string) =>
+      fetchJSON<{ simulation: Record<string, unknown>; narrative: Record<string, unknown>; meta: Record<string, unknown> }>(
+        `/api/v1/narrative/${runId}`,
+      ),
+
+    /** GET /api/v1/narrative/scenarios — Scenarios with narrative context */
+    scenarios: () =>
+      fetchJSON<{ count: number; scenarios: Array<Record<string, string>> }>(
+        "/api/v1/narrative/scenarios",
+      ),
+  },
+
   observatory: {
     /** POST /api/v1/runs — Launch unified pipeline */
     run: (body: { template_id: string; severity?: number; horizon_hours?: number; label?: string }) =>

@@ -34,6 +34,8 @@ from src.api.v1.nodes import router as v1_nodes_router
 from src.api.v1.decisions import router as v1_decisions_router
 from src.api.v1.outcomes import router as v1_outcomes_router
 from src.api.v1.values import router as v1_values_router
+from src.api.v1.narrative import router as v1_narrative_router
+from src.api.v1.decision_authority import router as v1_decision_authority_router, register_validation_handler
 
 from src.core.config import settings
 from src.services.state import init_state
@@ -115,6 +117,9 @@ app = FastAPI(
     redoc_url="/redoc",
     openapi_url="/openapi.json",
 )
+
+# ── Validation error handler (executive-safe, no raw Pydantic leaks) ─────
+register_validation_handler(app)
 
 # ── CORS ──────────────────────────────────────────────────────────────────
 app.add_middleware(
@@ -240,6 +245,12 @@ api_v1.include_router(v1_nodes_router)
 api_v1.include_router(v1_decisions_router)
 api_v1.include_router(v1_outcomes_router)
 api_v1.include_router(v1_values_router)
+
+# ── Executive Narrative Layer (Signal → Propagation → Exposure → Decision → Outcome) ──
+api_v1.include_router(v1_narrative_router)
+
+# ── Decision Authority Layer (Chief Risk Officer AI — forces decisions) ──
+api_v1.include_router(v1_decision_authority_router)
 
 # ── Auth endpoints — no API key required ─────────────────────────────────
 app.include_router(v1_auth_router, prefix="/api/v1")
