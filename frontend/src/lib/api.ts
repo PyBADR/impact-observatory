@@ -148,11 +148,12 @@ export const api = {
 
   decisions: {
     /** GET /api/v1/decisions — List operator decisions */
-    list: (params?: { status?: string; decision_type?: string; limit?: number }) => {
+    list: (params?: { status?: string; decision_type?: string; run_id?: string; limit?: number }) => {
       const qs = new URLSearchParams();
-      if (params?.status) qs.set("status", params.status);
-      if (params?.decision_type) qs.set("decision_type", params.decision_type);
-      if (params?.limit != null) qs.set("limit", String(params.limit));
+      if (params?.status)        qs.set("status",         params.status);
+      if (params?.decision_type) qs.set("decision_type",  params.decision_type);
+      if (params?.run_id)        qs.set("run_id",         params.run_id);
+      if (params?.limit != null) qs.set("limit",          String(params.limit));
       const q = qs.toString();
       return fetchJSON<import("@/types/observatory").DecisionListResponse>(
         `/api/v1/decisions${q ? `?${q}` : ""}`

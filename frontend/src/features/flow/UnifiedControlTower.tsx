@@ -43,6 +43,24 @@ import type { Persona } from "@/lib/persona-view-model";
 import type { FlowStage } from "@/store/flow-store";
 import { formatUSD } from "@/lib/format";
 
+// ─── Module-level stable selectors (Zustand v5 + React 19 safe) ─────────────
+// Inline selectors `(s) => s.field` that return arrays or objects create a new
+// getSnapshot reference every render. With React 19's useSyncExternalStore the
+// hook.getSnapshot !== getSnapshot mismatch triggers pushStoreConsistencyCheck
+// for every render, compounding into React error #185 when the store mutates
+// during passive effects (e.g. after loadAll() or setOutcomes()).
+// Module-level constants are created once — same reference every render.
+
+type AppS  = ReturnType<typeof useAppStore.getState>;
+type FlowS = ReturnType<typeof useFlowStore.getState>;
+
+const selectPersona           = (s: AppS)  => s.persona;
+const selectOutcomes          = (s: AppS)  => s.outcomes;
+const selectDecisionValues    = (s: AppS)  => s.decisionValues;
+const selectOperatorDecisions = (s: AppS)  => s.operatorDecisions;
+const selectLiveSignals       = (s: AppS)  => s.liveSignals;
+const selectActiveFlow        = (s: FlowS) => s.activeFlow;
+
 // ─── System Health Indicator ────────────────────────────────────────────────
 
 function SystemHealthBadge({ health }: { health: "healthy" | "degraded" | "failed" }) {
@@ -70,10 +88,43 @@ function StageSummaryCards({
   // instead of the flow store's UI-stage count which maxes out at 7.
   pipelineStagesCompleted: number;
 }) {
-  const activeFlow = useFlowStore((s) => s.activeFlow);
+  const activeFlow = useFlowStore(selectActiveFlow);
   const isAr = lang === "ar";
 
-  if (!activeFlow) return null;
+  // DEF-NEW-02: when activeFlow is null but the backend reported pipeline stages,
+  // render a minimal "stages complete" card rather than returning null (which
+  // would silently hide real pipeline progress from the user).
+  if (!activeFlow) {
+    if (pipelineStagesCompleted === 0) return null;
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 text-center">
+          <p className="text-2xl font-bold text-emerald-700">{pipelineStagesCompleted}</p>
+          <p className="text-xs text-emerald-600 font-medium">
+            {isAr ? "مراحل مكتملة" : "Stages Complete"}
+          </p>
+        </div>
+        <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-center">
+          <p className="text-2xl font-bold text-gray-400">—</p>
+          <p className="text-xs text-gray-400 font-medium">
+            {isAr ? "نشط الآن" : "Active Now"}
+          </p>
+        </div>
+        <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-center">
+          <p className="text-2xl font-bold text-gray-400">—</p>
+          <p className="text-xs text-gray-400 font-medium">
+            {isAr ? "فشل" : "Failed"}
+          </p>
+        </div>
+        <div className="bg-io-bg border border-io-border rounded-lg px-4 py-3 text-center">
+          <p className="text-2xl font-bold text-io-primary">{FLOW_STAGES_ORDERED.length}</p>
+          <p className="text-xs text-io-secondary font-medium">
+            {isAr ? "إجمالي المراحل" : "Total Stages"}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const activeStages = activeFlow.stages.filter((s) => s.status === "active");
   const failedStages = activeFlow.stages.filter((s) => s.status === "failed");
@@ -126,10 +177,10 @@ function IntelligenceSummary({
   lang: Language;
 }) {
   const isAr = lang === "ar";
-  const outcomes = useAppStore((s) => s.outcomes);
-  const values = useAppStore((s) => s.decisionValues);
-  const signals = useAppStore((s) => s.liveSignals);
-  const decisions = useAppStore((s) => s.operatorDecisions);
+  const outcomes  = useAppStore(selectOutcomes);
+  const values    = useAppStore(selectDecisionValues);
+  const signals   = useAppStore(selectLiveSignals);
+  const decisions = useAppStore(selectOperatorDecisions);
 
   const totalLoss = result.headline?.total_loss_usd ?? 0;
   const classification = result.executive_status ?? "unknown";
@@ -226,11 +277,11 @@ interface UnifiedControlTowerProps {
 }
 
 export function UnifiedControlTower({ result, lang }: UnifiedControlTowerProps) {
-  const persona = useAppStore((s) => s.persona);
-  const outcomes = useAppStore((s) => s.outcomes);
-  const decisionValues = useAppStore((s) => s.decisionValues);
-  const operatorDecisions = useAppStore((s) => s.operatorDecisions);
-  const activeFlow = useFlowStore((s) => s.activeFlow);
+  const persona           = useAppStore(selectPersona);
+  const outcomes          = useAppStore(selectOutcomes);
+  const decisionValues    = useAppStore(selectDecisionValues);
+  const operatorDecisions = useAppStore(selectOperatorDecisions);
+  const activeFlow        = useFlowStore(selectActiveFlow);
   const isAr = lang === "ar";
 
   // Build the existing control tower view model (preserves backward compat)

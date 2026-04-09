@@ -16,6 +16,10 @@ import { useAppStore } from "@/store/app-store";
 import { usePendingSeeds, useApproveSeed, useRejectSeed } from "@/hooks/use-api";
 import type { ScenarioSeed, Language } from "@/types/observatory";
 
+// ─── Module-level stable selectors ───────────────────────────────────────────
+type AppS_PSP = ReturnType<typeof useAppStore.getState>;
+const selectPendingSeeds_PSP = (s: AppS_PSP) => s.pendingSeeds;
+
 interface SeedRowProps {
   seed: ScenarioSeed;
   onApprove: (seedId: string, reason: string) => void;
@@ -86,7 +90,7 @@ function SeedRow({ seed, onApprove, onReject, isApproving, isRejecting, lang = "
 
 export function PendingSeedPanel({ lang = "en" }: { lang?: Language }) {
   const { isLoading, isError } = usePendingSeeds();
-  const pendingSeeds = useAppStore((s) => s.pendingSeeds);
+  const pendingSeeds = useAppStore(selectPendingSeeds_PSP);
   const approveSeed  = useApproveSeed();
   const rejectSeed   = useRejectSeed();
   const isAr = lang === "ar";

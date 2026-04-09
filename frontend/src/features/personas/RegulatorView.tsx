@@ -28,6 +28,14 @@ import {
   type RegulatorValueRow,
 } from "@/lib/persona-view-model";
 
+// ─── Module-level stable selectors ───────────────────────────────────────────
+type AppS_RV = ReturnType<typeof useAppStore.getState>;
+const selectOperatorDecisions_RV = (s: AppS_RV) => s.operatorDecisions;
+const selectLiveSignals_RV       = (s: AppS_RV) => s.liveSignals;
+const selectPendingSeeds_RV      = (s: AppS_RV) => s.pendingSeeds;
+const selectOutcomes_RV          = (s: AppS_RV) => s.outcomes;
+const selectDecisionValues_RV    = (s: AppS_RV) => s.decisionValues;
+
 // ─── Section wrapper ─────────────────────────────────────────────────────────
 
 function Section({ title, subtitle, children }: {
@@ -564,11 +572,11 @@ interface RegulatorViewProps {
 }
 
 export function RegulatorView({ result, lang }: RegulatorViewProps) {
-  const operatorDecisions = useAppStore((s) => s.operatorDecisions);
-  const liveSignals       = useAppStore((s) => s.liveSignals);
-  const pendingSeeds      = useAppStore((s) => s.pendingSeeds);
-  const outcomes          = useAppStore((s) => s.outcomes);
-  const decisionValues    = useAppStore((s) => s.decisionValues);
+  const operatorDecisions = useAppStore(selectOperatorDecisions_RV);
+  const liveSignals       = useAppStore(selectLiveSignals_RV);
+  const pendingSeeds      = useAppStore(selectPendingSeeds_RV);
+  const outcomes          = useAppStore(selectOutcomes_RV);
+  const decisionValues    = useAppStore(selectDecisionValues_RV);
 
   const vm = toRegulatorViewModel(result, operatorDecisions, liveSignals, pendingSeeds, outcomes, decisionValues);
   const isAr = lang === "ar";

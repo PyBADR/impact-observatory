@@ -23,6 +23,13 @@ import {
 } from "@/types/authority";
 import type { Language } from "@/types/observatory";
 
+// ─── Module-level stable selectors ───────────────────────────────────────────
+type AS_ADP  = ReturnType<typeof useAuthorityStore.getState>;
+type AppS_ADP = ReturnType<typeof useAppStore.getState>;
+const selectAuthorities_ADP   = (s: AS_ADP)   => s.authorities;
+const selectLoadByAuthority_ADP = (s: AS_ADP) => s.loadByAuthority;
+const selectPersona_ADP       = (s: AppS_ADP) => s.persona;
+
 // ─── Field Row ────────────────────────────────────────────────────────────
 
 function Field({ label, value, mono }: { label: string; value: string | null; mono?: boolean }) {
@@ -95,9 +102,13 @@ interface AuthorityDetailPanelProps {
 
 export function AuthorityDetailPanel({ authorityId, lang, onClose }: AuthorityDetailPanelProps) {
   const isAr = lang === "ar";
-  const persona = useAppStore((s) => s.persona);
-  const authority = useAuthorityStore((s) => s.getAuthority(authorityId));
-  const loadByAuthority = useAuthorityStore((s) => s.loadByAuthority);
+  const persona         = useAppStore(selectPersona_ADP);
+  const authoritiesMap  = useAuthorityStore(selectAuthorities_ADP);
+  const loadByAuthority = useAuthorityStore(selectLoadByAuthority_ADP);
+  const authority       = useMemo(
+    () => authoritiesMap.get(authorityId) ?? null,
+    [authoritiesMap, authorityId],
+  );
   const capabilities = PERSONA_AUTHORITY_CAPABILITIES[persona];
 
   // Refresh this authority from backend on mount

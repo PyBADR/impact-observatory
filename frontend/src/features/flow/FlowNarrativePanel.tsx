@@ -24,6 +24,12 @@ import {
 import type { Language } from "@/types/observatory";
 import type { Persona } from "@/lib/persona-view-model";
 
+// ─── Module-level stable selectors ───────────────────────────────────────────
+type FlowS_FN = ReturnType<typeof useFlowStore.getState>;
+type AppS_FN  = ReturnType<typeof useAppStore.getState>;
+const selectFlowActiveFlow_FN = (s: FlowS_FN) => s.activeFlow;
+const selectPersona_FN        = (s: AppS_FN)  => s.persona;
+
 // ─── Block Severity Styling ─────────────────────────────────────────────────
 
 const SEVERITY_STYLES: Record<string, string> = {
@@ -146,8 +152,8 @@ interface FlowNarrativePanelProps {
 }
 
 export function FlowNarrativePanel({ lang }: FlowNarrativePanelProps) {
-  const activeFlow = useFlowStore((s) => s.activeFlow);
-  const persona = useAppStore((s) => s.persona);
+  const activeFlow = useFlowStore(selectFlowActiveFlow_FN);
+  const persona    = useAppStore(selectPersona_FN);
   const isAr = lang === "ar";
 
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);

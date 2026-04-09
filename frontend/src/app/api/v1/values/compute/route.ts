@@ -25,6 +25,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "source_outcome_id is required" }, { status: 400 });
   }
 
+  // Guard: do not compute value for an outcome that does not exist in the store.
+  // An outcome MUST exist (created during decision seeding) for value to be valid.
+  if (!serverStore.outcomes.get(body.source_outcome_id as string)) {
+    return NextResponse.json(
+      { error: "source_outcome_id references an outcome that does not exist" },
+      { status: 400 },
+    );
+  }
+
   const val = serverStore.values.compute(
     body as Parameters<typeof serverStore.values.compute>[0],
   );

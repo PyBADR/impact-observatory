@@ -24,6 +24,10 @@ import {
 } from "@/components/ui";
 import type { ImpactedEntity } from "@/types/observatory";
 
+// ─── Module-level stable selectors ───────────────────────────────────────────
+type RS_MP = ReturnType<typeof useRunState.getState>;
+const selectAdaptedResult_MP = (s: RS_MP) => s.adaptedResult;
+
 // ── Map capability state (geospatial not supported by current backend) ──
 
 function MapCapabilityState({ isAr }: { isAr: boolean }) {
@@ -138,7 +142,7 @@ function EntityDetailPanel({
 export default function MapPage() {
   const language = useAppStore((s) => s.language);
   const isAr = language === "ar";
-  const adaptedResult = useRunState((s) => s.adaptedResult);
+  const adaptedResult = useRunState(selectAdaptedResult_MP);
   const scenarioLabel = adaptedResult?.scenario?.label ?? undefined;
 
   const {

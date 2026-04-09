@@ -34,6 +34,8 @@ import {
 import { useAppStore } from "@/store/app-store";
 import { useRunState } from "@/lib/run-state";
 import { ApiError } from "@/lib/api";
+import { filterValidDecisions } from "@/lib/graph-contracts";
+import { emitAudit } from "@/lib/audit";
 import type {
   OperatorDecision,
   DecisionType,
@@ -41,6 +43,14 @@ import type {
   WsSignalScoredData,
   Language,
 } from "@/types/observatory";
+
+// ─── Module-level stable selectors ───────────────────────────────────────────
+type AppS_ODP = ReturnType<typeof useAppStore.getState>;
+type RS_ODP   = ReturnType<typeof useRunState.getState>;
+const selectLiveSignals_ODP   = (s: AppS_ODP) => s.liveSignals;
+const selectPendingSeeds_ODP  = (s: AppS_ODP) => s.pendingSeeds;
+const selectAdaptedResult_ODP = (s: RS_ODP)   => s.adaptedResult;
+const selectActiveRunId_ODP   = (s: RS_ODP)   => s.unifiedResult?.run_id ?? null;
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -148,6 +158,15 @@ const USER_ERROR_MESSAGES: Record<string, { en: string; ar: string }> = {
   close:   {
     en: "Unable to close decision. It may not be in a closeable state.",
     ar: "تعذّر إغلاق القرار. قد لا يكون في حالة قابلة للإغلاق.",
+  },
+  // DEF-NEW-01: status-differentiated close messages
+  close_conflict: {
+    en: "Decision already closed or in a conflicting state. Refresh and retry.",
+    ar: "تمّ إغلاق القرار مسبقاً أو هو في حالة متعارضة. حدّث الصفحة وأعد المحاولة.",
+  },
+  close_forbidden: {
+    en: "You do not have permission to close this decision.",
+    ar: "لا تملك صلاحية إغلاق هذا القرار.",
   },
   load:    {
     en: "Unable to load decisions. Please retry or contact support.",
@@ -488,12 +507,12 @@ function CreateDecisionForm({ onClose, lang = "en" }: { onClose: () => void; lan
   const isAr = lang === "ar";
   // ── Store context (auto-linked sources) ──
   const selectedScenarioId = useAppStore((s) => s.selectedScenarioId);
-  const liveSignals = useAppStore((s) => s.liveSignals);
-  const pendingSeeds = useAppStore((s) => s.pendingSeeds);
+  const liveSignals = useAppStore(selectLiveSignals_ODP);
+  const pendingSeeds = useAppStore(selectPendingSeeds_ODP);
 
   // ── Active run context from unified pipeline (source of truth) ──
-  const activeRunId    = useRunState((s) => s.unifiedResult?.run_id ?? null);
-  const adaptedResult  = useRunState((s) => s.adaptedResult);
+  const activeRunId    = useRunState(selectActiveRunId_ODP);
+  const adaptedResult  = useRunState(selectAdaptedResult_ODP);
 
   // ── Local form state ──
   const [type, setType] = useState<DecisionType>("APPROVE_ACTION");
@@ -734,17 +753,25 @@ export function OperatorDecisionPanel({ lang = "en" }: { lang?: Language }) {
 
   const selectedDecisionId = useAppStore((s) => s.selectedDecisionId);
   const setSelectedDecisionId = useAppStore((s) => s.setSelectedDecisionId);
+  const activeRunId   = useRunState(selectActiveRunId_ODP);
+  const adaptedResult = useRunState(selectAdaptedResult_ODP);
 
-  const { data, isLoading, isError } = useDecisions({
+  // Apply run_id filter only when we're inside an active live run (adaptedResult present).
+  // After a cold hydration from Decision Room, adaptedResult comes from a stored run —
+  // in that case we rely on the backend's DB warmup to return the correct decisions.
+  // Passing run_id when the backend cache is still cold would produce an empty list,
+  // so we always include run_id to let the backend filter correctly after warmup.
+  const { data, isLoading, isError, refetch: refetchDecisions } = useDecisions({
     status: statusFilter || undefined,
     decision_type: typeFilter || undefined,
+    run_id: activeRunId || undefined,
     limit: 50,
   });
 
   const executeDecision = useExecuteDecision();
   const closeDecision = useCloseDecision();
 
-  const decisions = data?.decisions ?? [];
+  const decisions = filterValidDecisions(data?.decisions ?? []);
   const selected = selectedDecisionId
     ? decisions.find((d) => d.decision_id === selectedDecisionId) ?? null
     : null;
@@ -754,6 +781,18 @@ export function OperatorDecisionPanel({ lang = "en" }: { lang?: Language }) {
     setActionError(null);
     try {
       await executeDecision.mutateAsync({ decisionId: id });
+      emitAudit({
+        event_type:  "lifecycle_transition",
+        entity_id:   id,
+        run_id:      activeRunId,
+        scenario_id: adaptedResult?.scenario?.template_id ?? null,
+        actor:       "operator",
+        details: {
+          action:      "execute",
+          entity_kind: "decision",
+        },
+        lineage_ref: null,
+      });
     } catch (err: unknown) {
       // CRIT-03: differentiate error message by HTTP status so operators can
       // distinguish a lifecycle conflict (409) from a server failure (5xx).
@@ -762,6 +801,9 @@ export function OperatorDecisionPanel({ lang = "en" }: { lang?: Language }) {
           setActionError(safeErrorMessage("execute_conflict", lang));
         } else if (err.status === 404) {
           setActionError(safeErrorMessage("execute_not_found", lang));
+          // Decision no longer exists on backend — refresh list so the stale
+          // card is removed from the sidebar and doesn't confuse the user.
+          void refetchDecisions();
         } else if (err.status === 401 || err.status === 403) {
           setActionError(safeErrorMessage("execute_forbidden", lang));
         } else {
@@ -781,8 +823,27 @@ export function OperatorDecisionPanel({ lang = "en" }: { lang?: Language }) {
     try {
       await closeDecision.mutateAsync({ decisionId: id });
       if (selectedDecisionId === id) setSelectedDecisionId(null);
-    } catch {
-      setActionError(safeErrorMessage("close", lang));
+      emitAudit({
+        event_type:  "lifecycle_transition",
+        entity_id:   id,
+        run_id:      activeRunId,
+        scenario_id: adaptedResult?.scenario?.template_id ?? null,
+        actor:       "operator",
+        details: {
+          action:      "close",
+          entity_kind: "decision",
+        },
+        lineage_ref: null,
+      });
+    } catch (err: unknown) {
+      // DEF-NEW-01: differentiate HTTP status codes on close
+      if (err instanceof ApiError) {
+        if (err.status === 409) setActionError(safeErrorMessage("close_conflict", lang));
+        else if (err.status === 401 || err.status === 403) setActionError(safeErrorMessage("close_forbidden", lang));
+        else setActionError(safeErrorMessage("close", lang));
+      } else {
+        setActionError(safeErrorMessage("close", lang));
+      }
     } finally {
       setClosingId(null);
     }

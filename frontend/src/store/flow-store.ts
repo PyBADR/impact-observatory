@@ -203,6 +203,17 @@ function createStageEntry(stage: FlowStage, snapshot: Record<string, unknown> = 
   };
 }
 
+// ─── Re-entry Guards ────────────────────────────────────────────────────────
+// Module-level flags prevent recursive/duplicate execution of attach* and
+// advanceStage when a Zustand subscriber re-invokes one of these functions
+// during the same synchronous set() propagation cycle.
+// Flags reset to false immediately after set() returns — no logic is changed.
+
+let _inAdvanceStage     = false;
+let _inAttachDecisions  = false;
+let _inAttachOutcomes   = false;
+let _inAttachValues     = false;
+
 // ─── Store Implementation ───────────────────────────────────────────────────
 
 export const useFlowStore = create<FlowState>((set, get) => ({
@@ -245,6 +256,8 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   },
 
   advanceStage: (stage, snapshot = {}) => {
+    if (_inAdvanceStage) return;
+    _inAdvanceStage = true;
     set((state) => {
       if (!state.activeFlow) return state;
 
@@ -271,6 +284,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
 
       return { activeFlow: flow };
     });
+    _inAdvanceStage = false;
   },
 
   completeCurrentStage: (snapshot = {}) => {
@@ -330,30 +344,39 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   },
 
   attachDecisions: (decisions) => {
+    if (_inAttachDecisions) return;
+    _inAttachDecisions = true;
     set((state) => {
       if (!state.activeFlow) return state;
       const flow = { ...state.activeFlow };
       flow.context = { ...flow.context, decisions };
       return { activeFlow: flow };
     });
+    _inAttachDecisions = false;
   },
 
   attachOutcomes: (outcomes) => {
+    if (_inAttachOutcomes) return;
+    _inAttachOutcomes = true;
     set((state) => {
       if (!state.activeFlow) return state;
       const flow = { ...state.activeFlow };
       flow.context = { ...flow.context, outcomes };
       return { activeFlow: flow };
     });
+    _inAttachOutcomes = false;
   },
 
   attachValues: (values) => {
+    if (_inAttachValues) return;
+    _inAttachValues = true;
     set((state) => {
       if (!state.activeFlow) return state;
       const flow = { ...state.activeFlow };
       flow.context = { ...flow.context, values };
       return { activeFlow: flow };
     });
+    _inAttachValues = false;
   },
 
   completeFlow: () => {

@@ -10,6 +10,8 @@
  * that the existing frontend mapper functions (rawToAuthority, etc.) work as-is.
  */
 
+import { emitAudit } from "@/lib/audit";
+
 // ── Utility ───────────────────────────────────────────────────────────────────
 
 function uid(): string {
@@ -36,6 +38,7 @@ export interface StoredDecision {
   source_signal_id: string | null;
   source_seed_id:   string | null;
   source_run_id:    string | null;
+  scenario_id:      string | null;
   decision_type:    string;
   decision_status:  string;
   decision_payload: Record<string, unknown>;
@@ -44,6 +47,7 @@ export interface StoredDecision {
   created_by:       string;
   outcome_status:   string;
   outcome_payload:  Record<string, unknown>;
+  outcome_id:       string | null;
   created_at:       string;
   updated_at:       string;
   closed_at:        string | null;
@@ -203,6 +207,21 @@ function _makeAuthority(decisionId: string, runId: string | null, sector?: strin
   };
   _authority.set(id, auth);
   _authDecisionIdx.set(decisionId, id);
+
+  emitAudit({
+    event_type:  "authority_item_created",
+    entity_id:   id,
+    run_id:      runId,
+    actor:       "system",
+    details: {
+      authority_status: "PROPOSED",
+      priority:         auth.priority,
+      sector:           sector ?? null,
+      decision_id:      decisionId,
+    },
+    lineage_ref: decisionId,
+  });
+
   return auth;
 }
 
@@ -230,6 +249,20 @@ function _makeOutcome(decisionId: string, runId: string | null, expectedValue: n
     notes:                      null,
   };
   _outcomes.set(id, out);
+
+  emitAudit({
+    event_type:  "outcome_derived",
+    entity_id:   id,
+    run_id:      runId,
+    actor:       "system",
+    details: {
+      outcome_status: "PENDING_OBSERVATION",
+      expected_value: out.expected_value,
+      source_decision_id: decisionId,
+    },
+    lineage_ref: decisionId,
+  });
+
   return out;
 }
 
@@ -274,6 +307,24 @@ function _makeValue(
     notes: null,
   };
   _values.set(id, val);
+
+  emitAudit({
+    event_type:  "value_computed",
+    entity_id:   id,
+    run_id:      runId,
+    actor:       "system",
+    details: {
+      net_value:              val.net_value,
+      avoided_loss:           val.avoided_loss,
+      total_cost:             val.total_cost,
+      value_classification:   val.value_classification,
+      value_confidence_score: val.value_confidence_score,
+      source_outcome_id:      outcomeId,
+      source_decision_id:     decisionId,
+    },
+    lineage_ref: outcomeId,
+  });
+
   return val;
 }
 
@@ -284,10 +335,11 @@ export const serverStore = {
   // ── Decisions ──────────────────────────────────────────────────────────────
 
   decisions: {
-    list(params?: { status?: string; decision_type?: string; limit?: number }): StoredDecision[] {
+    list(params?: { status?: string; decision_type?: string; run_id?: string; limit?: number }): StoredDecision[] {
       let items = Array.from(_decisions.values()).reverse(); // newest first
       if (params?.status)        items = items.filter((d) => d.decision_status === params.status);
       if (params?.decision_type) items = items.filter((d) => d.decision_type   === params.decision_type);
+      if (params?.run_id)        items = items.filter((d) => d.source_run_id   === params.run_id);
       if (params?.limit != null) items = items.slice(0, params.limit);
       return items;
     },
@@ -303,6 +355,7 @@ export const serverStore = {
     create(body: {
       decision_type?:    string;
       source_run_id?:    string | null;
+      scenario_id?:      string | null;
       source_signal_id?: string | null;
       source_seed_id?:   string | null;
       decision_payload?: Record<string, unknown>;
@@ -317,6 +370,7 @@ export const serverStore = {
         source_signal_id: body.source_signal_id ?? null,
         source_seed_id:   body.source_seed_id   ?? null,
         source_run_id:    body.source_run_id     ?? null,
+        scenario_id:      body.scenario_id       ?? null,
         decision_type:    body.decision_type     ?? "APPROVE_ACTION",
         decision_status:  "CREATED",
         decision_payload: body.decision_payload  ?? {},
@@ -325,11 +379,26 @@ export const serverStore = {
         created_by:       body.created_by        ?? "system",
         outcome_status:   "PENDING",
         outcome_payload:  {},
+        outcome_id:       null,
         created_at:       now,
         updated_at:       now,
         closed_at:        null,
       };
       _decisions.set(id, dec);
+
+      emitAudit({
+        event_type:  "decision_created",
+        entity_id:   id,
+        run_id:      body.source_run_id ?? null,
+        actor:       dec.created_by,
+        details: {
+          decision_type:    dec.decision_type,
+          confidence_score: dec.confidence_score,
+          source_signal_id: dec.source_signal_id,
+          source_seed_id:   dec.source_seed_id,
+        },
+        lineage_ref: null,
+      });
 
       // Derive financial data from payload
       const payload     = body.decision_payload ?? {};
@@ -344,11 +413,55 @@ export const serverStore = {
       // Auto-create pending outcome
       const outcome = _makeOutcome(id, body.source_run_id ?? null, avoidedLoss);
 
+      // Bidirectional linkage: write outcome_id back to decision
+      dec.outcome_id = outcome.outcome_id;
+
       // Auto-compute value when we have financial data
       if (avoidedLoss > 0 || cost > 0) {
         _makeValue(outcome.outcome_id, id, body.source_run_id ?? null, avoidedLoss, cost, confidence);
       }
 
+      return dec;
+    },
+
+    /**
+     * Transition decision to EXECUTED status (mirrors backend execute endpoint).
+     * Guards: status must be CREATED or IN_REVIEW.
+     */
+    execute(id: string): StoredDecision | null {
+      const dec = _decisions.get(id);
+      if (!dec) {
+        console.warn("[server-store] execute: decision not found", id);
+        return null;
+      }
+      if (!["CREATED", "IN_REVIEW"].includes(dec.decision_status)) {
+        console.warn("[server-store] execute: invalid status", dec.decision_status);
+        return null;
+      }
+      dec.decision_status = "EXECUTED";
+      dec.outcome_status  = "SUCCESS";
+      dec.updated_at      = new Date().toISOString();
+      return dec;
+    },
+
+    /**
+     * Transition decision to CLOSED status (mirrors backend close endpoint).
+     * Guards: must not already be CLOSED.
+     */
+    close(id: string): StoredDecision | null {
+      const dec = _decisions.get(id);
+      if (!dec) {
+        console.warn("[server-store] close: decision not found", id);
+        return null;
+      }
+      if (dec.decision_status === "CLOSED") {
+        console.warn("[server-store] close: already closed", id);
+        return null;
+      }
+      const now = new Date().toISOString();
+      dec.decision_status = "CLOSED";
+      dec.closed_at       = now;
+      dec.updated_at      = now;
       return dec;
     },
 

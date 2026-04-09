@@ -675,6 +675,7 @@ export interface OperatorDecision {
   source_signal_id:  string | null;
   source_seed_id:    string | null;
   source_run_id:     string | null;
+  scenario_id:       string | null;
   decision_type:     DecisionType;
   decision_status:   OperatorDecisionStatus;
   decision_payload:  Record<string, unknown>;
@@ -683,6 +684,7 @@ export interface OperatorDecision {
   created_by:        string;
   outcome_status:    OutcomeStatus;
   outcome_payload:   Record<string, unknown>;
+  outcome_id:        string | null;
   created_at:        string;
   updated_at:        string;
   closed_at:         string | null;
@@ -700,6 +702,7 @@ export interface CreateDecisionRequest {
   source_signal_id?: string | null;
   source_seed_id?:   string | null;
   source_run_id?:    string | null;
+  scenario_id?:      string | null;
   decision_payload?: Record<string, unknown>;
   rationale?:        string | null;
   confidence_score?: number | null;

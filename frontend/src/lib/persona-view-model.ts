@@ -26,7 +26,22 @@ import type {
   DecisionValue,
   ValueClassification,
 } from "@/types/observatory";
-import { formatUSD, formatHours, safePercent, safeFixed } from "@/lib/format";
+import { formatUSD, formatHours, safePercent, safeFixed, safeArray } from "@/lib/format";
+import { emitAudit } from "@/lib/audit";
+
+/** Guard: parse a date string/number into a sort-safe timestamp.
+ *  Invalid or missing values return 0 so they sort to the end consistently. */
+function safeTime(v: unknown): number {
+  if (!v) return 0;
+  const t = new Date(v as string).getTime();
+  return isFinite(t) ? t : 0;
+}
+
+/** Guard: coerce a value to a finite number; returns 0 for NaN/Infinity/null/undefined. */
+function safeNum(v: unknown): number {
+  const n = Number(v);
+  return isFinite(n) ? n : 0;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // EXECUTIVE VIEW MODEL
@@ -826,6 +841,33 @@ export function toControlTowerViewModel(
   outcomes: Outcome[] = [],
   values: DecisionValue[] = [],
 ): ControlTowerViewModel {
+  // Runtime guard: coerce all three inputs to arrays before any reduce/map/filter.
+  // Track which inputs were non-arrays so we can emit a render_fallback_invoked
+  // event — this surfaces contract violations without silently swallowing them.
+  const coerced: string[]                            = [];
+  const originalTypes: Record<string, string>        = {};
+  if (!Array.isArray(operatorDecisions)) { coerced.push("operatorDecisions"); originalTypes.operatorDecisions = typeof operatorDecisions; }
+  if (!Array.isArray(outcomes))          { coerced.push("outcomes");          originalTypes.outcomes          = typeof outcomes; }
+  if (!Array.isArray(values))            { coerced.push("values");            originalTypes.values            = typeof values; }
+
+  operatorDecisions = safeArray<OperatorDecision>(operatorDecisions);
+  outcomes          = safeArray<Outcome>(outcomes);
+  values            = safeArray<DecisionValue>(values);
+
+  if (coerced.length > 0) {
+    emitAudit({
+      event_type: "render_fallback_invoked",
+      entity_id:  "toControlTowerViewModel",
+      actor:      "adapter",
+      details: {
+        coerced,
+        original_types: originalTypes,
+        hint: "One or more inputs to toControlTowerViewModel were not arrays; safeArray() substituted []",
+      },
+      lineage_ref: null,
+    });
+  }
+
   const hasData = operatorDecisions.length > 0 || outcomes.length > 0 || values.length > 0;
 
   // ── A. Value Overview (all values — no exclusions) ─────────────────────────
@@ -837,12 +879,13 @@ export function toControlTowerViewModel(
     return acc;
   }, { ..._classInit });
 
-  const totalNetValue    = values.reduce((s, v) => s + v.net_value, 0);
-  const totalAvoidedLoss = values.reduce((s, v) => s + v.avoided_loss, 0);
-  const totalCost        = values.reduce((s, v) => s + v.total_cost, 0);
+  // safeNum() guards NaN/Infinity from malformed API numeric fields
+  const totalNetValue    = values.reduce((s, v) => s + safeNum(v.net_value), 0);
+  const totalAvoidedLoss = values.reduce((s, v) => s + safeNum(v.avoided_loss), 0);
+  const totalCost        = values.reduce((s, v) => s + safeNum(v.total_cost), 0);
   // Derived in frontend only. Not persisted. Formula: Σ(net_value × confidence) / n.
   const confidenceWeighted = values.length > 0
-    ? values.reduce((s, v) => s + v.net_value * v.value_confidence_score, 0) / values.length
+    ? values.reduce((s, v) => s + safeNum(v.net_value) * safeNum(v.value_confidence_score), 0) / values.length
     : 0;
 
   // ── B. Decision Performance ─────────────────────────────────────────────────
@@ -869,7 +912,7 @@ export function toControlTowerViewModel(
     const arr = outcomesByDecision.get(decisionId);
     if (!arr || arr.length === 0) return null;
     return arr.slice().sort(
-      (a, b) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime()
+      (a, b) => safeTime(b.recorded_at) - safeTime(a.recorded_at)
     )[0];
   }
   // Latest value for a decision: sort by computed_at desc, take [0]
@@ -877,7 +920,7 @@ export function toControlTowerViewModel(
     const arr = valuesByDecision.get(decisionId);
     if (!arr || arr.length === 0) return null;
     return arr.slice().sort(
-      (a, b) => new Date(b.computed_at).getTime() - new Date(a.computed_at).getTime()
+      (a, b) => safeTime(b.computed_at) - safeTime(a.computed_at)
     )[0];
   }
 
@@ -950,14 +993,16 @@ export function toControlTowerViewModel(
 
   const valueDrivers: ControlTowerValueDriver[] = Array.from(driverGroups.entries())
     .map(([key, grp]) => {
-      const gnv = grp.reduce((s, v) => s + v.net_value, 0);
+      const gnv = grp.reduce((s, v) => s + safeNum(v.net_value), 0);
       return {
         groupKey:               key,
         label:                  key.replace(/_/g, " "),
         valueCount:             grp.length,
         totalNetValue:          gnv,
         totalNetValueFormatted: formatUSD(gnv),
-        avgConfidence:          grp.reduce((s, v) => s + v.value_confidence_score, 0) / grp.length,
+        avgConfidence:          grp.length > 0
+          ? grp.reduce((s, v) => s + safeNum(v.value_confidence_score), 0) / grp.length
+          : 0,
       };
     })
     .sort((a, b) => b.totalNetValue - a.totalNetValue);

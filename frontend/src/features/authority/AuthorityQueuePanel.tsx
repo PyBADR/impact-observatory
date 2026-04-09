@@ -16,8 +16,7 @@
  * It renders the authority envelope only — the governance wrapper.
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { useShallow } from "zustand/react/shallow";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useAuthorityStore } from "@/store/authority-store";
 import { useAppStore } from "@/store/app-store";
 import {
@@ -27,8 +26,64 @@ import {
   type AuthorityAction,
   type AuthorityActor,
   type AuthorityQueueItem,
+  type DecisionAuthority,
 } from "@/types/authority";
 import type { Language } from "@/types/observatory";
+import { useRunState } from "@/lib/run-state";
+import { emitAudit } from "@/lib/audit";
+
+// ─── Module-level stable selectors (Zustand v5 + React 19 safe) ─────────────
+// Inline arrow selectors `(s) => s.field` create a NEW function reference on
+// every render.  Zustand v5 wraps them in useCallback([api, selector]).
+// Since selector changes reference, useCallback recreates getSnapshot every
+// render.  React 19 calls pushStoreConsistencyCheck for each
+// hook.getSnapshot !== getSnapshot mismatch.  With 17+ useAuthorityStore hooks
+// in one component, that is 17+ consistency-check entries per render.
+// When loadAll() mutates the store during passive effects, those checks detect
+// tearing and schedule re-renders — compounding into React error #185.
+// Fix: module-level constants are defined once; Object.is(prev, next) is always
+// true for these references → no getSnapshot churn → no re-render loop.
+type AS = ReturnType<typeof useAuthorityStore.getState>;
+
+const selectAuthorities            = (s: AS) => s.authorities;
+const selectMetrics                = (s: AS) => s.metrics;
+const selectLoadAll                = (s: AS) => s.loadAll;
+const selectLoading                = (s: AS) => s.loading;
+const selectStoreError             = (s: AS) => s.error;
+const selectCanPerform             = (s: AS) => s.canPerform;
+const selectSubmitForReview        = (s: AS) => s.submitForReview;
+const selectApprove                = (s: AS) => s.approve;
+const selectReject                 = (s: AS) => s.reject;
+const selectReturnForRevision      = (s: AS) => s.returnForRevision;
+const selectEscalate               = (s: AS) => s.escalate;
+const selectQueueExecution         = (s: AS) => s.queueExecution;
+const selectMarkExecuted           = (s: AS) => s.markExecuted;
+const selectReportExecutionFailure = (s: AS) => s.reportExecutionFailure;
+const selectRevoke                 = (s: AS) => s.revoke;
+const selectWithdraw               = (s: AS) => s.withdraw;
+const selectOverride               = (s: AS) => s.override;
+const selectAnnotate               = (s: AS) => s.annotate;
+
+type AppS_AQP = ReturnType<typeof useAppStore.getState>;
+type RS_AQP   = ReturnType<typeof useRunState.getState>;
+const selectPersona_AQP       = (s: AppS_AQP) => s.persona;
+const selectAdaptedResult_AQP = (s: RS_AQP)   => s.adaptedResult;
+const selectActiveRunId_AQP   = (s: RS_AQP)   => s.unifiedResult?.run_id ?? null;
+
+// ─── Safe helpers ─────────────────────────────────────────────────────────
+
+/**
+ * Safe date → sort timestamp.
+ * Returns 0 for null / undefined / invalid ISO strings so sort is always
+ * deterministic and the comparator never returns NaN.
+ */
+function safeTime(value: unknown): number {
+  const t =
+    typeof value === "string" || value instanceof Date
+      ? new Date(value as string).getTime()
+      : 0;
+  return Number.isFinite(t) ? t : 0;
+}
 
 // ─── Status Badge ─────────────────────────────────────────────────────────
 
@@ -62,11 +117,15 @@ const STATUS_LABELS: Record<AuthorityStatus, { en: string; ar: string }> = {
 
 function StatusBadge({ status, lang }: { status: AuthorityStatus; lang: Language }) {
   const isAr = lang === "ar";
+  // C1 guard: backend may return an unrecognised status string — fall back to
+  // neutral styles/labels rather than crashing on STATUS_LABELS[unknown].en
+  const safeStyle  = STATUS_STYLES[status]  ?? "bg-gray-100 text-gray-600 border-gray-200";
+  const safeLabels = STATUS_LABELS[status]  ?? { en: String(status ?? "UNKNOWN"), ar: String(status ?? "UNKNOWN") };
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${STATUS_STYLES[status]}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${safeStyle}`}
     >
-      {isAr ? STATUS_LABELS[status].ar : STATUS_LABELS[status].en}
+      {isAr ? safeLabels.ar : safeLabels.en}
     </span>
   );
 }
@@ -74,16 +133,18 @@ function StatusBadge({ status, lang }: { status: AuthorityStatus; lang: Language
 // ─── Priority Indicator ───────────────────────────────────────────────────
 
 function PriorityDot({ priority }: { priority: 1 | 2 | 3 | 4 | 5 }) {
-  const colors = {
+  const colors: Record<number, string> = {
     1: "bg-red-500",
     2: "bg-orange-500",
     3: "bg-yellow-500",
     4: "bg-blue-400",
     5: "bg-gray-400",
   };
+  // C8 guard: out-of-range priority → neutral colour; never puts "undefined" in className
+  const colorClass = colors[priority] ?? "bg-gray-300";
   return (
     <span
-      className={`inline-block w-2 h-2 rounded-full ${colors[priority]}`}
+      className={`inline-block w-2 h-2 rounded-full ${colorClass}`}
       title={`Priority ${priority}`}
     />
   );
@@ -222,15 +283,26 @@ function QueueItemRow({
   onAction: (authorityId: string, action: AuthorityAction) => void;
 }) {
   const isAr = lang === "ar";
-  const canPerform = useAuthorityStore((s) => s.canPerform);
+  // C4 guard: canPerform may be undefined at store initialisation
+  const canPerform = useAuthorityStore(selectCanPerform);
 
-  const availableActions = useMemo(
-    () => allowedActions.filter((action) => canPerform(item.authority_id, action, actorRole)),
-    [allowedActions, canPerform, item.authority_id, actorRole]
-  );
+  const availableActions = useMemo(() => {
+    // C5 guard: allowedActions must be an array; C4 guard: canPerform must be callable
+    if (!Array.isArray(allowedActions)) return [];
+    if (typeof canPerform !== "function") return [];
+    return allowedActions.filter((action) => {
+      try { return canPerform(item.authority_id, action, actorRole); }
+      catch { return false; }
+    });
+  }, [allowedActions, canPerform, item.authority_id, actorRole]);
 
   const timeAgo = useMemo(() => {
-    const diff = Date.now() - new Date(item.proposed_at).getTime();
+    // C3 guard: invalid or missing proposed_at → safeTime returns 0 (epoch);
+    // cap to sensible display rather than showing "56y ago" or "NaN d"
+    const t = safeTime(item.proposed_at);
+    if (t === 0) return "—";
+    const diff = Date.now() - t;
+    if (diff < 0) return "—";
     const mins = Math.floor(diff / 60000);
     if (mins < 60) return `${mins}m`;
     const hrs = Math.floor(mins / 60);
@@ -261,7 +333,8 @@ function QueueItemRow({
         <div className="flex items-center gap-2 mb-1">
           <StatusBadge status={item.authority_status} lang={lang} />
           <span className="text-[10px] text-io-secondary font-mono truncate">
-            {item.decision_id.slice(0, 12)}…
+            {/* C6 guard: decision_id could be empty string or unexpectedly null */}
+            {(item.decision_id ?? "").slice(0, 12) || "—"}…
           </span>
           {item.escalation_level > 0 && (
             <span className="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-bold">
@@ -326,16 +399,26 @@ interface AuthorityQueuePanelProps {
   lang: Language;
 }
 
+// ── BINARY ISOLATION STUB ──────────────────────────────────────────────────
+// Set AUTHORITY_QUEUE_STATIC_STUB=true to render a zero-effect placeholder.
+// If crash disappears with stub=true → trigger is inside effect/store interaction.
+// If crash persists with stub=true  → trigger is parent/remount path.
+// Re-enable one selector at a time (selectAuthorities first) to pinpoint exact trigger.
+// NOTE: must be placed AFTER all hooks to satisfy React's rules-of-hooks.
+const AUTHORITY_QUEUE_STATIC_STUB = false;
+
 export function AuthorityQueuePanel({ lang }: AuthorityQueuePanelProps) {
   const isAr = lang === "ar";
-  const persona = useAppStore((s) => s.persona);
+  const persona       = useAppStore(selectPersona_AQP);
+  const activeRunId   = useRunState(selectActiveRunId_AQP);
+  const adaptedResult = useRunState(selectAdaptedResult_AQP);
 
   // CRIT-01 FIX: select stable primitives from the store; derive objects in useMemo.
   // useShallow(s => s.getQueueForPersona(persona)) creates new object instances on every
   // call — useShallow compares elements by Object.is, so new objects trigger re-renders
   // indefinitely once the store is non-empty (infinite loop).
-  const authorities = useAuthorityStore((s) => s.authorities);
-  const storeMetrics = useAuthorityStore((s) => s.metrics);
+  const authorities  = useAuthorityStore(selectAuthorities);
+  const storeMetrics = useAuthorityStore(selectMetrics);
 
   const queueSummary = useMemo(
     () =>
@@ -361,46 +444,78 @@ export function AuthorityQueuePanel({ lang }: AuthorityQueuePanelProps) {
   );
 
   const allItems = useMemo<AuthorityQueueItem[]>(() => {
+    // C2 guard: authorities must be a Map with a forEach method.
+    // In normal operation it always is (Zustand initialises it as new Map()), but
+    // a store reset or unexpected API response could leave it null/undefined.
+    if (!authorities || typeof (authorities as Map<string, DecisionAuthority>).forEach !== "function") {
+      return [];
+    }
+
     const items: AuthorityQueueItem[] = [];
-    authorities.forEach((auth) => {
+    (authorities as Map<string, DecisionAuthority>).forEach((auth) => {
+      // Guard: individual Map values could be null if a backend race produced a
+      // partial upsert — skip rather than crash
+      if (!auth || typeof auth !== "object") return;
+
       // Persona filter: skip items whose status is not visible to this persona
       if (!personaVisibleQueues.has(auth.authority_status)) return;
+
+      // C7 guard: tags could be non-array from a malformed API response
+      const firstTag = Array.isArray(auth.tags) && typeof auth.tags[0] === "string"
+        ? auth.tags[0]
+        : "UNKNOWN";
+
       items.push({
-        authority_id:          auth.authority_id,
-        decision_id:           auth.decision_id,
+        authority_id:          auth.authority_id          ?? `anon_${Math.random().toString(36).slice(2)}`,
+        decision_id:           auth.decision_id           ?? "",
         authority_status:      auth.authority_status,
-        decision_type:         auth.tags[0] ?? "UNKNOWN",
-        proposed_by:           auth.proposed_by,
-        proposed_by_role:      auth.proposed_by_role,
-        proposed_at:           auth.proposed_at,
-        priority:              auth.priority,
-        is_overdue:            auth.is_overdue,
-        rationale_preview:     auth.proposal_rationale?.slice(0, 120) ?? null,
+        decision_type:         firstTag,
+        proposed_by:           auth.proposed_by           ?? "system",
+        proposed_by_role:      auth.proposed_by_role      ?? "ANALYST",
+        proposed_at:           auth.proposed_at           ?? "",
+        priority:              (typeof auth.priority === "number" && auth.priority >= 1 && auth.priority <= 5)
+                                 ? auth.priority as 1|2|3|4|5
+                                 : 3,
+        is_overdue:            typeof auth.is_overdue === "boolean" ? auth.is_overdue : false,
+        rationale_preview:     typeof auth.proposal_rationale === "string"
+                                 ? auth.proposal_rationale.slice(0, 120)
+                                 : null,
         source_run_id:         null,
         source_scenario_label: null,
-        revision_number:       auth.revision_number,
-        escalation_level:      auth.escalation_level,
-        last_authority_actor:  auth.authority_actor_id,
+        revision_number:       typeof auth.revision_number === "number" ? auth.revision_number : 1,
+        escalation_level:      typeof auth.escalation_level === "number" ? auth.escalation_level : 0,
+        last_authority_actor:  auth.authority_actor_id    ?? null,
         last_authority_action: null,
-        last_authority_at:     auth.authority_decided_at,
+        last_authority_at:     auth.authority_decided_at  ?? null,
       });
     });
+
+    // C9 guard: use safeTime (NaN-safe) instead of raw getTime()
     items.sort((a, b) => {
       if (a.is_overdue !== b.is_overdue) return a.is_overdue ? -1 : 1;
-      if (a.priority  !== b.priority)    return a.priority - b.priority;
-      return new Date(b.proposed_at).getTime() - new Date(a.proposed_at).getTime();
+      if (a.priority   !== b.priority)   return a.priority - b.priority;
+      return safeTime(b.proposed_at) - safeTime(a.proposed_at);
     });
     return items;
   }, [authorities, personaVisibleQueues]);
 
-  const { loadAll, loading, error } = useAuthorityStore((s) => ({
-    loadAll: s.loadAll,
-    loading: s.loading,
-    error:   s.error,
-  }));
+  // Use stable module-level selectors — see block comment above for why this
+  // matters in Zustand v5 + React 19 (prevents React error #185).
+  const loadAll = useAuthorityStore(selectLoadAll);
+  const loading = useAuthorityStore(selectLoading);
+  const error   = useAuthorityStore(selectStoreError);
+
+  // Guard: prevent loadAll() from firing more than once per mount lifecycle.
+  // useRef persists across re-renders without triggering a render itself.
+  // Even if the component re-renders before the effect cleanup (e.g. due to
+  // parent re-renders or Strict Mode double-invocation in dev), the ref ensures
+  // only the first execution proceeds.
+  const loadAllCalledRef = useRef(false);
 
   // Hydrate authority store on mount
   useEffect(() => {
+    if (loadAllCalledRef.current) return;
+    loadAllCalledRef.current = true;
     loadAll();
   }, [loadAll]);
 
@@ -455,22 +570,43 @@ export function AuthorityQueuePanel({ lang }: AuthorityQueuePanelProps) {
     return counts;
   }, [allItems]);
 
-  // Extract stable action dispatch methods (Zustand store methods are stable references)
-  const storeActions = useAuthorityStore(
-    useShallow((s) => ({
-      submitForReview:         s.submitForReview,
-      approve:                 s.approve,
-      reject:                  s.reject,
-      returnForRevision:       s.returnForRevision,
-      escalate:                s.escalate,
-      queueExecution:          s.queueExecution,
-      markExecuted:            s.markExecuted,
-      reportExecutionFailure:  s.reportExecutionFailure,
-      revoke:                  s.revoke,
-      withdraw:                s.withdraw,
-      override:                s.override,
-      annotate:                s.annotate,
-    }))
+  // Extract action dispatch methods via stable module-level selectors.
+  // All store action functions are defined once at store creation time, so
+  // Object.is(prev, next) === true on every render → no getSnapshot churn.
+  const _submitForReview        = useAuthorityStore(selectSubmitForReview);
+  const _approve                = useAuthorityStore(selectApprove);
+  const _reject                 = useAuthorityStore(selectReject);
+  const _returnForRevision      = useAuthorityStore(selectReturnForRevision);
+  const _escalate               = useAuthorityStore(selectEscalate);
+  const _queueExecution         = useAuthorityStore(selectQueueExecution);
+  const _markExecuted           = useAuthorityStore(selectMarkExecuted);
+  const _reportExecutionFailure = useAuthorityStore(selectReportExecutionFailure);
+  const _revoke                 = useAuthorityStore(selectRevoke);
+  const _withdraw               = useAuthorityStore(selectWithdraw);
+  const _override               = useAuthorityStore(selectOverride);
+  const _annotate               = useAuthorityStore(selectAnnotate);
+
+  // Group into a stable object — all deps are stable function references, so
+  // this useMemo runs once on mount and never re-runs.
+  const storeActions = useMemo(
+    () => ({
+      submitForReview:        _submitForReview,
+      approve:                _approve,
+      reject:                 _reject,
+      returnForRevision:      _returnForRevision,
+      escalate:               _escalate,
+      queueExecution:         _queueExecution,
+      markExecuted:           _markExecuted,
+      reportExecutionFailure: _reportExecutionFailure,
+      revoke:                 _revoke,
+      withdraw:               _withdraw,
+      override:               _override,
+      annotate:               _annotate,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [_submitForReview, _approve, _reject, _returnForRevision, _escalate,
+     _queueExecution, _markExecuted, _reportExecutionFailure, _revoke,
+     _withdraw, _override, _annotate]
   );
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -519,13 +655,42 @@ export function AuthorityQueuePanel({ lang }: AuthorityQueuePanelProps) {
           default:
             console.warn(`[DAL] Unhandled action: ${action}`);
         }
+        // Emit lifecycle_transition after every successful authority action
+        emitAudit({
+          event_type:  "lifecycle_transition",
+          entity_id:   authorityId,
+          run_id:      activeRunId,
+          scenario_id: adaptedResult?.scenario?.template_id ?? null,
+          actor:       actorRole,
+          details: {
+            action:      action,
+            entity_kind: "authority",
+          },
+          lineage_ref: null,
+        });
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         setActionError(msg);
       }
     },
-    [actorRole, storeActions]
+    [actorRole, storeActions, activeRunId, adaptedResult]
   );
+
+  // BINARY ISOLATION: all hooks above have run. Return static content to prove
+  // the crash is store/effect-driven (not parent/remount).
+  // Set AUTHORITY_QUEUE_STATIC_STUB=true at the top of this file to activate.
+  if (AUTHORITY_QUEUE_STATIC_STUB) {
+    return (
+      <section className="bg-io-surface border border-io-border rounded-xl shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-io-border">
+          <h2 className="text-sm font-bold text-io-primary">⚖️ Authority Queue</h2>
+        </div>
+        <div className="px-5 py-8 text-center">
+          <p className="text-xs text-io-secondary">[isolation stub — no store interaction rendered]</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="bg-io-surface border border-io-border rounded-xl shadow-sm overflow-hidden">

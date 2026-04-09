@@ -8,21 +8,17 @@ export async function GET(req: NextRequest) {
   const url     = new URL(req.url);
   const qs      = url.search;
 
-  // Try backend first — prefer it if it returns real records
+  // Backend is primary source of truth — trust its response (including empty arrays).
+  // Only fall through to in-memory store if backend is unreachable or returns an error.
   if (backend) {
     try {
       const res = await fetch(`${backend}/api/v1/decisions${qs}`, {
         headers: { "X-IO-API-Key": req.headers.get("X-IO-API-Key") ?? "" },
         cache: "no-store",
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data?.decisions) && data.decisions.length > 0) {
-          return NextResponse.json(data);
-        }
-      }
+      if (res.ok) return NextResponse.json(await res.json());
     } catch {
-      // fall through to in-memory
+      // backend unreachable — fall through to in-memory
     }
   }
 
@@ -31,6 +27,7 @@ export async function GET(req: NextRequest) {
   const items = serverStore.decisions.list({
     status:        sp.get("status")        ?? undefined,
     decision_type: sp.get("decision_type") ?? undefined,
+    run_id:        sp.get("run_id")        ?? undefined,
     limit:         sp.has("limit") ? Number(sp.get("limit")) : undefined,
   });
   return NextResponse.json({ decisions: items, count: items.length });

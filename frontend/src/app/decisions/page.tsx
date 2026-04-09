@@ -12,12 +12,62 @@
  * activeRoute="decisions" highlights Decision Room in nav.
  */
 
+import { useEffect } from "react";
 import AppShell from "@/components/shell/AppShell";
 import { useAppStore } from "@/store/app-store";
 import { useRunState } from "@/lib/run-state";
+import { useDecisions, useRunResult } from "@/hooks/use-api";
 import { OperatorDecisionPanel } from "@/features/decisions/OperatorDecisionPanel";
 import DecisionDetailPanel from "@/features/decisions/DecisionDetailPanel";
-import type { Language } from "@/types/observatory";
+import type { Language, UnifiedRunResult } from "@/types/observatory";
+
+// ─── Module-level stable selectors ───────────────────────────────────────────
+type RS_DP = ReturnType<typeof useRunState.getState>;
+const selectAdaptedResult_DP = (s: RS_DP) => s.adaptedResult;
+
+// ── Center state when decisions exist but no run is active this session ──────
+// The sidebar shows decisions from the backend (persisted across sessions).
+// The center normally shows the decision plan from the current session's run.
+// When there are backend decisions but no in-session run, we show this panel
+// instead of "No Active Run" to avoid contradicting the populated sidebar.
+
+function DecisionPlanUnavailable({ isAr }: { isAr: boolean }) {
+  return (
+    <div className="flex-1 flex items-center justify-center bg-io-bg">
+      <div className="max-w-sm w-full mx-6 text-center">
+        <div className="w-12 h-12 border border-io-border rounded-xl flex items-center justify-center mx-auto mb-4 bg-io-surface">
+          <svg
+            className="w-6 h-6 text-io-secondary"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z"
+            />
+          </svg>
+        </div>
+        <p className="text-sm font-semibold text-io-primary mb-2">
+          {isAr ? "خطة القرار غير متاحة لهذه الجلسة" : "Decision Plan Not Available This Session"}
+        </p>
+        <p className="text-xs text-io-secondary leading-relaxed mb-4">
+          {isAr
+            ? "القرارات في القائمة الجانبية مرتبطة بتشغيلات سابقة. شغّل سيناريو جديداً لعرض خطة القرار التفصيلية هنا."
+            : "The decisions in the sidebar are linked to previous runs. Run a new scenario to populate the decision plan here."}
+        </p>
+        <a
+          href="/"
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-io-accent text-white hover:bg-blue-700 transition-colors"
+        >
+          {isAr ? "الانتقال إلى لوحة المعلومات" : "Go to Dashboard"}
+        </a>
+      </div>
+    </div>
+  );
+}
 
 // ── Empty state when no active run ─────────────────────────────────────
 
@@ -66,12 +116,37 @@ export default function DecisionsPage() {
   const isAr = language === "ar";
   const lang: Language = isAr ? "ar" : "en";
 
-  const adaptedResult = useRunState((s) => s.adaptedResult);
+  const adaptedResult = useRunState(selectAdaptedResult_DP);
   const scenarioLabel = adaptedResult?.scenario?.label ?? undefined;
 
   const hasRun = adaptedResult !== null;
   const decisionPlan = adaptedResult?.decisions ?? null;
   const explanation = adaptedResult?.explanation ?? undefined;
+
+  // Check if backend has any decisions (independent of in-session run state).
+  // Used to pick the right center-panel message so sidebar and center don't
+  // contradict each other: sidebar shows backend decisions, center shows the
+  // current session's run plan — if those diverge, say so clearly.
+  const { data: backendDecisions } = useDecisions({ limit: 1 });
+  const hasBackendDecisions = (backendDecisions?.decisions?.length ?? 0) > 0;
+
+  // Decision Room hydration: if decisions have a source_run_id but no active
+  // in-session run exists, fetch that run and populate run state so the
+  // decision plan renders without requiring the user to re-run the scenario.
+  const mostRecentRunId = (!hasRun
+    ? (backendDecisions?.decisions?.[0]?.source_run_id ?? null)
+    : null);
+  const { data: storedRun } = useRunResult(mostRecentRunId);
+
+  useEffect(() => {
+    if (!storedRun) return;
+    // Handle both v4 envelope ({ data: UnifiedRunResult }) and direct shape.
+    const unified = (storedRun as Record<string, unknown>)?.data
+      ?? storedRun as unknown as Record<string, unknown>;
+    if (unified && (unified as Record<string, unknown>).run_id) {
+      useRunState.getState().setUnifiedResult(unified as unknown as UnifiedRunResult);
+    }
+  }, [storedRun]);
 
   return (
     <AppShell activeRoute="decisions" scenarioLabel={scenarioLabel}>
@@ -82,8 +157,9 @@ export default function DecisionsPage() {
           <OperatorDecisionPanel lang={lang} />
         </div>
 
-        {/* ── Right: Decision Detail Panel or Empty State ──────────── */}
+        {/* ── Right: Decision Plan or contextual empty state ───────── */}
         {hasRun && decisionPlan ? (
+          // Active run this session + decision plan available → show it
           <div className="flex-1 overflow-y-auto bg-io-bg p-6">
             <DecisionDetailPanel
               decisions={decisionPlan}
@@ -91,7 +167,13 @@ export default function DecisionsPage() {
               lang={lang}
             />
           </div>
+        ) : hasBackendDecisions ? (
+          // Backend has decisions (from prior runs) but no in-session run →
+          // don't say "No Active Run" (contradicts populated sidebar); instead
+          // explain that the decision plan belongs to the current session run.
+          <DecisionPlanUnavailable isAr={isAr} />
         ) : (
+          // Neither in-session run nor backend decisions → full empty state
           <DecisionRoomEmptyState isAr={isAr} />
         )}
       </div>

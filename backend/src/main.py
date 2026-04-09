@@ -31,6 +31,9 @@ from src.api.v1.scenarios import router as v1_scenarios_router
 from src.api.v1.runs import router as v1_runs_router
 from src.api.v1.auth import router as v1_auth_router
 from src.api.v1.nodes import router as v1_nodes_router
+from src.api.v1.decisions import router as v1_decisions_router
+from src.api.v1.outcomes import router as v1_outcomes_router
+from src.api.v1.values import router as v1_values_router
 
 from src.core.config import settings
 from src.services.state import init_state
@@ -232,6 +235,11 @@ api_v1.include_router(decision_router)
 api_v1.include_router(v1_scenarios_router)
 api_v1.include_router(v1_runs_router)
 api_v1.include_router(v1_nodes_router)
+
+# ── Decision Execution Layer (persistent operator decisions, outcomes, values) ──
+api_v1.include_router(v1_decisions_router)
+api_v1.include_router(v1_outcomes_router)
+api_v1.include_router(v1_values_router)
 
 # ── Auth endpoints — no API key required ─────────────────────────────────
 app.include_router(v1_auth_router, prefix="/api/v1")

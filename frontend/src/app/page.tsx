@@ -25,7 +25,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useRunState } from "@/lib/run-state";
 import { useAppStore } from "@/store/app-store";
 import { useFlowStore } from "@/store/flow-store";
-import { useOutcomes, useDecisionValues } from "@/hooks/use-api";
+import { useOutcomes, useDecisionValues, useDecisions } from "@/hooks/use-api";
 import { api } from "@/lib/api";
 import type { RunResult, Language } from "@/types/observatory";
 import type { Persona } from "@/lib/persona-view-model";
@@ -35,6 +35,17 @@ import {
   scenarioPresentationMap,
   catalogScenarioIds,
 } from "@/lib/dashboard-mapping";
+
+// ─── Module-level stable selectors (Zustand v5 + React 19 safe) ─────────────
+type AppS_Page  = ReturnType<typeof useAppStore.getState>;
+type FlowS_Page = ReturnType<typeof useFlowStore.getState>;
+type RS_Page    = ReturnType<typeof useRunState.getState>;
+const selectOperatorDecisions_Page = (s: AppS_Page)  => s.operatorDecisions;
+const selectOutcomes_Page          = (s: AppS_Page)  => s.outcomes;
+const selectDecisionValues_Page    = (s: AppS_Page)  => s.decisionValues;
+const selectActiveFlow_Page        = (s: FlowS_Page) => s.activeFlow;
+const selectAdaptedResult_Page     = (s: RS_Page)    => s.adaptedResult;
+const selectLegacyResult_Page      = (s: RS_Page)    => s.legacyResult;
 
 type AppView = "landing" | "scenarios" | "results";
 type DetailView = "dashboard" | "banking" | "insurance" | "fintech" | "decisions";
@@ -276,9 +287,19 @@ export default function HomePage() {
 
   useOutcomes();
   useDecisionValues();
+  useDecisions();
 
-  const sharedResult = useRunState((s) => s.getRunResult());
-  const sharedSource = useRunState((s) => s.activeSource);
+  // CRIT-FIX: Do NOT call s.getRunResult() inside a Zustand selector.
+  // getRunResult() calls get() internally; in Zustand v5 the selector runs inside
+  // useCallback([api, selector]) in useSyncExternalStore. A method call returns the
+  // SAME stored reference (adaptedResult / legacyResult), but the method itself is
+  // a new closure on each render, making the selector reference unstable → React 19
+  // re-validates the snapshot on every render → potential infinite loop.
+  // Fix: select stored fields directly — identical semantics, zero instability.
+  const _adaptedResult    = useRunState(selectAdaptedResult_Page);
+  const _legacyResult     = useRunState(selectLegacyResult_Page);
+  const sharedResult   = _adaptedResult ?? _legacyResult;
+  const sharedSource   = useRunState((s) => s.activeSource);
 
   useEffect(() => {
     if (sharedResult && sharedSource === "unified" && !result) {
@@ -298,10 +319,10 @@ export default function HomePage() {
   const attachOutcomes = useFlowStore((s) => s.attachOutcomes);
   const attachValues = useFlowStore((s) => s.attachValues);
 
-  const operatorDecisions = useAppStore((s) => s.operatorDecisions);
-  const storeOutcomes = useAppStore((s) => s.outcomes);
-  const storeValues = useAppStore((s) => s.decisionValues);
-  const activeFlow = useFlowStore((s) => s.activeFlow);
+  const operatorDecisions = useAppStore(selectOperatorDecisions_Page);
+  const storeOutcomes     = useAppStore(selectOutcomes_Page);
+  const storeValues       = useAppStore(selectDecisionValues_Page);
+  const activeFlow        = useFlowStore(selectActiveFlow_Page);
 
   useEffect(() => {
     if (activeFlow?.isActive && operatorDecisions.length > 0) {
@@ -395,8 +416,11 @@ export default function HomePage() {
       // For each recommended action, create an OperatorDecision in the
       // execution layer (POST /api/v1/decisions → in-memory server-store).
       // This populates: operatorDecisions, authority queue, outcomes, values.
+      if (!runId) {
+        console.warn("[auto-seed] runId missing — skipping decision seeding");
+      }
       const actions = adapted.decisions?.actions ?? [];
-      if (actions.length > 0) {
+      if (runId && actions.length > 0) {
         const seeded: import("@/types/observatory").OperatorDecision[] = [];
         await Promise.allSettled(
           actions.slice(0, 8).map(async (a) => {
@@ -413,6 +437,7 @@ export default function HomePage() {
                   loss_avoided_usd: a.loss_avoided_usd,
                   cost_usd:        a.cost_usd,
                   priority:        a.priority,
+                  scenario_id:     templateId,
                 },
                 rationale:        a.action,
                 confidence_score: a.confidence,

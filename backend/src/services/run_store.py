@@ -25,14 +25,18 @@ _DEFAULT_ORG = "default"
 def put(run_id: str, result: dict) -> None:
     """Store run result in memory cache and async-persist to DB."""
     _cache[run_id] = result
-    # Fire-and-forget DB write
     import asyncio
     try:
         loop = asyncio.get_event_loop()
         if loop.is_running():
             asyncio.ensure_future(_persist(run_id, result))
+            return
     except RuntimeError:
-        pass  # No event loop — skip DB write
+        pass
+    try:
+        asyncio.run(_persist(run_id, result))
+    except Exception as e:
+        logger.warning("Sync DB persist fallback failed for run %s: %s", run_id, e)
 
 
 def get(run_id: str) -> dict | None:
@@ -92,14 +96,18 @@ def put_for_org(run_id: str, result: dict, org: str = _DEFAULT_ORG) -> None:
     _cache[run_id] = result
     # Tag the result with org
     result["_org"] = org
-    # Fire-and-forget DB write (org-scoped)
     import asyncio
     try:
         loop = asyncio.get_event_loop()
         if loop.is_running():
             asyncio.ensure_future(_persist(run_id, result))
+            return
     except RuntimeError:
         pass
+    try:
+        asyncio.run(_persist(run_id, result))
+    except Exception as e:
+        logger.warning("Sync DB persist fallback failed for run %s: %s", run_id, e)
 
 
 async def aget_for_org(run_id: str, org: str = _DEFAULT_ORG) -> dict | None:

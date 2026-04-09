@@ -67,6 +67,9 @@ class Settings(BaseSettings):
         description="Comma-separated list of allowed CORS origins. Add your Vercel/production domain here.",
     )
 
+    # === Cache ===
+    cache_warmup_limit: int = Field(2000, description="Max records per store loaded on startup cache warmup (decisions/outcomes/values)")
+
     # === Simulation limits ===
     max_horizon_days: int = Field(365, description="Maximum simulation time horizon in days")
     default_horizon_hours: int = Field(336, description="Default simulation time horizon in hours (14 days)")

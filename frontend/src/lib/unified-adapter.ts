@@ -12,6 +12,7 @@
  * Zero logic duplication — only structural mapping.
  */
 
+import { emitAudit } from "@/lib/audit";
 import type {
   RunResult,
   UnifiedRunResult,
@@ -35,9 +36,75 @@ import type {
  * Maps unified pipeline output (graph-centric) to the legacy RunResult
  * shape (sector-centric) that ExecutiveDashboard expects.
  */
-export function unifiedToRunResult(unified: UnifiedRunResult): RunResult {
+export function unifiedToRunResult(
+  unified: UnifiedRunResult,
+  /** Optional context for same-run integrity checking. Does not change output shape. */
+  opts?: { expected_run_id?: string; scenario_id?: string },
+): RunResult {
   // Cast to any for cross-version field access (v4 unified + v2 legacy schemas)
   const u = unified as unknown as Record<string, unknown>;
+
+  // ── API contract violation checks ──────────────────────────────────────────
+  // run_id is the linchpin of the entire execution lineage. If it is absent
+  // the result is structurally invalid — every downstream consumer loses
+  // traceability. Emit immediately before any further mapping.
+  const inboundRunId = unified.run_id ?? (u.run_id as string) ?? "";
+  if (!inboundRunId) {
+    emitAudit({
+      event_type: "api_contract_violation",
+      entity_id:  "unifiedToRunResult",
+      actor:      "adapter",
+      details: {
+        violation: "run_id absent or empty in UnifiedRunResult",
+        field:     "run_id",
+        received:  inboundRunId || null,
+        hint:      "Backend must always return a stable run_id for execution lineage",
+      },
+      lineage_ref: null,
+    });
+  }
+
+  // headline is required for all financial KPI rendering downstream.
+  const headlinePresent = !!(unified.headline ?? u.headline);
+  if (!headlinePresent) {
+    emitAudit({
+      event_type: "api_contract_violation",
+      entity_id:  "unifiedToRunResult",
+      run_id:     inboundRunId || null,
+      actor:      "adapter",
+      details: {
+        violation: "headline object absent in UnifiedRunResult",
+        field:     "headline",
+        received:  null,
+        hint:      "Financial KPI rendering will use zero-value fallbacks",
+      },
+      lineage_ref: null,
+    });
+  }
+
+  // ── Same-run integrity check ───────────────────────────────────────────────
+  // If the caller specifies an expected run_id (from the active run context in
+  // the store) and the backend response carries a different run_id, a response
+  // from a stale or concurrent run may have been mixed into the active session.
+  if (
+    opts?.expected_run_id &&
+    inboundRunId &&
+    opts.expected_run_id !== inboundRunId
+  ) {
+    emitAudit({
+      event_type: "same_run_integrity_violation",
+      entity_id:  "unifiedToRunResult",
+      run_id:     inboundRunId,
+      scenario_id: opts.scenario_id ?? null,
+      actor:      "adapter",
+      details: {
+        expected_run_id: opts.expected_run_id,
+        received_run_id: inboundRunId,
+        hint: "Response run_id does not match the active session run_id — possible stale or concurrent response",
+      },
+      lineage_ref: null,
+    });
+  }
 
   // Normalise scenario: v4 uses template_id, v2 uses scenario_id
   const rawScenario = (u.scenario as Record<string, unknown>) ?? {};

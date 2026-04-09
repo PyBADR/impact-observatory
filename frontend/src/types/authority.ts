@@ -128,7 +128,7 @@ export type AuthorityAction =
  */
 export const AUTHORITY_PERMISSIONS: Record<AuthorityAction, AuthorityActor[]> = {
   PROPOSE:                  ["SYSTEM", "ANALYST", "OPERATOR"],
-  SUBMIT_FOR_REVIEW:        ["OPERATOR", "ANALYST"],
+  SUBMIT_FOR_REVIEW:        ["OPERATOR", "ANALYST", "EXECUTIVE"],
   APPROVE:                  ["EXECUTIVE", "ADMIN"],
   REJECT:                   ["EXECUTIVE", "ADMIN"],
   RETURN_FOR_REVISION:      ["EXECUTIVE", "REGULATOR"],
@@ -329,10 +329,10 @@ export interface PersonaAuthorityCapabilities {
 export const PERSONA_AUTHORITY_CAPABILITIES: Record<string, PersonaAuthorityCapabilities> = {
   executive: {
     allowed_actions: [
-      "APPROVE", "REJECT", "RETURN_FOR_REVISION", "ESCALATE", "REVOKE", "ANNOTATE",
+      "SUBMIT_FOR_REVIEW", "APPROVE", "REJECT", "RETURN_FOR_REVISION", "ESCALATE", "REVOKE", "ANNOTATE",
     ],
     visible_queues: [
-      "UNDER_REVIEW", "APPROVED", "EXECUTION_PENDING", "EXECUTED",
+      "PROPOSED", "UNDER_REVIEW", "APPROVED", "EXECUTION_PENDING", "EXECUTED",
       "REJECTED", "ESCALATED", "REVOKED",
     ],
     can_view_audit_trail: true,
