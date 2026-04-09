@@ -8,12 +8,16 @@ const nextConfig = {
     const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     return [
       {
+        source: "/api/health",
+        destination: "${apiBase}/health",  // eslint-disable-line no-template-curly-in-string
+      },
+      {
         source: "/api/:path*",
-        destination: `${apiBase}/api/:path*`,
+        destination: "${apiBase}/api/:path*",
       },
       {
         source: "/health",
-        destination: `${apiBase}/health`,
+        destination: "${apiBase}/health",
       },
     ];
   },

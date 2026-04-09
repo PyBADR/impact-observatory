@@ -34,6 +34,12 @@ async def health_check():
     }
 
 
+@router.get("/api/health")
+async def api_health_alias():
+    """Alias so /api/health works when proxied or accessed directly."""
+    return await health_check()
+
+
 @router.get("/health/feeds")
 async def feeds_health():
     """Data feed status — shows ACLED/AIS/OpenSky connectivity."""
