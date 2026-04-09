@@ -13,6 +13,14 @@ class Settings(BaseSettings):
     log_level: str = Field("info", description="Logging level: debug|info|warning|error")
 
     # === PostgreSQL ===
+    database_url: str = Field(
+        "",
+        description=(
+            "Full PostgreSQL connection URL. Takes priority over individual postgres_* fields. "
+            "Railway sets this automatically when a PostgreSQL service is attached. "
+            "Format: postgresql://user:pass@host:port/db"
+        ),
+    )
     postgres_host: str = Field("localhost", description="PostgreSQL host")
     postgres_port: int = Field(5432, description="PostgreSQL port")
     postgres_db: str = Field("impact_observatory", description="PostgreSQL database name")
@@ -86,6 +94,18 @@ class Settings(BaseSettings):
 
     @property
     def postgres_dsn(self) -> str:
+        """Async DSN for SQLAlchemy (asyncpg driver).
+
+        Priority: DATABASE_URL env var (Railway) → individual postgres_* fields.
+        Converts ``postgresql://`` to ``postgresql+asyncpg://`` automatically.
+        """
+        if self.database_url:
+            url = self.database_url
+            if url.startswith("postgresql://"):
+                url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            elif not url.startswith("postgresql+asyncpg://"):
+                url = f"postgresql+asyncpg://{url.split('://', 1)[-1]}"
+            return url
         return (
             f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
@@ -93,6 +113,18 @@ class Settings(BaseSettings):
 
     @property
     def postgres_sync_dsn(self) -> str:
+        """Sync DSN for Alembic / one-off scripts (psycopg2 driver).
+
+        Priority: DATABASE_URL env var (Railway) → individual postgres_* fields.
+        Ensures the scheme is plain ``postgresql://``.
+        """
+        if self.database_url:
+            url = self.database_url
+            if url.startswith("postgresql+asyncpg://"):
+                url = url.replace("postgresql+asyncpg://", "postgresql://", 1)
+            elif not url.startswith("postgresql://"):
+                url = f"postgresql://{url.split('://', 1)[-1]}"
+            return url
         return (
             f"postgresql://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
