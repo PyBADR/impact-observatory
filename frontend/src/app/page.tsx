@@ -30,6 +30,7 @@ import { api } from "@/lib/api";
 import type { RunResult, Language } from "@/types/observatory";
 import type { Persona } from "@/lib/persona-view-model";
 import { DomainBadge } from "@/components/ui";
+import { StorySequenceWrapper } from "@/features/story-layer/components";
 
 import {
   scenarioPresentationMap,
@@ -498,18 +499,18 @@ export default function HomePage() {
 
   const detailLabels: Record<Language, Record<DetailView, string>> = {
     en: {
-      dashboard: "Overview",
-      banking: "Banking",
-      insurance: "Insurance",
-      fintech: "Fintech",
-      decisions: "Decisions",
+      dashboard: "Intelligence Brief",
+      banking: "Banking Stress",
+      insurance: "Insurance Stress",
+      fintech: "Fintech Stress",
+      decisions: "Executive Directive",
     },
     ar: {
-      dashboard: "النظرة العامة",
-      banking: "البنوك",
-      insurance: "التأمين",
-      fintech: "الفنتك",
-      decisions: "القرارات",
+      dashboard: "الموجز الاستخباراتي",
+      banking: "ضغط البنوك",
+      insurance: "ضغط التأمين",
+      fintech: "ضغط الفنتك",
+      decisions: "التوجيه التنفيذي",
     },
   };
 
@@ -536,18 +537,18 @@ export default function HomePage() {
             <div className="max-w-3xl">
               <p className="text-[11px] font-semibold text-io-secondary uppercase tracking-widest mb-4">
                 {isAr
-                  ? "منصة ذكاء القرار · الأسواق المالية الخليجية"
-                  : "Decision Intelligence Platform · GCC Financial Markets"}
+                  ? "ذكاء اقتصادي كلي → قرار · الأسواق المالية الخليجية"
+                  : "Macro → Decision Intelligence · GCC Financial Markets"}
               </p>
               <h1 className="text-4xl font-bold text-io-primary leading-tight mb-5 tracking-tight">
                 {isAr
-                  ? "مرصد الأثر المالي لمؤسسات منطقة الخليج"
-                  : "Financial impact intelligence\nfor GCC institutions"}
+                  ? "ذكاء القرار الاقتصادي الكلي\nلمؤسسات الخليج"
+                  : "Macro financial intelligence\nfor GCC decision systems"}
               </h1>
               <p className="text-base text-io-secondary leading-relaxed mb-8 max-w-2xl">
                 {isAr
-                  ? "نمذجة كمية لانتشار الصدمات عبر القطاع البنكي والتأمين والفنتك الخليجي. من الحدث إلى قرارات مُرتَّبة حسب الأولوية في وقت قياسي."
-                  : "Quantitative shock propagation modeling across GCC banking, insurance, and fintech sectors. From event to prioritized decision actions in seconds."}
+                  ? "من الصدمة الاقتصادية الكلية إلى القرار التنفيذي — نمذجة انتشار الأثر عبر البنوك والتأمين والفنتك الخليجي مع مسار واضح: ماذا حدث، كيف انتشر، من تأثر، وماذا يجب فعله."
+                  : "From macro shock to executive decision — trace impact propagation across GCC banking, insurance, and fintech with a clear path: what happened, how it spread, who is affected, and what must be done."}
               </p>
               <div className="flex flex-wrap gap-3">
                 <button
@@ -650,30 +651,30 @@ export default function HomePage() {
         <section className="border-b border-io-border">
           <div className="max-w-5xl mx-auto px-6 lg:px-10 py-12">
             <p className="text-[10px] font-semibold text-io-secondary uppercase tracking-widest mb-8">
-              {isAr ? "آلية العمل" : "Analysis Flow"}
+              {isAr ? "المسار: من الصدمة إلى القرار" : "Path: From Shock to Decision"}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
                 {
                   step: "01",
-                  title: isAr ? "تعريف السيناريو" : "Define Scenario",
+                  title: isAr ? "الصدمة الاقتصادية الكلية" : "Macro Shock",
                   desc: isAr
-                    ? "اختر سيناريو من 8 أنواع: جيوسياسي، سوقي، هجوم سيبراني، اضطراب بنية تحتية. حدّد شدة الصدمة."
-                    : "Select from 8 scenario types: geopolitical, market, cyber attack, infrastructure disruption. Set shock severity.",
+                    ? "حدّد الصدمة: جيوسياسية، سوقية، سيبرانية، أو بنية تحتية. تتبّع كيف يتغير العالم الاقتصادي الكلي وماذا يعني ذلك للمنطقة."
+                    : "Define the shock: geopolitical, market, cyber, or infrastructure. See how the macro environment shifts and what it means for the region.",
                 },
                 {
                   step: "02",
-                  title: isAr ? "انتشار الأثر" : "Propagate Impact",
+                  title: isAr ? "الانتقال والقطاعات" : "Transmission & Sector Impact",
                   desc: isAr
-                    ? "يُشغّل المحرك خط أنابيب من 13 مرحلة: انتشار الصدمة عبر 31 كياناً خليجياً باستخدام الرسم البياني السببي."
-                    : "The engine runs a 13-stage pipeline: shock propagation across 31 GCC entities using the causal knowledge graph.",
+                    ? "تتبّع انتشار الأثر عبر 31 كياناً خليجياً. افهم أي القطاعات تمتص الصدمة وكيف ينتقل الضغط بين البنوك والتأمين والفنتك."
+                    : "Trace propagation across 31 GCC entities. Understand which sectors absorb the shock and how stress transmits between banking, insurance, and fintech.",
                 },
                 {
                   step: "03",
-                  title: isAr ? "إجراءات القرار" : "Decision Actions",
+                  title: isAr ? "القرار والتنفيذ" : "Decision & Execution",
                   desc: isAr
-                    ? "أعلى 3 إجراءات مُرتّبة بمعادلة: الأولوية = القيمة + الإلحاح + المخاطر التنظيمية. مع تعيين المسؤول."
-                    : "Top-ranked responses scored by: Priority = Value + Urgency + Regulatory Risk. With owner assignment.",
+                    ? "إجراءات مُرتّبة بالأولوية مع تعيين المسؤول ونوافذ وقت التنفيذ. من تحليل الأثر إلى التوجيه التنفيذي في ثوانٍ."
+                    : "Priority-ranked actions with owner assignment and execution windows. From impact analysis to executive directive in seconds.",
                 },
               ].map((s) => (
                 <div key={s.step}>
@@ -802,8 +803,8 @@ export default function HomePage() {
             <div className="flex flex-col items-start md:items-end gap-1">
               <p className="text-xs text-io-secondary">
                 {isAr
-                  ? "منصة ذكاء القرار للأسواق المالية الخليجية"
-                  : "Decision Intelligence Platform for GCC Financial Markets"}
+                  ? "ذكاء اقتصادي كلي → قرار للأسواق المالية الخليجية"
+                  : "Macro → Decision Intelligence for GCC Financial Markets"}
               </p>
               <p className="text-[10px] text-io-secondary/60">
                 {isAr
@@ -1013,10 +1014,12 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Dashboard / flow view */}
+      {/* Dashboard / flow view — wrapped with story layer */}
       {result && detailView === "dashboard" && (
-        <ErrorBoundary section="Persona Flow View">
-          <PersonaFlowView result={result} lang={lang} />
+        <ErrorBoundary section="Story Layer + Flow View">
+          <StorySequenceWrapper result={result} lang={lang}>
+            <PersonaFlowView result={result} lang={lang} />
+          </StorySequenceWrapper>
         </ErrorBoundary>
       )}
 

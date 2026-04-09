@@ -7,7 +7,7 @@ import { DirectionProvider } from "@/components/shared/direction-provider";
 export const metadata: Metadata = {
   title: "Impact Observatory | مرصد الأثر",
   description:
-    "Decision Intelligence Platform for GCC Financial Markets — Financial-first, decision-terminal, explainable",
+    "Macro → Decision Intelligence Platform for GCC Financial Markets — From macro shock to executive action, explainable and auditable",
 };
 
 export default function RootLayout({
