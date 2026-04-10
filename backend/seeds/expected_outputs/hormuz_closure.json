@@ -1,0 +1,102 @@
+{
+  "scenario_id": "hormuz_closure",
+  "test_type": "regression",
+  "timestamp": "2024-01-15T10:00:00Z",
+  "risk_metrics": {
+    "overall_risk_increase": {
+      "min": 0.3,
+      "max": 0.55
+    },
+    "confidence_adjustment": {
+      "min": -0.15,
+      "max": 0.05
+    },
+    "system_stress_level": {
+      "min": 0.7,
+      "max": 0.95
+    }
+  },
+  "impact_metrics": {
+    "affected_ports": {
+      "min": 8,
+      "max": 12
+    },
+    "affected_airports": {
+      "min": 5,
+      "max": 9
+    },
+    "affected_corridors": {
+      "min": 6,
+      "max": 10
+    },
+    "insurance_surge": {
+      "min": 0.4,
+      "max": 0.65
+    },
+    "logistics_delay_hours": {
+      "min": 120,
+      "max": 240
+    }
+  },
+  "cascade_metrics": {
+    "cascade_depth": {
+      "min": 2,
+      "max": 4
+    },
+    "propagation_factor": {
+      "min": 0.55,
+      "max": 0.78
+    },
+    "nodes_affected_total": {
+      "min": 15,
+      "max": 25
+    }
+  },
+  "expected_events": [
+    "NAVAL_BLOCKADE",
+    "CORRIDOR_RESTRICTION",
+    "VESSEL_DIVERSION",
+    "FLIGHT_DIVERSION"
+  ],
+  "critical_nodes_at_risk": [
+    "prt-003",
+    "prt-007",
+    "prt-009",
+    "prt-015",
+    "cor-001",
+    "cor-005",
+    "cor-008"
+  ],
+  "time_horizon": {
+    "initial_hours": 0,
+    "terminal_hours": 168,
+    "peak_stress_hours": {
+      "min": 24,
+      "max": 72
+    }
+  },
+  "expected_risk_range": [
+    0.7,
+    1.0
+  ],
+  "expected_affected_ports": [
+    7,
+    13
+  ],
+  "expected_affected_airports": [
+    1,
+    7
+  ],
+  "expected_affected_corridors": [
+    3,
+    9
+  ],
+  "expected_cascade_depth": [
+    2,
+    4
+  ],
+  "expected_nodes_affected": [
+    15,
+    25
+  ]
+}

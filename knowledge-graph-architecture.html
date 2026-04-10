@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Macro Intelligence Knowledge Graph — Impact Observatory</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.0/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0e17; --surface: #111827; --surface2: #1e293b;
+    --border: #334155; --text: #e2e8f0; --text-dim: #94a3b8;
+    --accent: #38bdf8; --accent2: #818cf8; --green: #4ade80;
+    --amber: #fbbf24; --red: #f87171; --teal: #2dd4bf;
+    --insurance: #818cf8; --tech: #38bdf8; --event: #fbbf24;
+    --gcc: #4ade80; --propagation: #f87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg); color: var(--text);
+    line-height: 1.7; padding: 0;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 40px 40px;
+  }
+  .header h1 {
+    font-size: 2rem; font-weight: 700; letter-spacing: -0.5px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .header .subtitle {
+    color: var(--text-dim); font-size: 1rem; margin-top: 8px;
+  }
+  .header .meta {
+    display: flex; gap: 24px; margin-top: 16px; flex-wrap: wrap;
+  }
+  .header .meta span {
+    font-size: 0.8rem; color: var(--text-dim);
+    background: var(--surface); padding: 4px 12px;
+    border-radius: 6px; border: 1px solid var(--border);
+  }
+
+  /* ── Container ── */
+  .container { max-width: 1280px; margin: 0 auto; padding: 40px 40px; }
+
+  /* ── Tabs ── */
+  .tab-nav {
+    display: flex; gap: 0; border-bottom: 2px solid var(--border);
+    margin-bottom: 32px; overflow-x: auto; position: sticky;
+    top: 0; z-index: 100; background: var(--bg); padding-top: 8px;
+  }
+  .tab-btn {
+    background: none; border: none; color: var(--text-dim);
+    padding: 12px 20px; font-size: 0.85rem; cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -2px;
+    white-space: nowrap; transition: all 0.2s;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active {
+    color: var(--accent); border-bottom-color: var(--accent);
+    font-weight: 600;
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── Section headings ── */
+  h2 {
+    font-size: 1.5rem; font-weight: 700; margin-bottom: 24px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  h2 .badge {
+    font-size: 0.7rem; padding: 3px 10px; border-radius: 20px;
+    font-weight: 600; text-transform: uppercase;
+  }
+  h3 { font-size: 1.1rem; font-weight: 600; margin: 24px 0 12px; color: var(--accent); }
+  h4 { font-size: 0.95rem; font-weight: 600; margin: 16px 0 8px; }
+
+  /* ── Cards ── */
+  .card-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 16px; margin-bottom: 32px;
+  }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px; transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--accent); }
+  .card .card-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px;
+  }
+  .card .card-title { font-weight: 700; font-size: 1rem; }
+  .card .domain-tag {
+    font-size: 0.65rem; padding: 2px 8px; border-radius: 12px;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .domain-tag.insurance { background: rgba(129,140,248,0.15); color: var(--insurance); }
+  .domain-tag.technical { background: rgba(56,189,248,0.15); color: var(--tech); }
+  .domain-tag.event { background: rgba(251,191,36,0.15); color: var(--event); }
+  .domain-tag.gcc { background: rgba(74,222,128,0.15); color: var(--gcc); }
+  .domain-tag.propagation { background: rgba(248,113,113,0.15); color: var(--propagation); }
+  .card .desc { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 12px; }
+  .card .props { font-size: 0.8rem; }
+  .card .props code {
+    background: var(--surface2); padding: 1px 6px; border-radius: 4px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 0.75rem;
+    color: var(--teal);
+  }
+
+  /* ── Tables ── */
+  .table-wrap { overflow-x: auto; margin-bottom: 32px; }
+  table {
+    width: 100%; border-collapse: collapse; font-size: 0.85rem;
+  }
+  th {
+    background: var(--surface); text-align: left; padding: 12px 16px;
+    font-weight: 600; color: var(--accent); border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+  td {
+    padding: 10px 16px; border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:hover td { background: rgba(56,189,248,0.04); }
+  td code {
+    background: var(--surface2); padding: 1px 6px; border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+  }
+
+  /* ── Code blocks ── */
+  pre {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px; overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;
+    line-height: 1.6; margin-bottom: 24px;
+  }
+  pre .comment { color: #6b7280; }
+  pre .keyword { color: var(--accent); }
+  pre .string { color: var(--green); }
+  pre .label { color: var(--amber); }
+
+  /* ── Mermaid ── */
+  .mermaid-wrap {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px; margin-bottom: 24px;
+    overflow-x: auto;
+  }
+  .mermaid { text-align: center; }
+
+  /* ── Use case cards ── */
+  .uc-card {
+    background: var(--surface); border-left: 3px solid var(--accent);
+    border-radius: 0 10px 10px 0; padding: 20px; margin-bottom: 16px;
+  }
+  .uc-card h4 { margin-top: 0; color: var(--text); }
+  .uc-card p { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 8px; }
+  .uc-card .query-ref { font-size: 0.75rem; color: var(--teal); }
+
+  /* ── Stats bar ── */
+  .stats {
+    display: flex; gap: 16px; margin-bottom: 32px; flex-wrap: wrap;
+  }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 24px; text-align: center;
+    flex: 1; min-width: 140px;
+  }
+  .stat-card .num {
+    font-size: 2rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat-card .lbl { font-size: 0.75rem; color: var(--text-dim); margin-top: 4px; }
+
+  /* ── Extensibility timeline ── */
+  .timeline { position: relative; padding-left: 28px; margin-bottom: 32px; }
+  .timeline::before {
+    content: ''; position: absolute; left: 8px; top: 0; bottom: 0;
+    width: 2px; background: var(--border);
+  }
+  .timeline-item { position: relative; margin-bottom: 20px; }
+  .timeline-item::before {
+    content: ''; position: absolute; left: -24px; top: 6px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--accent); border: 2px solid var(--bg);
+  }
+  .timeline-item h4 { margin-top: 0; }
+  .timeline-item p { font-size: 0.85rem; color: var(--text-dim); }
+
+  @media (max-width: 768px) {
+    .container { padding: 20px; }
+    .card-grid { grid-template-columns: 1fr; }
+    .header { padding: 24px 20px; }
+    .header h1 { font-size: 1.4rem; }
+    .stats { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Macro Intelligence Knowledge Graph</h1>
+  <div class="subtitle">Impact Observatory | مرصد الأثر — Production Graph Schema & Architecture Brief</div>
+  <div class="meta">
+    <span>Layer: Data (L1) + Models (L3) + Governance (L7)</span>
+    <span>Database: Neo4j 5.x</span>
+    <span>Version: 1.0.0</span>
+    <span>Entities: 26 types</span>
+    <span>Relationships: 28 types</span>
+    <span>Domains: 5</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card"><div class="num">26</div><div class="lbl">Entity Types</div></div>
+    <div class="stat-card"><div class="num">28</div><div class="lbl">Relationship Types</div></div>
+    <div class="stat-card"><div class="num">5</div><div class="lbl">Domains</div></div>
+    <div class="stat-card"><div class="num">42</div><div class="lbl">GCC Nodes</div></div>
+    <div class="stat-card"><div class="num">9</div><div class="lbl">Cypher Queries</div></div>
+    <div class="stat-card"><div class="num">15</div><div class="lbl">Scenarios</div></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-nav">
+    <button class="tab-btn active" data-tab="overview">1. Overview</button>
+    <button class="tab-btn" data-tab="entities">2. Entities</button>
+    <button class="tab-btn" data-tab="relationships">3. Relationships</button>
+    <button class="tab-btn" data-tab="schema">4. Schema</button>
+    <button class="tab-btn" data-tab="sample">5. Sample Graph</button>
+    <button class="tab-btn" data-tab="queries">6. Queries</button>
+    <button class="tab-btn" data-tab="usecases">7. Use Cases</button>
+    <button class="tab-btn" data-tab="extensibility">8. Extensibility</button>
+  </div>
+
+  <!-- ════════ TAB 1: OVERVIEW ════════ -->
+  <div class="tab-panel active" id="overview">
+    <h2>Overview <span class="badge" style="background:rgba(56,189,248,0.15);color:var(--accent);">Architecture</span></h2>
+
+    <p style="color:var(--text-dim);margin-bottom:24px;">
+      This Knowledge Graph unifies three operational domains — <strong style="color:var(--insurance)">Insurance</strong>,
+      <strong style="color:var(--tech)">Technical/Observability</strong>, and <strong style="color:var(--event)">Intelligence/Events</strong> —
+      into a single semantic layer built on top of the existing <strong style="color:var(--gcc)">GCC Infrastructure Graph</strong>
+      (42 nodes, 9 sectors) and <strong style="color:var(--propagation)">Propagation Engine</strong>. It is designed to serve
+      as the foundational data layer for AI reasoning, decision synthesis, and regulatory compliance tracing across
+      the entire Impact Observatory stack.
+    </p>
+
+    <h3>Domain Architecture</h3>
+    <div class="mermaid-wrap">
+      <div class="mermaid">
+graph TB
+    subgraph SIGNAL["Signal Intelligence Layer"]
+        SIG[Signal] --> EVT[Event]
+    end
+    subgraph GCC_INFRA["GCC Infrastructure Layer (42 Nodes)"]
+        COUNTRY[Country] --- SECTOR[Sector]
+        SECTOR --- GCCNODE[GCC Node]
+        REG[Regulator] --- GCCNODE
+    end
+    subgraph INSURANCE["Insurance Domain"]
+        CUST[Customer] --> POL[Policy]
+        POL --> CLM[Claim]
+        POL --> COV[Coverage]
+        CUST --> RISK[Risk Profile]
+        POL --> PREM[Premium]
+        POL --> TREATY[Reinsurance Treaty]
+    end
+    subgraph PROPAGATION["Propagation Layer"]
+        SCEN[Scenario] --> SIMRUN[Simulation Run]
+        SIMRUN --> PROPPATH[Propagation Path]
+    end
+    subgraph INTELLIGENCE["Decision Intelligence"]
+        ANOM[Anomaly] --> DEC[Decision]
+        DEC --> OUT[Outcome]
+    end
+    subgraph TECH["Technical / Observability"]
+        REPO[Repository] --> SVC[Service]
+        CMT[Commit] --> BUILD[Build]
+        BUILD --> DEPLOY[Deployment]
+        DEPLOY --> ENV[Environment]
+    end
+
+    EVT -->|affects| GCCNODE
+    EVT -->|causes anomaly| ANOM
+    EVT -->|triggers claims in| CLM
+    GCCNODE -->|propagates to| GCCNODE
+    SIMRUN -->|impacts node| GCCNODE
+    DEC -->|applied to| TREATY
+    DEPLOY -->|deploys| SVC
+    SVC -->|powers analytics for| GCCNODE
+
+    style SIGNAL fill:#4338ca,stroke:#6366f1,color:#fff
+    style GCC_INFRA fill:#065f46,stroke:#10b981,color:#fff
+    style INSURANCE fill:#3730a3,stroke:#818cf8,color:#fff
+    style PROPAGATION fill:#991b1b,stroke:#f87171,color:#fff
+    style INTELLIGENCE fill:#92400e,stroke:#fbbf24,color:#fff
+    style TECH fill:#0e4d78,stroke:#38bdf8,color:#fff
+      </div>
+    </div>
+
+    <h3>Design Principles</h3>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-title">Codebase Alignment</div>
+        <div class="desc">Every entity type maps to an existing Pydantic model, TypeScript interface, or graph_brain enum. No orphan abstractions — the graph is the runtime data model.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Deterministic Lifecycle</div>
+        <div class="desc">Signal → Event → Anomaly → Decision → Outcome. Every intelligence path is traceable through typed relationships with confidence scores and audit hashes.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Cross-Domain Bridging</div>
+        <div class="desc">Insurance claims link to geopolitical events. Deployment failures link to affected services and the GCC nodes they serve. The graph enables reasoning across operational silos.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Audit-First</div>
+        <div class="desc">SHA-256 content hashes, IFRS 17 group classifications, PDPL-compliant data lineage. Every node and edge supports provenance tracking for GCC regulatory requirements.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ TAB 2: ENTITIES ════════ -->
+  <div class="tab-panel" id="entities">
+    <h2>Entity Definitions <span class="badge" style="background:rgba(74,222,128,0.15);color:var(--gcc);">26 Types</span></h2>
+
+    <h3>Insurance Domain (7 entities)</h3>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Customer</span><span class="domain-tag insurance">Insurance</span></div>
+        <div class="desc">Policyholder entity — individual or corporate. Linked to KYC, risk tier, and GCC country.</div>
+        <div class="props">
+          <code>customer_id</code> <code>name</code> <code>name_ar</code> <code>customer_type</code>
+          <code>country</code> <code>sector</code> <code>kyc_verified</code> <code>risk_tier</code>
+          <code>created_at</code> <code>audit_hash</code>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Policy</span><span class="domain-tag insurance">Insurance</span></div>
+        <div class="desc">Insurance contract binding coverage, premium, and regulatory classification (IFRS 17 PAA/GMM).</div>
+        <div class="props">
+          <code>policy_id</code> <code>policy_type</code> <code>product_line</code> <code>effective_date</code>
+          <code>expiry_date</code> <code>sum_insured_usd</code> <code>premium_usd</code> <code>status</code>
+          <code>ifrs17_group</code> <code>country</code>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Claim</span><span class="domain-tag insurance">Insurance</span></div>
+        <div class="desc">Insurance claim filed against a policy. Tracks amounts, fraud score, causal event, and sector.</div>
+        <div class="props">
+          <code>claim_id</code> <code>claim_type</code> <code>filed_at</code> <code>amount_claimed_usd</code>
+          <code>amount_reserved_usd</code> <code>amount_paid_usd</code> <code>status</code> <code>cause</code>
+          <code>fraud_score</code> <code>severity</code> <code>sector</code>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Coverage</span><span class="domain-tag insurance">Insurance</span></div>
+        <div class="desc">Specific coverage section within a policy — limits, deductibles, sublimits, territory.</div>
+        <div class="props"><code>coverage_id</code> <code>coverage_type</code> <code>limit_usd</code> <code>deductible_usd</code> <code>sublimits</code> <code>territory</code></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">RiskProfile</span><span class="domain-tag insurance">Insurance</span></div>
+        <div class="desc">Multi-dimensional risk assessment — financial, operational, geopolitical scores with concentration index.</div>
+        <div class="props"><code>risk_profile_id</code> <code>overall_score</code> <code>financial_score</code> <code>operational_score</code> <code>geopolitical_score</code> <code>exposure_usd</code> <code>concentration_index</code></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Premium</span><span class="domain-tag insurance">Insurance</span></div>
+        <div class="desc">Pricing breakdown — base premium, risk loading, catastrophe loading, combined/loss/expense ratios.</div>
+        <div class="props"><code>premium_id</code> <code>base_premium_usd</code> <code>risk_loading_usd</code> <code>catastrophe_loading_usd</code> <code>combined_ratio</code> <code>loss_ratio</code> <code>expense_ratio</code></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">ReinsuranceTreaty</span><span class="domain-tag insurance">Insurance</span></div>
+        <div class="desc">Reinsurance contract — excess-of-loss or quota share. Attachment point, limit, rate-on-line.</div>
+        <div class="props"><code>treaty_id</code> <code>treaty_type</code> <code>reinsurer</code> <code>attachment_point_usd</code> <code>limit_usd</code> <code>rate_on_line</code> <code>territory</code></div>
+      </div>
+    </div>
+
+    <h3>Technical / Observability Domain (6 entities)</h3>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Repository</span><span class="domain-tag technical">Technical</span></div>
+        <div class="desc">Source code repository (GitHub). Contains services, tracks commits and branches.</div>
+        <div class="props"><code>repository_id</code> <code>name</code> <code>full_name</code> <code>provider</code> <code>default_branch</code> <code>url</code> <code>language</code></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Service</span><span class="domain-tag technical">Technical</span></div>
+        <div class="desc">Deployed microservice (frontend, backend, worker). Tracks health, SLA, and runtime.</div>
+        <div class="props"><code>service_id</code> <code>name</code> <code>service_type</code> <code>runtime</code> <code>provider</code> <code>health_endpoint</code> <code>status</code> <code>sla_target</code></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Deployment</span><span class="domain-tag technical">Technical</span></div>
+        <div class="desc">A deployment event (Vercel/Railway). Tracks commit SHA, state (READY/ERROR), and verification fingerprint.</div>
+        <div class="props"><code>deployment_id</code> <code>provider</code> <code>state</code> <code>target</code> <code>url</code> <code>commit_sha</code> <code>verified</code> <code>verification_fingerprint</code></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Build</span><span class="domain-tag technical">Technical</span></div>
+        <div class="desc">CI build artifact. Links a commit to a deployment with duration and status.</div>
+        <div class="props"><code>build_id</code> <code>provider</code> <code>status</code> <code>duration_seconds</code> <code>started_at</code> <code>finished_at</code></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Commit</span><span class="domain-tag technical">Technical</span></div>
+        <div class="desc">Git commit — the atomic unit of code change. Unique by SHA.</div>
+        <div class="props"><code>sha</code> <code>short_sha</code> <code>message</code> <code>author</code> <code>branch</code> <code>committed_at</code></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Environment</span><span class="domain-tag technical">Technical</span></div>
+        <div class="desc">Deployment target — production, staging, preview. Tracks URL, region, auto-deploy policy.</div>
+        <div class="props"><code>environment_id</code> <code>name</code> <code>tier</code> <code>url</code> <code>region</code> <code>auto_deploy</code></div>
+      </div>
+    </div>
+
+    <h3>Intelligence / Event Domain (5 entities)</h3>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Signal</span><span class="domain-tag event">Event</span></div>
+        <div class="desc">Raw intelligence signal from external feeds (RSS, JSON API, economic data). Entry point of the intelligence lifecycle. Aligned with signal_intel/ MacroSignalInput.</div>
+        <div class="props"><code>signal_id</code> <code>signal_type</code> <code>source</code> <code>source_title</code> <code>impact_domain</code> <code>severity</code> <code>confidence</code> <code>regions</code> <code>content_hash</code> <code>dedup_status</code></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Event</span><span class="domain-tag event">Event</span></div>
+        <div class="desc">Materialized event derived from one or more signals. Affects GCC infrastructure nodes and triggers downstream anomalies.</div>
+        <div class="props"><code>event_id</code> <code>event_type</code> <code>severity</code> <code>started_at</code> <code>duration_hours</code> <code>affected_sectors</code> <code>affected_countries</code></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Anomaly</span><span class="domain-tag event">Event</span></div>
+        <div class="desc">Statistical deviation detected in business or system metrics. Bridges events to decisions.</div>
+        <div class="props"><code>anomaly_id</code> <code>anomaly_type</code> <code>severity</code> <code>baseline_value</code> <code>observed_value</code> <code>deviation_factor</code> <code>detection_method</code> <code>confirmed</code></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Decision</span><span class="domain-tag event">Intelligence</span></div>
+        <div class="desc">Recommended or executed action from the Decision Brain. Tracks reasoning chain, contribution percentages (graph/propagation/rule), and cost-benefit.</div>
+        <div class="props"><code>decision_id</code> <code>action</code> <code>action_ar</code> <code>sector</code> <code>owner</code> <code>urgency</code> <code>priority</code> <code>time_to_act_hours</code> <code>loss_avoided_usd</code> <code>cost_usd</code> <code>reasoning_chain</code> <code>graph_contribution_pct</code></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Outcome</span><span class="domain-tag event">Intelligence</span></div>
+        <div class="desc">Post-decision result classification (TRUE_POSITIVE, FALSE_POSITIVE, etc.). Closes the intelligence lifecycle with actual vs. predicted loss and net value.</div>
+        <div class="props"><code>outcome_id</code> <code>classification</code> <code>actual_loss_usd</code> <code>predicted_loss_usd</code> <code>prediction_accuracy</code> <code>net_value_usd</code> <code>lessons_learned</code></div>
+      </div>
+    </div>
+
+    <h3>GCC Infrastructure Domain (4 entities)</h3>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-header"><span class="card-title">GCCNode</span><span class="domain-tag gcc">GCC</span></div>
+        <div class="desc">Core infrastructure node from the 42-node simulation graph. Tracks capacity, criticality, redundancy, and real-time state (NOMINAL → FAILED).</div>
+        <div class="props"><code>node_id</code> <code>label</code> <code>label_ar</code> <code>sector</code> <code>capacity</code> <code>current_load</code> <code>criticality</code> <code>redundancy</code> <code>lat</code> <code>lng</code> <code>state</code></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Country</span><span class="domain-tag gcc">GCC</span></div>
+        <div class="desc">GCC member state with GDP, ISO code, and bilingual naming.</div>
+        <div class="props"><code>country_id</code> <code>name</code> <code>name_ar</code> <code>iso_code</code> <code>gdp_usd</code></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Sector</span><span class="domain-tag gcc">GCC</span></div>
+        <div class="desc">Economic sector with alpha coefficient from config.py for loss propagation weighting.</div>
+        <div class="props"><code>sector_id</code> <code>name</code> <code>name_ar</code> <code>alpha_coefficient</code></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Regulator</span><span class="domain-tag gcc">GCC</span></div>
+        <div class="desc">Financial regulator (CBUAE, SAMA, QCB, etc.) with jurisdiction scope.</div>
+        <div class="props"><code>regulator_id</code> <code>name</code> <code>name_ar</code> <code>country</code> <code>jurisdiction</code></div>
+      </div>
+    </div>
+
+    <h3>Propagation Domain (3 entities)</h3>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Scenario</span><span class="domain-tag propagation">Propagation</span></div>
+        <div class="desc">One of 15 predefined stress scenarios (e.g., hormuz_chokepoint_disruption). Defines affected nodes and severity multiplier.</div>
+        <div class="props"><code>scenario_id</code> <code>name</code> <code>name_ar</code> <code>severity_multiplier</code> <code>affected_nodes</code> <code>category</code></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">SimulationRun</span><span class="domain-tag propagation">Propagation</span></div>
+        <div class="desc">A single execution of the 17-stage pipeline. Records total loss, peak day, URS score, risk level, and audit hash.</div>
+        <div class="props"><code>run_id</code> <code>scenario_id</code> <code>total_loss_usd</code> <code>peak_day</code> <code>recovery_days</code> <code>urs_score</code> <code>risk_level</code> <code>pipeline_stages_completed</code> <code>audit_hash</code></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">PropagationPath</span><span class="domain-tag propagation">Propagation</span></div>
+        <div class="desc">A traced causal propagation path through the GCC node graph. Records hops, cumulative decay, and the domain chain.</div>
+        <div class="props"><code>path_id</code> <code>entry_domain</code> <code>terminal_domain</code> <code>total_hops</code> <code>cumulative_decay</code> <code>path_description</code> <code>audit_hash</code></div>
+      </div>
+    </div>
+
+    <p style="color:var(--text-dim);font-size:0.85rem;margin-top:24px;">
+      <strong>Total entity alignment:</strong> 13 existing graph_brain entity types + 8 insurance entities + 6 technical entities + 3 propagation entities = 26 production node labels (with InsuranceProduct reserved for future use).
+    </p>
+  </div>
+
+  <!-- ════════ TAB 3: RELATIONSHIPS ════════ -->
+  <div class="tab-panel" id="relationships">
+    <h2>Relationship Definitions <span class="badge" style="background:rgba(248,113,113,0.15);color:var(--propagation);">28 Types</span></h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Relationship</th><th>Source</th><th>Target</th><th>Card.</th><th>Edge Properties</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>OWNS_POLICY</code></td><td>Customer</td><td>Policy</td><td>1:N</td><td><code>since</code> <code>relationship_type</code></td><td>Customer is the policyholder of a policy</td></tr>
+          <tr><td><code>HAS_COVERAGE</code></td><td>Policy</td><td>Coverage</td><td>1:N</td><td><code>effective_date</code></td><td>Policy includes a specific coverage section</td></tr>
+          <tr><td><code>GENERATED_CLAIM</code></td><td>Policy</td><td>Claim</td><td>1:N</td><td><code>filed_at</code></td><td>A claim was filed against this policy</td></tr>
+          <tr><td><code>HAS_RISK_PROFILE</code></td><td>Customer</td><td>RiskProfile</td><td>1:1</td><td><code>assessed_at</code></td><td>Customer's current multi-dimensional risk assessment</td></tr>
+          <tr><td><code>PRICED_BY</code></td><td>Policy</td><td>Premium</td><td>1:1</td><td><code>pricing_date</code></td><td>Policy's premium calculation and ratio breakdown</td></tr>
+          <tr><td><code>PROTECTED_BY</code></td><td>Policy</td><td>ReinsuranceTreaty</td><td>N:N</td><td><code>attachment_point_usd</code></td><td>Reinsurance treaty covers this policy</td></tr>
+          <tr><td><code>OPERATES_IN_SECTOR</code></td><td>Customer</td><td>Sector</td><td>N:N</td><td>—</td><td>Customer's business sector classification</td></tr>
+          <tr><td><code>LOCATED_IN</code></td><td>Customer|GCCNode</td><td>Country</td><td>N:1</td><td>—</td><td>Geographic location of entity</td></tr>
+
+          <tr style="background:rgba(74,222,128,0.03)"><td><code>PROPAGATES_TO</code></td><td>GCCNode</td><td>GCCNode</td><td>N:N</td><td><code>weight</code> <code>channel</code> <code>decay</code></td><td>Causal contagion edge — aligned with simulation adjacency</td></tr>
+          <tr style="background:rgba(74,222,128,0.03)"><td><code>BELONGS_TO_SECTOR</code></td><td>GCCNode</td><td>Sector</td><td>N:1</td><td>—</td><td>Node's economic sector classification</td></tr>
+          <tr style="background:rgba(74,222,128,0.03)"><td><code>REGULATES</code></td><td>Regulator</td><td>GCCNode</td><td>1:N</td><td>—</td><td>Regulatory oversight of infrastructure node</td></tr>
+
+          <tr><td><code>CONTAINS_SERVICE</code></td><td>Repository</td><td>Service</td><td>1:N</td><td>—</td><td>Repo contains the source code for this service</td></tr>
+          <tr><td><code>COMMITTED_TO</code></td><td>Commit</td><td>Repository</td><td>N:1</td><td>—</td><td>Commit belongs to this repository</td></tr>
+          <tr><td><code>BUILT_FROM</code></td><td>Build</td><td>Commit</td><td>N:1</td><td>—</td><td>Build was compiled from this commit</td></tr>
+          <tr><td><code>DEPLOYS</code></td><td>Deployment</td><td>Service</td><td>N:1</td><td>—</td><td>Deployment releases this service</td></tr>
+          <tr><td><code>BUILT_BY</code></td><td>Deployment</td><td>Build</td><td>1:1</td><td>—</td><td>Deployment was produced by this build</td></tr>
+          <tr><td><code>TARGETS</code></td><td>Deployment</td><td>Environment</td><td>N:1</td><td>—</td><td>Deployment targets this environment</td></tr>
+          <tr><td><code>RUNS_IN</code></td><td>Service</td><td>Environment</td><td>N:N</td><td>—</td><td>Service is running in this environment</td></tr>
+
+          <tr style="background:rgba(251,191,36,0.03)"><td><code>TRIGGERS</code></td><td>Signal</td><td>Event</td><td>N:N</td><td><code>confidence</code></td><td>Signal triggered an event materialization</td></tr>
+          <tr style="background:rgba(251,191,36,0.03)"><td><code>AFFECTS</code></td><td>Event</td><td>GCCNode</td><td>N:N</td><td><code>severity</code> <code>channel</code></td><td>Event impacts a GCC infrastructure node</td></tr>
+          <tr style="background:rgba(251,191,36,0.03)"><td><code>CAUSED_ANOMALY</code></td><td>Event</td><td>Anomaly</td><td>1:N</td><td><code>detection_lag_hours</code></td><td>Event caused a statistical anomaly</td></tr>
+          <tr style="background:rgba(251,191,36,0.03)"><td><code>PROMPTED_DECISION</code></td><td>Anomaly</td><td>Decision</td><td>N:N</td><td><code>urgency</code></td><td>Anomaly prompted a decision action</td></tr>
+          <tr style="background:rgba(251,191,36,0.03)"><td><code>PRODUCED_OUTCOME</code></td><td>Decision</td><td>Outcome</td><td>1:1</td><td><code>accuracy</code></td><td>Decision resulted in this outcome</td></tr>
+
+          <tr style="background:rgba(129,140,248,0.03)"><td><code>TRIGGERED_CLAIMS_IN</code></td><td>Event</td><td>GCCNode</td><td>N:N</td><td><code>volume_increase_pct</code></td><td>Cross-domain: event caused claims spike in sector</td></tr>
+          <tr style="background:rgba(129,140,248,0.03)"><td><code>CAUSED_BY_EVENT</code></td><td>Claim</td><td>Event</td><td>N:1</td><td>—</td><td>Cross-domain: claim was caused by this event</td></tr>
+          <tr style="background:rgba(129,140,248,0.03)"><td><code>APPLIED_TO</code></td><td>Decision</td><td>ReinsuranceTreaty</td><td>N:N</td><td>—</td><td>Cross-domain: decision activates reinsurance</td></tr>
+          <tr style="background:rgba(129,140,248,0.03)"><td><code>INFLUENCED_BY</code></td><td>RiskProfile</td><td>Event</td><td>N:N</td><td>—</td><td>Cross-domain: risk profile updated due to event</td></tr>
+
+          <tr><td><code>EXECUTED_AS</code></td><td>Scenario</td><td>SimulationRun</td><td>1:N</td><td>—</td><td>Scenario was executed as this simulation run</td></tr>
+          <tr><td><code>PROPAGATED_VIA</code></td><td>SimulationRun</td><td>PropagationPath</td><td>1:N</td><td>—</td><td>Run traced this propagation path</td></tr>
+          <tr><td><code>IMPACTED_NODE</code></td><td>SimulationRun</td><td>GCCNode</td><td>N:N</td><td><code>loss_usd</code></td><td>Simulation calculated loss at this node</td></tr>
+          <tr><td><code>SEEDED_SCENARIO</code></td><td>Signal</td><td>Scenario</td><td>N:N</td><td>—</td><td>Signal seeded this scenario for simulation</td></tr>
+          <tr><td><code>POWERS_ANALYTICS_FOR</code></td><td>Service</td><td>GCCNode</td><td>N:N</td><td>—</td><td>Cross-domain: tech service provides analytics for GCC sector</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ════════ TAB 4: SCHEMA ════════ -->
+  <div class="tab-panel" id="schema">
+    <h2>Graph Schema Design <span class="badge" style="background:rgba(56,189,248,0.15);color:var(--accent);">Neo4j 5.x</span></h2>
+
+    <h3>Constraint Architecture</h3>
+    <p style="color:var(--text-dim);margin-bottom:16px;">Every node label has a UNIQUE constraint on its primary identifier. This ensures referential integrity and enables O(1) lookups by ID across the entire graph.</p>
+    <pre><span class="comment">// ── 26 unique constraints (one per entity type) ──</span>
+<span class="keyword">CREATE CONSTRAINT</span> customer_id_unique <span class="keyword">IF NOT EXISTS</span>
+  <span class="keyword">FOR</span> (n:<span class="label">Customer</span>) <span class="keyword">REQUIRE</span> n.customer_id <span class="keyword">IS UNIQUE</span>;
+
+<span class="keyword">CREATE CONSTRAINT</span> policy_id_unique <span class="keyword">IF NOT EXISTS</span>
+  <span class="keyword">FOR</span> (n:<span class="label">Policy</span>) <span class="keyword">REQUIRE</span> n.policy_id <span class="keyword">IS UNIQUE</span>;
+
+<span class="keyword">CREATE CONSTRAINT</span> deployment_id_unique <span class="keyword">IF NOT EXISTS</span>
+  <span class="keyword">FOR</span> (n:<span class="label">Deployment</span>) <span class="keyword">REQUIRE</span> n.deployment_id <span class="keyword">IS UNIQUE</span>;
+
+<span class="keyword">CREATE CONSTRAINT</span> signal_id_unique <span class="keyword">IF NOT EXISTS</span>
+  <span class="keyword">FOR</span> (n:<span class="label">Signal</span>) <span class="keyword">REQUIRE</span> n.signal_id <span class="keyword">IS UNIQUE</span>;
+
+<span class="keyword">CREATE CONSTRAINT</span> gcc_node_id_unique <span class="keyword">IF NOT EXISTS</span>
+  <span class="keyword">FOR</span> (n:<span class="label">GCCNode</span>) <span class="keyword">REQUIRE</span> n.node_id <span class="keyword">IS UNIQUE</span>;
+
+<span class="comment">// ... 21 more constraints (see knowledge-graph-schema.cypher)</span></pre>
+
+    <h3>Index Strategy</h3>
+    <p style="color:var(--text-dim);margin-bottom:16px;">Three index tiers: temporal (range queries on timestamps), classification (enum/status filters), and composite (hot query path optimization).</p>
+    <pre><span class="comment">// ── Temporal (7 indexes) ──</span>
+<span class="keyword">CREATE INDEX</span> idx_claim_filed_at <span class="keyword">FOR</span> (n:<span class="label">Claim</span>) <span class="keyword">ON</span> (n.filed_at);
+<span class="keyword">CREATE INDEX</span> idx_signal_received_at <span class="keyword">FOR</span> (n:<span class="label">Signal</span>) <span class="keyword">ON</span> (n.received_at);
+<span class="keyword">CREATE INDEX</span> idx_deployment_created_at <span class="keyword">FOR</span> (n:<span class="label">Deployment</span>) <span class="keyword">ON</span> (n.created_at);
+
+<span class="comment">// ── Classification (7 indexes) ──</span>
+<span class="keyword">CREATE INDEX</span> idx_claim_status <span class="keyword">FOR</span> (n:<span class="label">Claim</span>) <span class="keyword">ON</span> (n.status);
+<span class="keyword">CREATE INDEX</span> idx_gcc_node_sector <span class="keyword">FOR</span> (n:<span class="label">GCCNode</span>) <span class="keyword">ON</span> (n.sector);
+
+<span class="comment">// ── Composite (3 indexes) ──</span>
+<span class="keyword">CREATE INDEX</span> idx_claim_sector_status <span class="keyword">FOR</span> (n:<span class="label">Claim</span>) <span class="keyword">ON</span> (n.sector, n.status);
+<span class="keyword">CREATE INDEX</span> idx_signal_domain_severity <span class="keyword">FOR</span> (n:<span class="label">Signal</span>) <span class="keyword">ON</span> (n.impact_domain, n.severity);</pre>
+
+    <h3>Naming Convention Enforcement</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Element</th><th>Convention</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td>Node labels</td><td>PascalCase</td><td><code>:GCCNode</code> <code>:ReinsuranceTreaty</code></td></tr>
+          <tr><td>Relationship types</td><td>UPPER_SNAKE_CASE</td><td><code>:PROPAGATES_TO</code> <code>:OWNS_POLICY</code></td></tr>
+          <tr><td>Properties</td><td>snake_case</td><td><code>customer_id</code> <code>amount_claimed_usd</code></td></tr>
+          <tr><td>Identifiers</td><td>{domain}_{entity}_{id}</td><td><code>ins_pol_001</code> <code>sig_hormuz_alert_001</code></td></tr>
+          <tr><td>Temporal fields</td><td>_at suffix (datetime)</td><td><code>created_at</code> <code>filed_at</code></td></tr>
+          <tr><td>Date-only fields</td><td>_date suffix (date)</td><td><code>effective_date</code> <code>expiry_date</code></td></tr>
+          <tr><td>Monetary fields</td><td>_usd suffix</td><td><code>loss_usd</code> <code>sum_insured_usd</code></td></tr>
+          <tr><td>Arabic labels</td><td>_ar suffix</td><td><code>label_ar</code> <code>name_ar</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ════════ TAB 5: SAMPLE GRAPH ════════ -->
+  <div class="tab-panel" id="sample">
+    <h2>Sample Graph Instances <span class="badge" style="background:rgba(251,191,36,0.15);color:var(--event);">Live Example</span></h2>
+
+    <h3>Full Lifecycle: Hormuz Chokepoint Disruption</h3>
+    <p style="color:var(--text-dim);margin-bottom:16px;">This example traces a complete intelligence lifecycle from a signal detection through event materialization, propagation across GCC infrastructure, insurance impact, decision synthesis, and outcome verification.</p>
+
+    <div class="mermaid-wrap">
+      <div class="mermaid">
+graph LR
+    SIG1["🛰 Signal<br/>Hormuz Alert<br/><i>severity: 0.78</i>"] -->|TRIGGERS| EVT1["⚡ Event<br/>Chokepoint Disruption<br/><i>severity: 0.82</i>"]
+    EVT1 -->|AFFECTS| HMZ["🚢 Hormuz<br/><i>criticality: 0.95</i>"]
+    HMZ -->|"PROPAGATES_TO<br/>w: 0.85"| DP["🏗 Dubai Port<br/><i>criticality: 0.88</i>"]
+    DP -->|"PROPAGATES_TO<br/>w: 0.55"| UB["🏦 UAE Banking<br/><i>criticality: 0.85</i>"]
+    UB -->|"PROPAGATES_TO<br/>w: 0.40"| GI["🛡 GCC Insurance<br/><i>criticality: 0.70</i>"]
+
+    EVT1 -->|CAUSED_ANOMALY| ANOM["📊 Claims Spike<br/><i>+292% volume</i>"]
+    EVT1 -->|TRIGGERED_CLAIMS_IN| GI
+    ANOM -->|PROMPTED_DECISION| DEC["🎯 Decision<br/>Activate Catastrophe<br/>Reinsurance"]
+    DEC -->|APPLIED_TO| TREATY["📋 Treaty<br/>XoL $10M xs $100M"]
+    DEC -->|PRODUCED_OUTCOME| OUT["✅ Outcome<br/>TRUE_POSITIVE<br/><i>$75.5M net value</i>"]
+
+    CLM["📝 Claim<br/>$12.5M Cargo<br/><i>fraud: 0.12</i>"] -->|CAUSED_BY_EVENT| EVT1
+    POL["📄 Policy<br/>Marine Hull<br/><i>$250M insured</i>"] -->|GENERATED_CLAIM| CLM
+    CUST["👤 Gulf Maritime<br/>Holdings<br/><i>risk: HIGH</i>"] -->|OWNS_POLICY| POL
+
+    SIG1 -->|SEEDED_SCENARIO| SCEN["🧪 Scenario<br/>Hormuz Disruption"]
+    SCEN -->|EXECUTED_AS| RUN["⚙ Simulation Run<br/><i>loss: $4.2B</i><br/><i>URS: 0.78</i>"]
+    RUN -->|IMPACTED_NODE| HMZ
+
+    style SIG1 fill:#4338ca,stroke:#6366f1,color:#fff
+    style EVT1 fill:#92400e,stroke:#fbbf24,color:#fff
+    style HMZ fill:#065f46,stroke:#10b981,color:#fff
+    style DP fill:#065f46,stroke:#10b981,color:#fff
+    style UB fill:#065f46,stroke:#10b981,color:#fff
+    style GI fill:#065f46,stroke:#10b981,color:#fff
+    style ANOM fill:#7c2d12,stroke:#fb923c,color:#fff
+    style DEC fill:#713f12,stroke:#fbbf24,color:#fff
+    style OUT fill:#14532d,stroke:#4ade80,color:#fff
+    style CLM fill:#3730a3,stroke:#818cf8,color:#fff
+    style POL fill:#3730a3,stroke:#818cf8,color:#fff
+    style CUST fill:#3730a3,stroke:#818cf8,color:#fff
+    style TREATY fill:#3730a3,stroke:#818cf8,color:#fff
+    style SCEN fill:#991b1b,stroke:#f87171,color:#fff
+    style RUN fill:#991b1b,stroke:#f87171,color:#fff
+      </div>
+    </div>
+
+    <h3>Technical Domain: Deployment → Service → Business</h3>
+    <div class="mermaid-wrap">
+      <div class="mermaid">
+graph LR
+    CMT["📝 Commit<br/>f2996bf<br/><i>close 4 blockers</i>"] -->|COMMITTED_TO| REPO["📦 Repository<br/>impact-observatory"]
+    BLD["🔨 Build<br/>mAjyXlYWevyK<br/><i>87s, SUCCESS</i>"] -->|BUILT_FROM| CMT
+    DPL["🚀 Deployment<br/>READY<br/><i>verified: ✓</i>"] -->|BUILT_BY| BLD
+    DPL -->|DEPLOYS| SVC_FE["🖥 Frontend<br/>Next.js 15<br/><i>Vercel</i>"]
+    DPL -->|TARGETS| ENV["🌍 Production<br/><i>deevo-sim.vercel.app</i>"]
+    REPO -->|CONTAINS_SERVICE| SVC_FE
+    REPO -->|CONTAINS_SERVICE| SVC_BE["⚡ Backend<br/>FastAPI<br/><i>Railway</i>"]
+    SVC_FE -->|RUNS_IN| ENV
+    SVC_FE -->|POWERS_ANALYTICS_FOR| GI2["🛡 GCC Insurance"]
+    SVC_BE -->|RUNS_SIMULATION_FOR| RUN2["⚙ Simulation Run"]
+
+    style CMT fill:#0e4d78,stroke:#38bdf8,color:#fff
+    style BLD fill:#0e4d78,stroke:#38bdf8,color:#fff
+    style DPL fill:#0e4d78,stroke:#38bdf8,color:#fff
+    style SVC_FE fill:#0e4d78,stroke:#38bdf8,color:#fff
+    style SVC_BE fill:#0e4d78,stroke:#38bdf8,color:#fff
+    style ENV fill:#0e4d78,stroke:#38bdf8,color:#fff
+    style REPO fill:#0e4d78,stroke:#38bdf8,color:#fff
+    style GI2 fill:#065f46,stroke:#10b981,color:#fff
+    style RUN2 fill:#991b1b,stroke:#f87171,color:#fff
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ TAB 6: QUERIES ════════ -->
+  <div class="tab-panel" id="queries">
+    <h2>Example Cypher Queries <span class="badge" style="background:rgba(45,212,191,0.15);color:var(--teal);">9 Queries</span></h2>
+
+    <h3>Q1: Deployment Failures → Affected Services → Business Impact</h3>
+    <pre><span class="keyword">MATCH</span> (d:<span class="label">Deployment</span> {state: <span class="string">'ERROR'</span>})-[:<span class="label">DEPLOYS</span>]->(s:<span class="label">Service</span>)
+<span class="keyword">OPTIONAL MATCH</span> (s)-[:<span class="label">POWERS_ANALYTICS_FOR</span>]->(g:<span class="label">GCCNode</span>)
+<span class="keyword">RETURN</span> d.deployment_id, d.commit_sha, s.name, s.status,
+       collect(g.label) <span class="keyword">AS</span> affected_gcc_nodes
+<span class="keyword">ORDER BY</span> d.created_at <span class="keyword">DESC</span>;</pre>
+
+    <h3>Q2: Claims → Customer Risk Profiles (Fraud Detection)</h3>
+    <pre><span class="keyword">MATCH</span> (c:<span class="label">Customer</span>)-[:<span class="label">OWNS_POLICY</span>]->(p:<span class="label">Policy</span>)-[:<span class="label">GENERATED_CLAIM</span>]->(cl:<span class="label">Claim</span>)
+<span class="keyword">MATCH</span> (c)-[:<span class="label">HAS_RISK_PROFILE</span>]->(r:<span class="label">RiskProfile</span>)
+<span class="keyword">WHERE</span> cl.status = <span class="string">'OPEN'</span> <span class="keyword">AND</span> cl.amount_claimed_usd > 1000000
+<span class="keyword">RETURN</span> c.name, c.risk_tier, r.overall_score, r.geopolitical_score,
+       cl.claim_id, cl.amount_claimed_usd, cl.fraud_score
+<span class="keyword">ORDER BY</span> cl.amount_claimed_usd <span class="keyword">DESC</span>;</pre>
+
+    <h3>Q3: Cross-System Anomaly Detection (7-Day Window)</h3>
+    <pre><span class="keyword">MATCH</span> (a:<span class="label">Anomaly</span>)
+<span class="keyword">WHERE</span> a.severity > 0.6 <span class="keyword">AND</span> a.detected_at > datetime() - duration(<span class="string">'P7D'</span>)
+<span class="keyword">OPTIONAL MATCH</span> (a)<-[:<span class="label">CAUSED_ANOMALY</span>]-(e:<span class="label">Event</span>)-[:<span class="label">AFFECTS</span>]->(g:<span class="label">GCCNode</span>)
+<span class="keyword">RETURN</span> a.anomaly_type, a.severity, a.deviation_factor,
+       e.event_type, collect(<span class="keyword">DISTINCT</span> g.label) <span class="keyword">AS</span> affected_nodes
+<span class="keyword">ORDER BY</span> a.severity <span class="keyword">DESC</span>;</pre>
+
+    <h3>Q4: Technical Events Correlated with Business Impact</h3>
+    <pre><span class="keyword">MATCH</span> (d:<span class="label">Deployment</span>)-[:<span class="label">DEPLOYS</span>]->(s:<span class="label">Service</span>)-[:<span class="label">POWERS_ANALYTICS_FOR</span>]->(g:<span class="label">GCCNode</span>)
+<span class="keyword">MATCH</span> (g)<-[:<span class="label">AFFECTS</span>]-(e:<span class="label">Event</span>)<-[:<span class="label">TRIGGERS</span>]-(sig:<span class="label">Signal</span>)
+<span class="keyword">WHERE</span> d.created_at > datetime() - duration(<span class="string">'P30D'</span>)
+<span class="keyword">RETURN</span> d.deployment_id, d.state, s.name,
+       g.label, e.event_type, sig.severity
+<span class="keyword">ORDER BY</span> sig.severity <span class="keyword">DESC</span>;</pre>
+
+    <h3>Q5: Full Signal → Outcome Lifecycle Trace</h3>
+    <pre><span class="keyword">MATCH</span> path = (sig:<span class="label">Signal</span>)-[:<span class="label">TRIGGERS</span>]->(evt:<span class="label">Event</span>)
+              -[:<span class="label">CAUSED_ANOMALY</span>]->(anom:<span class="label">Anomaly</span>)
+              -[:<span class="label">PROMPTED_DECISION</span>]->(dec:<span class="label">Decision</span>)
+              -[:<span class="label">PRODUCED_OUTCOME</span>]->(out:<span class="label">Outcome</span>)
+<span class="keyword">RETURN</span> sig.signal_id, sig.severity <span class="keyword">AS</span> signal_severity,
+       evt.event_type, anom.anomaly_type,
+       dec.action, dec.loss_avoided_usd,
+       out.classification, out.net_value_usd,
+       length(path) <span class="keyword">AS</span> lifecycle_hops;</pre>
+
+    <h3>Q6: Multi-Hop Propagation Path Analysis</h3>
+    <pre><span class="keyword">MATCH</span> path = (entry:<span class="label">GCCNode</span>)-[:<span class="label">PROPAGATES_TO</span>*1..5]->(terminal:<span class="label">GCCNode</span>)
+<span class="keyword">WHERE</span> entry.node_id = <span class="string">'hormuz'</span>
+<span class="keyword">RETURN</span> [n <span class="keyword">IN</span> nodes(path) | n.label] <span class="keyword">AS</span> propagation_chain,
+       [r <span class="keyword">IN</span> relationships(path) | r.weight] <span class="keyword">AS</span> weights,
+       reduce(w = 1.0, r <span class="keyword">IN</span> relationships(path) | w * r.weight) <span class="keyword">AS</span> cumulative_weight
+<span class="keyword">ORDER BY</span> cumulative_weight <span class="keyword">DESC</span>;</pre>
+
+    <h3>Q7: Insurance Exposure by GCC Event</h3>
+    <pre><span class="keyword">MATCH</span> (evt:<span class="label">Event</span>)-[:<span class="label">TRIGGERED_CLAIMS_IN</span>]->(g:<span class="label">GCCNode</span> {sector: <span class="string">'insurance'</span>})
+<span class="keyword">MATCH</span> (cl:<span class="label">Claim</span>)-[:<span class="label">CAUSED_BY_EVENT</span>]->(evt)
+<span class="keyword">MATCH</span> (cl)<-[:<span class="label">GENERATED_CLAIM</span>]-(p:<span class="label">Policy</span>)<-[:<span class="label">OWNS_POLICY</span>]-(c:<span class="label">Customer</span>)
+<span class="keyword">RETURN</span> evt.event_type,
+       count(<span class="keyword">DISTINCT</span> cl) <span class="keyword">AS</span> claim_count,
+       sum(cl.amount_claimed_usd) <span class="keyword">AS</span> total_exposure_usd,
+       collect(<span class="keyword">DISTINCT</span> c.name) <span class="keyword">AS</span> affected_customers;</pre>
+
+    <h3>Q8: Fraud Detection — High-Risk Claims with Event Correlation</h3>
+    <pre><span class="keyword">MATCH</span> (cl:<span class="label">Claim</span>)
+<span class="keyword">WHERE</span> cl.fraud_score > 0.5
+<span class="keyword">OPTIONAL MATCH</span> (cl)-[:<span class="label">CAUSED_BY_EVENT</span>]->(evt:<span class="label">Event</span>)
+<span class="keyword">OPTIONAL MATCH</span> (cl)<-[:<span class="label">GENERATED_CLAIM</span>]-(p:<span class="label">Policy</span>)<-[:<span class="label">OWNS_POLICY</span>]-(c:<span class="label">Customer</span>)
+               -[:<span class="label">HAS_RISK_PROFILE</span>]->(r:<span class="label">RiskProfile</span>)
+<span class="keyword">RETURN</span> cl.claim_id, cl.fraud_score, cl.amount_claimed_usd,
+       c.name, c.risk_tier, r.overall_score,
+       evt.event_type,
+       <span class="keyword">CASE WHEN</span> evt <span class="keyword">IS NULL THEN</span> <span class="string">'NO_CORRELATED_EVENT'</span>
+            <span class="keyword">ELSE</span> <span class="string">'EVENT_CORRELATED'</span> <span class="keyword">END AS</span> correlation_status;</pre>
+
+    <h3>Q9: Deployment Verification Audit Trail</h3>
+    <pre><span class="keyword">MATCH</span> (d:<span class="label">Deployment</span>)-[:<span class="label">BUILT_BY</span>]->(b:<span class="label">Build</span>)-[:<span class="label">BUILT_FROM</span>]->(c:<span class="label">Commit</span>)
+      -[:<span class="label">COMMITTED_TO</span>]->(r:<span class="label">Repository</span>)
+<span class="keyword">WHERE</span> d.target = <span class="string">'production'</span>
+<span class="keyword">RETURN</span> d.deployment_id, d.state, d.verified,
+       d.verification_fingerprint,
+       c.sha, c.message, c.committed_at,
+       b.duration_seconds, r.full_name
+<span class="keyword">ORDER BY</span> d.created_at <span class="keyword">DESC LIMIT</span> 10;</pre>
+  </div>
+
+  <!-- ════════ TAB 7: USE CASES ════════ -->
+  <div class="tab-panel" id="usecases">
+    <h2>Use Cases <span class="badge" style="background:rgba(129,140,248,0.15);color:var(--insurance);">6 Core</span></h2>
+
+    <div class="uc-card" style="border-left-color:var(--insurance);">
+      <h4>1. Risk Analysis — Portfolio Exposure Under GCC Stress</h4>
+      <p>Traverse from a Scenario through SimulationRun to impacted GCCNodes, then cross into the insurance domain to quantify aggregate portfolio exposure. The graph enables answering: "If Hormuz closes, what is our total claims exposure across all marine hull policies?"</p>
+      <p>This query path spans three domains: Propagation → GCC Infrastructure → Insurance. It replaces manual spreadsheet analysis that previously took 2–3 days with a sub-second graph traversal.</p>
+      <div class="query-ref">Enabled by: Q6 (Propagation Path) + Q7 (Insurance Exposure)</div>
+    </div>
+
+    <div class="uc-card" style="border-left-color:var(--amber);">
+      <h4>2. Fraud Detection — Event-Uncorrelated Claims</h4>
+      <p>Claims filed during or after a GCC event (e.g., Hormuz disruption) that cannot be linked to that event via the CAUSED_BY_EVENT relationship are statistically more likely to be fraudulent. The graph identifies claims with high fraud_score that lack event correlation — a pattern invisible to traditional flat-table queries.</p>
+      <p>By combining risk profile scores (financial, operational, geopolitical) with claim-event correlation status, investigators can prioritize review of the highest-risk claims first.</p>
+      <div class="query-ref">Enabled by: Q2 (Claims → Risk) + Q8 (Fraud Detection)</div>
+    </div>
+
+    <div class="uc-card" style="border-left-color:var(--tech);">
+      <h4>3. System Observability — Deployment Impact Chain</h4>
+      <p>When a deployment fails (state: ERROR), the graph traces the impact: Deployment → Service → Environment → GCCNode. If the frontend service goes down, which GCC sectors lose their analytics dashboard? If the backend API fails, which simulation runs are blocked?</p>
+      <p>This enables SRE teams to understand business impact of technical incidents in real time, not after a post-mortem.</p>
+      <div class="query-ref">Enabled by: Q1 (Deployment Failures) + Q9 (Audit Trail)</div>
+    </div>
+
+    <div class="uc-card" style="border-left-color:var(--propagation);">
+      <h4>4. Impact Analysis — Cross-Sector Contagion Modeling</h4>
+      <p>The PROPAGATES_TO relationship with weight, channel, and decay properties enables variable-depth graph traversal to model how a shock in one sector (e.g., maritime) cascades through banking, insurance, and fintech. The cumulative_weight reduction along the path quantifies contagion attenuation.</p>
+      <p>This directly implements the propagation model from config.py (PROP_BETA=0.65, PROP_LAMBDA=0.05, PROP_CUTOFF=0.005) as first-class graph structure rather than procedural code.</p>
+      <div class="query-ref">Enabled by: Q6 (Propagation Paths)</div>
+    </div>
+
+    <div class="uc-card" style="border-left-color:var(--green);">
+      <h4>5. Customer Profiling — Multi-Dimensional Risk Intelligence</h4>
+      <p>Each Customer connects to RiskProfile (multi-score assessment), Policy (exposure), Sector (business classification), and Country (geography). An AI agent can traverse from a customer through their policies to see which GCC events affected their coverage territory, what claims were filed, and how the risk profile should be updated.</p>
+      <p>This supports dynamic repricing: after a Hormuz event, all marine hull policies for UAE-based maritime companies should be flagged for premium review.</p>
+      <div class="query-ref">Enabled by: Q2 (Claims → Risk) + Q7 (Insurance Exposure)</div>
+    </div>
+
+    <div class="uc-card" style="border-left-color:var(--event);">
+      <h4>6. Decision Support — Full Lifecycle Reasoning</h4>
+      <p>The Signal → Event → Anomaly → Decision → Outcome chain is the graph's core intelligence lifecycle. Each Decision node records its reasoning_chain and contribution percentages (graph_contribution_pct, propagation_contribution_pct, rule_contribution_pct), enabling explainable AI that shows auditors exactly why a recommendation was made.</p>
+      <p>Outcome classification (TRUE_POSITIVE, FALSE_POSITIVE, etc.) creates a feedback loop: decisions that produced FALSE_POSITIVE outcomes indicate model drift, triggering recalibration of the decision brain's weighting.</p>
+      <div class="query-ref">Enabled by: Q5 (Lifecycle Trace)</div>
+    </div>
+  </div>
+
+  <!-- ════════ TAB 8: EXTENSIBILITY ════════ -->
+  <div class="tab-panel" id="extensibility">
+    <h2>Extensibility Plan <span class="badge" style="background:rgba(74,222,128,0.15);color:var(--gcc);">Roadmap</span></h2>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <h4>Phase 1: External Macroeconomic Data</h4>
+        <p>Add <code>:MacroIndicator</code> nodes (oil price, CPI, interest rates, FX rates) with <code>:INFLUENCES</code> relationships to <code>:GCCNode</code> and <code>:Sector</code>. Data sourced from signal_intel/ economic feed adapters. Enables queries like "How does a $20/barrel oil price drop propagate through the Saudi banking sector to insurance combined ratios?"</p>
+        <p>Schema extension: <code>CREATE (:MacroIndicator {indicator_id, type, value, unit, source, observed_at})</code>. No existing schema changes required — pure additive.</p>
+      </div>
+      <div class="timeline-item">
+        <h4>Phase 2: Additional Insurance Products</h4>
+        <p>Add <code>:InsuranceProduct</code> node (already reserved in constraints) with product-specific sub-labels: <code>:MotorProduct</code>, <code>:HealthProduct</code>, <code>:PropertyProduct</code>, <code>:LifeProduct</code>. Each product links to <code>:Policy</code> via <code>:ISSUED_UNDER</code> and inherits <code>:Coverage</code> templates via <code>:OFFERS_COVERAGE</code>.</p>
+        <p>This enables product-level portfolio analytics: "What is our total motor insurance exposure across UAE during a traffic infrastructure failure scenario?"</p>
+      </div>
+      <div class="timeline-item">
+        <h4>Phase 3: More Event Sources</h4>
+        <p>The <code>:Signal</code> node already supports <code>signal_type</code> (GEOPOLITICAL, ECONOMIC, INFRASTRUCTURE) and <code>source</code> (RSS_FEED, JSON_API). Adding new feed types (SATELLITE, IoT_SENSOR, SOCIAL_MEDIA, REGULATORY_FILING) requires only new enum values and signal_intel/ adapter plugins — the graph schema is unchanged.</p>
+        <p>For high-volume sources, add <code>:SignalBatch</code> aggregate nodes that summarize 100+ signals into a single node with statistical properties (mean_severity, max_severity, signal_count).</p>
+      </div>
+      <div class="timeline-item">
+        <h4>Phase 4: AI/LLM Agent Integration</h4>
+        <p>Add <code>:Agent</code> nodes representing AI agents (Decision Brain, Fraud Detector, Pricing Engine) with <code>:RECOMMENDED</code> relationships to <code>:Decision</code> nodes. Each recommendation edge carries <code>model_version</code>, <code>confidence</code>, <code>latency_ms</code>, and <code>prompt_hash</code> for LLM audit trailing.</p>
+        <p>Add <code>:Conversation</code> and <code>:ReasoningStep</code> nodes for LangGraph chain-of-thought tracing, linked to the Decisions they informed. This enables post-hoc analysis of which reasoning paths produce the best Outcome classifications.</p>
+        <p>Schema: <code>(:Agent)-[:RECOMMENDED {confidence, model_version}]->(:Decision)</code> and <code>(:ReasoningStep)-[:NEXT_STEP]->(:ReasoningStep)</code></p>
+      </div>
+      <div class="timeline-item">
+        <h4>Phase 5: Multi-Tenant SaaS Isolation</h4>
+        <p>Add <code>:Tenant</code> nodes with <code>:BELONGS_TO_TENANT</code> relationships on all insurance entities (Customer, Policy, Claim). Enforce data isolation via Neo4j's role-based access control (RBAC) with per-tenant database users, or via property-level filtering (<code>WHERE n.tenant_id = $tenantId</code>) on all query paths.</p>
+        <p>For the ZhongAn/Lemonade multi-tenant model, each tenant gets a logical subgraph partition while sharing the GCC Infrastructure and Technical domains as read-only shared context.</p>
+      </div>
+      <div class="timeline-item">
+        <h4>Phase 6: Real-Time Streaming</h4>
+        <p>Connect Neo4j Streams (Kafka connector) to the signal_intel/ ingestion pipeline. New <code>:Signal</code> nodes and <code>:TRIGGERS</code> relationships are created in real time as feeds are processed. The graph becomes a living representation of the GCC risk landscape, not a periodic snapshot.</p>
+        <p>Add <code>:GraphVersion</code> nodes for temporal versioning — enabling point-in-time queries: "What did the graph look like 24 hours before the Hormuz disruption?"</p>
+      </div>
+    </div>
+
+    <h3>Scaling Considerations</h3>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-title">Node Growth Projection</div>
+        <div class="desc">Year 1: ~5K nodes (42 GCC + insurance entities). Year 2: ~50K (multi-tenant customers + signals). Year 3: ~500K (real-time streaming signals + LLM reasoning chains). Neo4j Enterprise supports billions of nodes — no architectural ceiling.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Query Performance</div>
+        <div class="desc">All hot paths are covered by composite indexes. PROPAGATES_TO traversals are bounded to 5 hops (matching PROP_CUTOFF). APOC procedures available for Dijkstra/A* if weighted shortest path is needed at scale.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Backward Compatibility</div>
+        <div class="desc">Every extension phase is purely additive — new labels, new relationship types, new properties. No existing schema is modified. The IF NOT EXISTS clause on all constraints ensures idempotent re-runs.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Tab switching
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  // Mermaid init
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#1e293b',
+      primaryTextColor: '#e2e8f0',
+      lineColor: '#475569',
+      secondaryColor: '#0f172a',
+      tertiaryColor: '#1e1b4b'
+    },
+    flowchart: { curve: 'basis', padding: 20 },
+    securityLevel: 'loose'
+  });
+</script>
+
+</body>
+</html>

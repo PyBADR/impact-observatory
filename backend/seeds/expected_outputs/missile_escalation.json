@@ -1,0 +1,101 @@
+{
+  "scenario_id": "missile_escalation",
+  "test_type": "regression",
+  "timestamp": "2024-02-01T08:30:00Z",
+  "risk_metrics": {
+    "overall_risk_increase": {
+      "min": 0.32,
+      "max": 0.58
+    },
+    "confidence_adjustment": {
+      "min": -0.2,
+      "max": 0.02
+    },
+    "system_stress_level": {
+      "min": 0.72,
+      "max": 0.92
+    }
+  },
+  "impact_metrics": {
+    "affected_ports": {
+      "min": 5,
+      "max": 9
+    },
+    "affected_airports": {
+      "min": 6,
+      "max": 10
+    },
+    "affected_corridors": {
+      "min": 4,
+      "max": 7
+    },
+    "insurance_surge": {
+      "min": 0.45,
+      "max": 0.72
+    },
+    "logistics_delay_hours": {
+      "min": 96,
+      "max": 192
+    }
+  },
+  "cascade_metrics": {
+    "cascade_depth": {
+      "min": 2,
+      "max": 4
+    },
+    "propagation_factor": {
+      "min": 0.58,
+      "max": 0.8
+    },
+    "nodes_affected_total": {
+      "min": 13,
+      "max": 22
+    }
+  },
+  "expected_events": [
+    "MISSILE_THREAT",
+    "AIRSPACE_CLOSURE",
+    "PORT_DAMAGE",
+    "FLIGHT_DIVERSION"
+  ],
+  "critical_nodes_at_risk": [
+    "prt-002",
+    "prt-008",
+    "prt-014",
+    "apt-005",
+    "apt-010",
+    "apt-016"
+  ],
+  "time_horizon": {
+    "initial_hours": 0,
+    "terminal_hours": 72,
+    "peak_stress_hours": {
+      "min": 6,
+      "max": 36
+    }
+  },
+  "expected_risk_range": [
+    0.7,
+    1.0
+  ],
+  "expected_affected_ports": [
+    5,
+    11
+  ],
+  "expected_affected_airports": [
+    0,
+    6
+  ],
+  "expected_affected_corridors": [
+    2,
+    8
+  ],
+  "expected_cascade_depth": [
+    3,
+    5
+  ],
+  "expected_nodes_affected": [
+    11,
+    21
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/health",
+      "destination": "${NEXT_PUBLIC_API_URL}/health"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "${NEXT_PUBLIC_API_URL}/api/:path*"
+    },
+    {
+      "source": "/health",
+      "destination": "${NEXT_PUBLIC_API_URL}/health"
+    }
+  ]
+}

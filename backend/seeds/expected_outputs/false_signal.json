@@ -1,0 +1,95 @@
+{
+  "scenario_id": "false_signal",
+  "test_type": "regression",
+  "timestamp": "2024-03-25T09:30:00Z",
+  "risk_metrics": {
+    "overall_risk_increase": {
+      "min": 0.05,
+      "max": 0.18
+    },
+    "confidence_adjustment": {
+      "min": 0.02,
+      "max": 0.25
+    },
+    "system_stress_level": {
+      "min": 0.32,
+      "max": 0.52
+    }
+  },
+  "impact_metrics": {
+    "affected_ports": {
+      "min": 2,
+      "max": 4
+    },
+    "affected_airports": {
+      "min": 1,
+      "max": 3
+    },
+    "affected_corridors": {
+      "min": 2,
+      "max": 4
+    },
+    "insurance_surge": {
+      "min": 0.08,
+      "max": 0.22
+    },
+    "logistics_delay_hours": {
+      "min": 12,
+      "max": 36
+    }
+  },
+  "cascade_metrics": {
+    "cascade_depth": {
+      "min": 0,
+      "max": 1
+    },
+    "propagation_factor": {
+      "min": 0.25,
+      "max": 0.45
+    },
+    "nodes_affected_total": {
+      "min": 4,
+      "max": 8
+    }
+  },
+  "expected_events": [
+    "ECONOMIC_PRESSURE"
+  ],
+  "critical_nodes_at_risk": [
+    "prt-001",
+    "apt-001",
+    "cor-001"
+  ],
+  "time_horizon": {
+    "initial_hours": 0,
+    "terminal_hours": 24,
+    "peak_stress_hours": {
+      "min": 2,
+      "max": 12
+    }
+  },
+  "expected_risk_range": [
+    0.18,
+    0.48
+  ],
+  "expected_affected_ports": [
+    0,
+    5
+  ],
+  "expected_affected_airports": [
+    0,
+    6
+  ],
+  "expected_affected_corridors": [
+    0,
+    5
+  ],
+  "expected_cascade_depth": [
+    1,
+    2
+  ],
+  "expected_nodes_affected": [
+    2,
+    12
+  ]
+}

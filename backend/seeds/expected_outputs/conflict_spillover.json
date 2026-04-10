@@ -1,0 +1,103 @@
+{
+  "scenario_id": "conflict_spillover",
+  "test_type": "regression",
+  "timestamp": "2024-02-15T16:20:00Z",
+  "risk_metrics": {
+    "overall_risk_increase": {
+      "min": 0.3,
+      "max": 0.52
+    },
+    "confidence_adjustment": {
+      "min": -0.18,
+      "max": 0.06
+    },
+    "system_stress_level": {
+      "min": 0.68,
+      "max": 0.88
+    }
+  },
+  "impact_metrics": {
+    "affected_ports": {
+      "min": 6,
+      "max": 10
+    },
+    "affected_airports": {
+      "min": 5,
+      "max": 9
+    },
+    "affected_corridors": {
+      "min": 5,
+      "max": 8
+    },
+    "insurance_surge": {
+      "min": 0.38,
+      "max": 0.62
+    },
+    "logistics_delay_hours": {
+      "min": 144,
+      "max": 288
+    }
+  },
+  "cascade_metrics": {
+    "cascade_depth": {
+      "min": 2,
+      "max": 4
+    },
+    "propagation_factor": {
+      "min": 0.58,
+      "max": 0.82
+    },
+    "nodes_affected_total": {
+      "min": 15,
+      "max": 24
+    }
+  },
+  "expected_events": [
+    "CONFLICT_SPILLOVER",
+    "AIRSPACE_CLOSURE",
+    "PORT_DAMAGE",
+    "VESSEL_DIVERSION"
+  ],
+  "critical_nodes_at_risk": [
+    "prt-006",
+    "prt-012",
+    "apt-008",
+    "apt-013",
+    "apt-017",
+    "cor-003",
+    "cor-007",
+    "cor-011"
+  ],
+  "time_horizon": {
+    "initial_hours": 0,
+    "terminal_hours": 240,
+    "peak_stress_hours": {
+      "min": 48,
+      "max": 120
+    }
+  },
+  "expected_risk_range": [
+    0.7,
+    1.0
+  ],
+  "expected_affected_ports": [
+    6,
+    12
+  ],
+  "expected_affected_airports": [
+    5,
+    11
+  ],
+  "expected_affected_corridors": [
+    2,
+    8
+  ],
+  "expected_cascade_depth": [
+    3,
+    5
+  ],
+  "expected_nodes_affected": [
+    17,
+    27
+  ]
+}

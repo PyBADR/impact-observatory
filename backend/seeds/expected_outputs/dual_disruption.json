@@ -1,0 +1,105 @@
+{
+  "scenario_id": "dual_disruption",
+  "test_type": "regression",
+  "timestamp": "2024-03-15T14:55:00Z",
+  "risk_metrics": {
+    "overall_risk_increase": {
+      "min": 0.28,
+      "max": 0.5
+    },
+    "confidence_adjustment": {
+      "min": -0.15,
+      "max": 0.08
+    },
+    "system_stress_level": {
+      "min": 0.68,
+      "max": 0.88
+    }
+  },
+  "impact_metrics": {
+    "affected_ports": {
+      "min": 7,
+      "max": 11
+    },
+    "affected_airports": {
+      "min": 6,
+      "max": 10
+    },
+    "affected_corridors": {
+      "min": 4,
+      "max": 7
+    },
+    "insurance_surge": {
+      "min": 0.42,
+      "max": 0.68
+    },
+    "logistics_delay_hours": {
+      "min": 120,
+      "max": 240
+    }
+  },
+  "cascade_metrics": {
+    "cascade_depth": {
+      "min": 2,
+      "max": 3
+    },
+    "propagation_factor": {
+      "min": 0.55,
+      "max": 0.78
+    },
+    "nodes_affected_total": {
+      "min": 15,
+      "max": 23
+    }
+  },
+  "expected_events": [
+    "NAVAL_BLOCKADE",
+    "AIRSPACE_CLOSURE",
+    "FLIGHT_DIVERSION",
+    "VESSEL_DIVERSION"
+  ],
+  "critical_nodes_at_risk": [
+    "prt-005",
+    "prt-012",
+    "prt-019",
+    "apt-007",
+    "apt-011",
+    "apt-016",
+    "apt-019",
+    "cor-004",
+    "cor-008",
+    "cor-012"
+  ],
+  "time_horizon": {
+    "initial_hours": 0,
+    "terminal_hours": 240,
+    "peak_stress_hours": {
+      "min": 36,
+      "max": 120
+    }
+  },
+  "expected_risk_range": [
+    0.7,
+    1.0
+  ],
+  "expected_affected_ports": [
+    4,
+    10
+  ],
+  "expected_affected_airports": [
+    7,
+    13
+  ],
+  "expected_affected_corridors": [
+    1,
+    7
+  ],
+  "expected_cascade_depth": [
+    3,
+    5
+  ],
+  "expected_nodes_affected": [
+    16,
+    26
+  ]
+}

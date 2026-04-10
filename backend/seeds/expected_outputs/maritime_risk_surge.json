@@ -1,0 +1,103 @@
+{
+  "scenario_id": "maritime_risk_surge",
+  "test_type": "regression",
+  "timestamp": "2024-02-20T11:30:00Z",
+  "risk_metrics": {
+    "overall_risk_increase": {
+      "min": 0.22,
+      "max": 0.42
+    },
+    "confidence_adjustment": {
+      "min": -0.12,
+      "max": 0.1
+    },
+    "system_stress_level": {
+      "min": 0.58,
+      "max": 0.82
+    }
+  },
+  "impact_metrics": {
+    "affected_ports": {
+      "min": 5,
+      "max": 8
+    },
+    "affected_airports": {
+      "min": 1,
+      "max": 4
+    },
+    "affected_corridors": {
+      "min": 6,
+      "max": 9
+    },
+    "insurance_surge": {
+      "min": 0.42,
+      "max": 0.68
+    },
+    "logistics_delay_hours": {
+      "min": 240,
+      "max": 400
+    }
+  },
+  "cascade_metrics": {
+    "cascade_depth": {
+      "min": 2,
+      "max": 3
+    },
+    "propagation_factor": {
+      "min": 0.5,
+      "max": 0.72
+    },
+    "nodes_affected_total": {
+      "min": 12,
+      "max": 19
+    }
+  },
+  "expected_events": [
+    "NAVAL_BLOCKADE",
+    "CORRIDOR_RESTRICTION",
+    "INSURANCE_RATE_SPIKE",
+    "VESSEL_DIVERSION"
+  ],
+  "critical_nodes_at_risk": [
+    "cor-001",
+    "cor-004",
+    "cor-008",
+    "cor-010",
+    "cor-014",
+    "prt-007",
+    "prt-013",
+    "prt-018"
+  ],
+  "time_horizon": {
+    "initial_hours": 0,
+    "terminal_hours": 504,
+    "peak_stress_hours": {
+      "min": 96,
+      "max": 240
+    }
+  },
+  "expected_risk_range": [
+    0.44,
+    0.74
+  ],
+  "expected_affected_ports": [
+    2,
+    8
+  ],
+  "expected_affected_airports": [
+    1,
+    7
+  ],
+  "expected_affected_corridors": [
+    1,
+    7
+  ],
+  "expected_cascade_depth": [
+    2,
+    4
+  ],
+  "expected_nodes_affected": [
+    8,
+    18
+  ]
+}

@@ -1,0 +1,102 @@
+"""Impact Observatory | مرصد الأثر — Project Identity.
+
+Single source of truth for product metadata.
+"""
+
+PROJECT = {
+    "name_en": "Impact Observatory",
+    "name_ar": "مرصد الأثر",
+    "short_name": "impact-observatory",
+    "repo_name": "impact-observatory",
+    "default_locale": "ar",
+    "supported_locales": ["ar", "en"],
+    "version": "1.0.0",
+    "category": "executive_decision_intelligence_platform",
+    "positioning_en": "Decision Intelligence for Financial Impact",
+    "positioning_ar": "ذكاء القرار لقياس الأثر المالي",
+    "tone": [
+        "executive",
+        "financial_first",
+        "decision_driven",
+        "regulatory_aware",
+        "bilingual",
+        "explainable",
+    ],
+    "v1_focus": {
+        "flagship_scenario": "hormuz_closure",
+        "primary_views": ["banking", "insurance", "fintech"],
+        "secondary_views": ["sovereign"],
+    },
+    "principles": [
+        "financial_first",
+        "decision_terminal",
+        "gcc_aware",
+        "auditable",
+        "explainable",
+        "modular",
+        "json_first",
+        "white_light_ui",
+        "safe_migration_in_place",
+    ],
+    "runtime_flow": [
+        "scenario",
+        "physics",
+        "graph_snapshot",
+        "propagation",
+        "financial",
+        "sector_risk",
+        "regulatory",
+        "decision",
+        "explanation",
+        "output",
+    ],
+    "core_objects": [
+        "Scenario",
+        "Entity",
+        "Edge",
+        "FlowState",
+        "FinancialImpact",
+        "BankingStress",
+        "InsuranceStress",
+        "FintechStress",
+        "DecisionAction",
+        "DecisionPlan",
+        "RegulatoryState",
+        "ExplanationPack",
+    ],
+}
+
+# UI Theme tokens — boardroom aesthetic, clean spacing, no neon
+THEME = {
+    "mode": "light",
+    "palette": {
+        "background": "#F8FAFC",
+        "surface": "#FFFFFF",
+        "primary": "#0F172A",
+        "secondary": "#475569",
+        "accent": "#1D4ED8",
+        "success": "#15803D",
+        "warning": "#B45309",
+        "danger": "#B91C1C",
+        "border": "#E2E8F0",
+    },
+    "classification_colors": {
+        "critical": "#B91C1C",
+        "elevated": "#B45309",
+        "moderate": "#CA8A04",
+        "low": "#15803D",
+        "nominal": "#059669",
+    },
+    "design_rules": [
+        "clean_spacing",
+        "premium_cards",
+        "no_neon",
+        "no_black_default",
+        "boardroom_aesthetic",
+        "graph_is_secondary",
+    ],
+    "font_family": "Inter, 'Noto Sans Arabic', system-ui, sans-serif",
+    "font_family_ar": "'Noto Sans Arabic', 'Cairo', system-ui, sans-serif",
+    "border_radius": "8px",
+    "shadow": "0 1px 3px rgba(0,0,0,0.08)",
+}

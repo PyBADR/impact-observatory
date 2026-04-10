@@ -1,0 +1,17 @@
+{
+  "name": "@io/gcc-constants",
+  "version": "1.0.0",
+  "description": "GCC macro-financial constants and sector baselines — server-side canonical source",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "browser": false,
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc"
+  },
+  "private": true,
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}
