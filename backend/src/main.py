@@ -36,6 +36,11 @@ from src.api.v1.outcomes import router as v1_outcomes_router
 from src.api.v1.values import router as v1_values_router
 from src.api.v1.narrative import router as v1_narrative_router
 from src.api.v1.decision_authority import router as v1_decision_authority_router, register_validation_handler
+from src.banking_intelligence.api.v1.scenario_chain import router as v1_scenario_chain_router
+from src.banking_intelligence.api.v1.entities import router as v1_banking_entities_router
+from src.banking_intelligence.api.v1.decisions import router as v1_banking_decisions_router
+from src.api.v1.institutional import router as v1_institutional_router
+from src.api.v1.provenance import router as v1_provenance_router
 
 from src.core.config import settings
 from src.services.state import init_state
@@ -95,6 +100,16 @@ async def lifespan(app: FastAPI):
         print("✅ PostgreSQL tables verified/created (action_tracking, enterprise, orm)")
     except Exception as e:
         print(f"⚠️  PostgreSQL table creation skipped: {e}")
+
+    # Banking Intelligence seed data (non-fatal)
+    try:
+        from src.banking_intelligence.seed.loader import seed_entity_store
+        from src.banking_intelligence.api.v1.entities import _entity_store
+        counts = seed_entity_store(_entity_store)
+        total = sum(v for k, v in counts.items() if k != "edges")
+        print(f"✅ Banking Intelligence seeded: {total} entities, {counts.get('edges', 0)} edges")
+    except Exception as e:
+        print(f"⚠️  Banking Intelligence seed skipped: {e}")
 
     print("🚀 Impact Observatory | مرصد الأثر — ready")
     yield
@@ -265,6 +280,17 @@ api_v1.include_router(v1_narrative_router)
 
 # ── Decision Authority Layer (Chief Risk Officer AI — forces decisions) ──
 api_v1.include_router(v1_decision_authority_router)
+
+# ── Banking Intelligence Layer (Scenario bridging to contract chains) ──
+api_v1.include_router(v1_scenario_chain_router)
+api_v1.include_router(v1_banking_entities_router)
+api_v1.include_router(v1_banking_decisions_router)
+
+# ── Institutional Interface Layer (Stage 70/80 consumer surface) ──
+api_v1.include_router(v1_institutional_router)
+
+# ── Metrics Provenance Layer (Stage 85 — explainability + factor decomposition) ──
+api_v1.include_router(v1_provenance_router)
 
 # ── Auth endpoints — no API key required ─────────────────────────────────
 app.include_router(v1_auth_router, prefix="/api/v1")

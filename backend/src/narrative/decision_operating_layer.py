@@ -321,7 +321,14 @@ def build_counterfactual_comparison(
     mitigation_pct = min(total_loss_avoided / max(total_loss, 1.0), 0.60)  # cap at 60%
     total_action_cost = sum(a.get("cost_usd", 0) for a in recommended_actions)
 
-    recommended_loss = max(total_loss * (1.0 - mitigation_pct) + total_action_cost, 0)
+    # Net cost = action cost minus loss avoided (represents the true cost of acting)
+    # Cap so recommended never exceeds baseline (acting is always better than inaction)
+    net_action_cost = max(total_action_cost - total_loss_avoided, 0)
+    # Cap net cost at a fraction of total loss to prevent inversion
+    capped_net_cost = min(net_action_cost, total_loss * 0.3)
+    recommended_loss = max(total_loss * (1.0 - mitigation_pct) + capped_net_cost, 0)
+    # Safety: recommended must always be less than baseline
+    recommended_loss = min(recommended_loss, baseline_loss * 0.85)
     # Actions extend time to failure
     recommended_ttf = time_to_failure * (1.0 + mitigation_pct * 1.5)
     recommended_risk = _risk_after_mitigation(risk_level, mitigation_pct)
@@ -359,7 +366,12 @@ def build_counterfactual_comparison(
     # ── Alternative Outcome (partial action — 50% of recommended) ────
     alt_mitigation = mitigation_pct * 0.5
     alt_cost = total_action_cost * 0.5
-    alt_loss = max(total_loss * (1.0 - alt_mitigation) + alt_cost, 0)
+    alt_net_cost = max(alt_cost - (total_loss_avoided * 0.5), 0)
+    alt_capped_cost = min(alt_net_cost, total_loss * 0.2)
+    alt_loss = max(total_loss * (1.0 - alt_mitigation) + alt_capped_cost, 0)
+    # Safety: alternative must be between recommended and baseline
+    alt_loss = min(alt_loss, baseline_loss * 0.93)
+    alt_loss = max(alt_loss, recommended_loss * 1.05)
     alt_ttf = time_to_failure * (1.0 + alt_mitigation * 1.0)
     alt_risk = _risk_after_mitigation(risk_level, alt_mitigation)
 

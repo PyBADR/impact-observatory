@@ -335,12 +335,12 @@ export function unifiedToRunResult(
           : "low";
   const executiveStatus: ExecutiveStatus =
     avgStress >= 0.7
-      ? "crisis"
+      ? "CRITICAL"
       : avgStress >= 0.5
-        ? "escalate"
+        ? "SEVERE"
         : avgStress >= 0.3
-          ? "intervene"
-          : "monitor";
+          ? "ELEVATED"
+          : "STABLE";
 
   // ── Regulatory Events ───────────────────────────────────
   const regState = sectors?.regulatory_state;

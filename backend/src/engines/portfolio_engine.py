@@ -23,6 +23,8 @@ def aggregate_portfolio(
     expected_actuals: list[dict],
     value_attributions: list[dict],
     effectiveness_results: list[dict],
+    scenario_id: str = "",
+    run_id: str = "",
 ) -> dict:
     """Aggregate portfolio-level metrics.
 
@@ -35,6 +37,21 @@ def aggregate_portfolio(
             roi_ratio,
         }
     """
+    # ROI Isolation: filter to only this scenario's data
+    if scenario_id:
+        expected_actuals = [
+            ea for ea in expected_actuals
+            if ea.get("scenario_id", "") == scenario_id or ea.get("scenario_id", "") == ""
+        ]
+        value_attributions = [
+            va for va in value_attributions
+            if va.get("scenario_id", "") == scenario_id or va.get("scenario_id", "") == ""
+        ]
+        effectiveness_results = [
+            er for er in effectiveness_results
+            if er.get("scenario_id", "") == scenario_id or er.get("scenario_id", "") == ""
+        ]
+
     total_decisions = len(expected_actuals)
     if total_decisions == 0:
         return {
@@ -52,6 +69,8 @@ def aggregate_portfolio(
             "best_decision_id": None,
             "worst_decision_id": None,
             "roi_ratio": 0.0,
+            "scenario_id": scenario_id,
+            "run_id": run_id,
         }
 
     total_expected = sum(_sn(ea.get("expected_outcome")) for ea in expected_actuals)
@@ -112,4 +131,6 @@ def aggregate_portfolio(
         "best_decision_id": best_decision_id,
         "worst_decision_id": worst_decision_id,
         "roi_ratio": roi_ratio,
+        "scenario_id": scenario_id,
+        "run_id": run_id,
     }

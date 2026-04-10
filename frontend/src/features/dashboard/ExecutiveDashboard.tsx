@@ -430,17 +430,17 @@ export default function ExecutiveDashboard({
             <KPICard
               label={t.executive_status}
               value={
-                data.executive_status === "crisis" ? (lang === "ar" ? "حرج" : "Critical")
-                : data.executive_status === "escalate" ? (lang === "ar" ? "شديد" : "Severe")
-                : data.executive_status === "intervene" ? (lang === "ar" ? "مرتفع" : "Elevated")
-                : (lang === "ar" ? "مراقبة" : "Monitor")
+                data.executive_status === "CRITICAL" ? (lang === "ar" ? "حرج" : "Critical")
+                : data.executive_status === "SEVERE" ? (lang === "ar" ? "شديد" : "Severe")
+                : data.executive_status === "ELEVATED" ? (lang === "ar" ? "مرتفع" : "Elevated")
+                : (lang === "ar" ? "مستقر" : "Stable")
               }
               classification={
-                (data.executive_status === "crisis"
+                (data.executive_status === "CRITICAL"
                   ? "CRITICAL"
-                  : data.executive_status === "escalate"
+                  : data.executive_status === "SEVERE"
                   ? "ELEVATED"
-                  : data.executive_status === "intervene"
+                  : data.executive_status === "ELEVATED"
                   ? "MODERATE"
                   : "NOMINAL") as Classification
               }

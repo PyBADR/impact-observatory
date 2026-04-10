@@ -18,6 +18,7 @@ import logging
 from fastapi import APIRouter, HTTPException, Query
 
 from src.services import outcome_store
+from src.events.event_store import event_store
 from src.schemas.operator_decision import (
     Outcome,
     OutcomeListResponse,
@@ -40,6 +41,13 @@ async def create_outcome(body: CreateOutcomeRequest):
     logger.info(
         "Outcome %s created (decision=%s, run=%s)",
         out["outcome_id"], out.get("source_decision_id"), out.get("source_run_id"),
+    )
+    # Event: OUTCOME_PENDING
+    event_store.emit(
+        "OUTCOME_PENDING",
+        run_id=out.get("source_run_id", ""),
+        scenario_id=out.get("scenario_id", ""),
+        payload={"outcome_id": out["outcome_id"], "expected_value": out.get("expected_value")},
     )
     return out
 
@@ -99,6 +107,17 @@ async def confirm_outcome(outcome_id: str, body: ConfirmOutcomeRequest):
             detail=f"Cannot confirm outcome in {out['outcome_status']} status",
         )
     updated = outcome_store.confirm(outcome_id, body.model_dump(exclude_unset=True))
+    # Event: OUTCOME_CONFIRMED
+    event_store.emit(
+        "OUTCOME_CONFIRMED",
+        run_id=updated.get("source_run_id", ""),
+        scenario_id=updated.get("scenario_id", ""),
+        payload={
+            "outcome_id": outcome_id,
+            "realized_value": updated.get("realized_value"),
+            "classification": updated.get("classification"),
+        },
+    )
     return updated
 
 
@@ -115,6 +134,49 @@ async def dispute_outcome(outcome_id: str, body: DisputeOutcomeRequest):
         )
     updated = outcome_store.dispute(outcome_id, body.model_dump(exclude_unset=True))
     return updated
+
+
+@router.get("/feedback/{scenario_id}")
+async def get_roi_feedback(scenario_id: str):
+    """
+    C5 ROI Feedback — aggregate confirmed outcomes for a scenario.
+
+    Returns:
+      scenario_id, confirmed_count, total_expected, total_realized,
+      delta_usd, accuracy_ratio
+    """
+    all_outcomes = outcome_store.list_outcomes()
+    confirmed = [
+        o for o in all_outcomes
+        if o.get("outcome_status") == "CONFIRMED"
+        and (
+            o.get("source_run_id", "").startswith(scenario_id)
+            or scenario_id in (o.get("source_run_id") or "")
+        )
+    ]
+    if not confirmed:
+        return {
+            "scenario_id": scenario_id,
+            "confirmed_count": 0,
+            "total_expected_usd": 0.0,
+            "total_realized_usd": 0.0,
+            "delta_usd": 0.0,
+            "accuracy_ratio": 0.0,
+        }
+
+    total_expected = sum(float(o.get("expected_value") or 0) for o in confirmed)
+    total_realized = sum(float(o.get("realized_value") or 0) for o in confirmed)
+    delta = total_realized - total_expected
+    accuracy = min(total_realized, total_expected) / max(total_realized, total_expected, 1.0)
+
+    return {
+        "scenario_id": scenario_id,
+        "confirmed_count": len(confirmed),
+        "total_expected_usd": round(total_expected, 2),
+        "total_realized_usd": round(total_realized, 2),
+        "delta_usd": round(delta, 2),
+        "accuracy_ratio": round(accuracy, 4),
+    }
 
 
 @router.post("/{outcome_id}/close")

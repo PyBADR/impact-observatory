@@ -215,6 +215,55 @@ RISK_THRESHOLDS: dict[str, tuple[float, float]] = {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# Scenario Taxonomy & Action Mapping (owned by decision_layer.py)
+# ═══════════════════════════════════════════════════════════════════════════════
+SCENARIO_TYPES = frozenset(["MARITIME", "ENERGY", "LIQUIDITY", "CYBER", "REGULATORY"])
+
+# Map all 21 GCC scenarios to canonical scenario type
+SCENARIO_TAXONOMY: dict[str, str] = {
+    # Maritime (port/shipping disruptions)
+    "hormuz_chokepoint_disruption":       "MARITIME",
+    "hormuz_full_closure":                "MARITIME",
+    "oman_port_closure":                  "MARITIME",
+    "red_sea_trade_corridor_instability": "MARITIME",
+    "critical_port_throughput_disruption": "MARITIME",
+    # Energy (oil/gas production/supply)
+    "saudi_oil_shock":                    "ENERGY",
+    "qatar_lng_disruption":               "ENERGY",
+    "kuwait_fiscal_shock":                "ENERGY",
+    "energy_market_volatility_shock":     "ENERGY",
+    # Liquidity (banking/credit systems)
+    "uae_banking_crisis":                 "LIQUIDITY",
+    "bahrain_sovereign_stress":           "LIQUIDITY",
+    "regional_liquidity_stress_event":    "LIQUIDITY",
+    # Cyber (infrastructure attacks)
+    "gcc_cyber_attack":                   "CYBER",
+    "financial_infrastructure_cyber_disruption": "CYBER",
+    # Regulatory/Geopolitical
+    "iran_regional_escalation":           "REGULATORY",
+}
+
+# Map action template index (0-15) to allowed scenario types
+SCENARIO_ACTION_MATRIX: dict[int, set[str]] = {
+    0:  {"LIQUIDITY"},                                      # Central bank liquidity injection
+    1:  {"MARITIME", "ENERGY"},                             # Trade corridor reopening
+    2:  {"ENERGY"},                                         # Energy rationing protocols
+    3:  {"LIQUIDITY"},                                      # Interbank lending facility
+    4:  {"CYBER", "LIQUIDITY"},                             # Payment system contingency
+    5:  {"MARITIME", "ENERGY", "LIQUIDITY"},               # Emergency financing facility
+    6:  {"REGULATORY"},                                     # Regulatory forbearance
+    7:  {"MARITIME"},                                       # Port rerouting protocols
+    8:  {"ENERGY"},                                         # Oil reserves release
+    9:  {"LIQUIDITY"},                                      # Reserve requirement reduction
+    10: {"CYBER", "LIQUIDITY"},                             # Backup systems activation
+    11: {"MARITIME", "ENERGY", "LIQUIDITY", "CYBER"},      # Regional coordination
+    12: {"REGULATORY"},                                     # Cross-border exemptions
+    13: {"LIQUIDITY"},                                      # Capital controls easing
+    14: {"MARITIME", "ENERGY"},                             # Strategic reserve drawdown
+    15: {"CYBER"},                                          # Cyber defense mobilization
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # Physics Constants (owned by physics_intelligence_layer.py)
 # ═══════════════════════════════════════════════════════════════════════════════
 PHYS_ALPHA: float = 0.08   # shock wave decay coefficient (dP/dt = -α*P + β*Σ)
@@ -233,3 +282,106 @@ DL_P_W2: float = 0.30   # loss avoided (normalised) weight
 DL_P_W3: float = 0.20   # regulatory risk weight
 DL_P_W4: float = 0.15   # feasibility weight
 DL_P_W5: float = 0.10   # time effect weight
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Transmission Path Engine
+# Severity transfer between nodes; breakable-point detection
+# ═══════════════════════════════════════════════════════════════════════════════
+TX_BASE_DELAY_HOURS: float = 6.0         # base propagation delay per hop
+TX_SEVERITY_TRANSFER_RATIO: float = 0.72 # default severity attenuation per hop
+TX_BREAKABLE_SEVERITY_THRESHOLD: float = 0.45  # severity above this → breakable
+TX_CRITICAL_WINDOW_HOURS: float = 24.0   # delay below this + severity above threshold → breakable
+
+# Sector-specific delay multipliers (higher = slower transmission)
+TX_SECTOR_DELAY: dict[str, float] = {
+    "energy":         0.8,   # fast — physical commodity flow
+    "maritime":       1.0,   # baseline
+    "banking":        0.5,   # very fast — electronic settlement
+    "insurance":      1.5,   # slower — contractual lag
+    "fintech":        0.4,   # fastest — API-based
+    "logistics":      1.2,   # physical movement
+    "infrastructure": 1.8,   # slow — capex dependent
+    "government":     2.0,   # slowest — bureaucratic
+    "healthcare":     1.6,   # moderate
+}
+
+# Sector-specific severity transfer ratios (higher = more contagious)
+TX_SECTOR_TRANSFER: dict[str, float] = {
+    "energy":         0.82,
+    "maritime":       0.75,
+    "banking":        0.88,
+    "insurance":      0.65,
+    "fintech":        0.80,
+    "logistics":      0.70,
+    "infrastructure": 0.55,
+    "government":     0.50,
+    "healthcare":     0.45,
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Counterfactual Calibration Engine
+# Ensures recommended outcome never contradicts its narrative
+# ═══════════════════════════════════════════════════════════════════════════════
+CF_MITIGATION_FACTOR: float = 0.35       # default loss reduction from recommended action
+CF_ALTERNATIVE_PENALTY: float = 0.15     # cost increase from choosing alternative
+CF_COST_TOLERANCE: float = 0.10          # short-term cost increase allowed in recommendation
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Action Pathways Engine
+# Classifies actions into IMMEDIATE / CONDITIONAL / STRATEGIC
+# ═══════════════════════════════════════════════════════════════════════════════
+AP_IMMEDIATE_THRESHOLD_HOURS: int = 6    # time_to_act ≤ this → IMMEDIATE
+AP_CONDITIONAL_THRESHOLD_HOURS: int = 48 # 6 < time_to_act ≤ this → CONDITIONAL
+AP_REVERSIBILITY_COST_RATIO: float = 0.3 # cost/loss_avoided > this → LOW reversibility
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Executive Classification System
+# Maps multi-factor metrics to operational escalation levels (STABLE/ELEVATED/SEVERE/CRITICAL)
+# ═══════════════════════════════════════════════════════════════════════════════
+EXEC_CLASS_WEIGHTS: dict[str, float] = {
+    "severity": 0.35,           # event magnitude (0-1 scale)
+    "breach_timing": 0.30,      # time to first regulatory breach (hours)
+    "loss_ratio": 0.20,         # peak loss / baseline loss
+    "propagation_speed": 0.15,  # velocity of contagion (0-1 scale)
+}
+EXEC_BREACH_TIMING_MAX_HOURS: float = 72.0  # maximum breach horizon considered
+EXEC_LOSS_RATIO_CAP: float = 2.5             # loss ratio ceiling for normalization
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Decision Trust System (Phase 2)
+# Action-Level Confidence, Model Dependency, Validation, Risk Envelope
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Action-Level Confidence weights
+# confidence = W_SIG*signal + W_DATA*data + W_PROP*propagation + W_CF*counterfactual
+TRUST_W_SIGNAL: float = 0.30           # signal strength weight
+TRUST_W_DATA: float = 0.30            # data completeness weight
+TRUST_W_PROPAGATION: float = 0.20     # propagation clarity weight
+TRUST_W_COUNTERFACTUAL: float = 0.20  # counterfactual stability weight
+
+# Confidence label thresholds
+TRUST_HIGH_THRESHOLD: float = 0.75    # ≥ this → HIGH
+TRUST_LOW_THRESHOLD: float = 0.45     # < this → LOW (between → MEDIUM)
+
+# Model Dependency — base data completeness by sector (known data availability)
+TRUST_SECTOR_DATA_COMPLETENESS: dict[str, float] = {
+    "energy":         0.88,   # OPEC data, futures pricing — well-observed
+    "maritime":       0.72,   # AIS data gaps, port reporting lags
+    "banking":        0.82,   # CBUAE/SAMA regulatory reporting
+    "insurance":      0.65,   # IFRS 17 transition incomplete across GCC
+    "fintech":        0.58,   # limited regulatory visibility
+    "logistics":      0.70,   # partial customs data
+    "infrastructure": 0.60,   # capex data fragmented
+    "government":     0.75,   # sovereign budgets published
+    "healthcare":     0.55,   # weakest data coverage in GCC
+}
+
+# Validation trigger thresholds
+TRUST_VALIDATION_CONFIDENCE_FLOOR: float = 0.50   # confidence below this → require validation
+TRUST_VALIDATION_LOSS_THRESHOLD_USD: float = 500_000_000  # loss above this → require validation
+TRUST_VALIDATION_DATA_FLOOR: float = 0.55         # data_completeness below this → require validation
+
+# Risk Envelope — downside thresholds
+TRUST_DOWNSIDE_HIGH_LOSS_USD: float = 1_000_000_000  # loss above → HIGH downside
+TRUST_DOWNSIDE_MEDIUM_LOSS_USD: float = 200_000_000  # loss above → MEDIUM downside
+TRUST_TIME_CRITICAL_HOURS: float = 12.0              # propagation < this → CRITICAL time sensitivity

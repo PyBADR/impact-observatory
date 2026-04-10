@@ -33,6 +33,7 @@ def compute_value_attribution(
     trust_confidence: float = 0.85,
     total_actions: int = 1,
     data_completeness: float = 0.70,
+    scenario_id: str = "",
 ) -> dict:
     """Attribute value to a single decision.
 
@@ -91,6 +92,7 @@ def compute_value_attribution(
         "value_created": value_created,
         "attribution_confidence": attribution_confidence,
         "attribution_type": attribution_type,
+        "scenario_id": scenario_id,
     }
 
 
@@ -100,6 +102,7 @@ def compute_all_attributions(
     actions: list[dict] | None = None,
     action_confidences: list[dict] | None = None,
     data_completeness: float = 0.70,
+    scenario_id: str = "",
 ) -> list[dict]:
     """Compute value attribution for all decisions."""
     act_list = actions or []
@@ -119,6 +122,7 @@ def compute_all_attributions(
             trust_confidence=conf,
             total_actions=total_actions,
             data_completeness=data_completeness,
+            scenario_id=scenario_id,
         )
         results.append(va)
     return results

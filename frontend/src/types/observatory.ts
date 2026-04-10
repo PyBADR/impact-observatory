@@ -183,7 +183,7 @@ export interface RegulatoryEvent {
 }
 
 export type BusinessSeverity = "low" | "medium" | "high" | "severe";
-export type ExecutiveStatus = "monitor" | "intervene" | "escalate" | "crisis";
+export type ExecutiveStatus = "STABLE" | "ELEVATED" | "SEVERE" | "CRITICAL";
 
 export interface RunResult {
   schema_version: string;
@@ -1141,6 +1141,8 @@ export interface PortfolioValue {
   best_decision_id: string | null;
   worst_decision_id: string | null;
   roi_ratio: number;
+  scenario_id: string;
+  run_id: string;
 }
 
 /** Full Phase 4 value measurement payload */

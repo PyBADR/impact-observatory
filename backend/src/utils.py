@@ -9,6 +9,8 @@ import uuid
 from datetime import datetime, timezone
 from typing import Sequence
 
+from .config import EXEC_CLASS_WEIGHTS, EXEC_BREACH_TIMING_MAX_HOURS, EXEC_LOSS_RATIO_CAP
+
 
 # ---------------------------------------------------------------------------
 # Financial formatting
@@ -52,6 +54,69 @@ def classify_stress(score: float) -> str:
 
 
 classify_risk = classify_stress  # alias
+
+
+def classify_executive_status(
+    severity: float,
+    time_to_first_breach_hours: float | None,
+    loss_ratio: float,
+    propagation_speed: float,
+) -> str:
+    """
+    Dynamic multi-factor executive classification.
+
+    Maps four input metrics to operational escalation levels:
+    "STABLE" | "ELEVATED" | "SEVERE" | "CRITICAL"
+
+    Inputs are normalized to [0,1], weighted by EXEC_CLASS_WEIGHTS,
+    and mapped to output states based on composite score.
+
+    Args:
+        severity: Event magnitude (0-1 scale)
+        time_to_first_breach_hours: Hours until first regulatory breach (None → no breach)
+        loss_ratio: Peak cumulative loss / baseline loss
+        propagation_speed: Velocity of contagion (0-1 scale)
+
+    Returns:
+        Executive status: "STABLE", "ELEVATED", "SEVERE", or "CRITICAL"
+    """
+    # Normalize inputs to [0, 1]
+    norm_severity = clamp(severity, 0.0, 1.0)
+
+    # Breach timing: closer to 0 hours → higher risk (normalized from EXEC_BREACH_TIMING_MAX_HOURS)
+    if time_to_first_breach_hours is None:
+        norm_breach_timing = 0.0  # no breach = lowest risk factor
+    else:
+        norm_breach_timing = 1.0 - clamp(
+            time_to_first_breach_hours / EXEC_BREACH_TIMING_MAX_HOURS, 0.0, 1.0
+        )
+
+    # Loss ratio: capped at EXEC_LOSS_RATIO_CAP, then normalized
+    norm_loss_ratio = clamp(loss_ratio / EXEC_LOSS_RATIO_CAP, 0.0, 1.0)
+
+    # Propagation speed: already 0-1, just clamp
+    norm_propagation_speed = clamp(propagation_speed, 0.0, 1.0)
+
+    # Weighted average of normalized inputs
+    composite_score = weighted_average(
+        values=[norm_severity, norm_breach_timing, norm_loss_ratio, norm_propagation_speed],
+        weights=[
+            EXEC_CLASS_WEIGHTS["severity"],
+            EXEC_CLASS_WEIGHTS["breach_timing"],
+            EXEC_CLASS_WEIGHTS["loss_ratio"],
+            EXEC_CLASS_WEIGHTS["propagation_speed"],
+        ],
+    )
+
+    # Map composite score to output state
+    if composite_score < 0.25:
+        return "STABLE"
+    elif composite_score < 0.50:
+        return "ELEVATED"
+    elif composite_score < 0.75:
+        return "SEVERE"
+    else:
+        return "CRITICAL"
 
 
 # ---------------------------------------------------------------------------

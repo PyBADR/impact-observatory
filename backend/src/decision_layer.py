@@ -15,6 +15,9 @@ from typing import Any
 
 from src.utils import clamp, classify_stress, format_loss_usd
 from src.config import DL_P_W1, DL_P_W2, DL_P_W3, DL_P_W4, DL_P_W5
+from src.policies.scenario_policy import build_policy_context
+from src.policies.action_policy import evaluate_action_policy
+from src.actions.action_registry import get_actions_for_scenario_id
 
 # ---------------------------------------------------------------------------
 # Action templates (sector × risk_level)
@@ -170,26 +173,59 @@ def build_decision_actions(
     insurance_stress: dict,
     unified_risk: dict,
     total_loss_usd: float,
+    scenario_id: str = "",
+    regime_urgency_boost: float = 0.0,
 ) -> list[dict]:
     """
-    Build top-5 ranked decision actions.
+    Build top-5 ranked decision actions from scenario-type-keyed registry.
+
+    Uses the action registry for scenario-type-scoped action lookup,
+    eliminating index-based cross-scenario leakage.
 
     Returns list of action dicts sorted by priority_score descending.
     """
+    # Build policy context for urgency escalation
+    policy_ctx = build_policy_context(scenario_id) if scenario_id else None
+
     relevant = set(_relevant_sectors(sector_analysis))
     risk_score = unified_risk.get("score", 0.5)
 
+    # Get scenario-type-scoped actions from the registry
+    registry_actions = get_actions_for_scenario_id(scenario_id) if scenario_id else _LEGACY_ACTIONS
+
     candidate_actions: list[dict] = []
-    for idx, tpl in enumerate(_ACTION_TEMPLATES):
-        (sector, owner, action_en, action_ar,
-         base_urgency, cost_usd,
-         reg_risk, feasibility, time_hours) = tpl
+    for idx, tpl in enumerate(registry_actions):
+        sector = tpl["sector"]
+        owner = tpl["owner"]
+        action_en = tpl["action_en"]
+        action_ar = tpl["action_ar"]
+        base_urgency = tpl["base_urgency"]
+        cost_usd = tpl["cost_usd"]
+        reg_risk = tpl["regulatory_risk"]
+        feasibility = tpl["feasibility"]
+        time_hours = tpl["time_to_act_hours"]
+        action_id = tpl.get("action_id", f"ACT-{idx + 1:03d}")
+
+        # Policy-based urgency escalation (no longer does action filtering —
+        # the registry already ensures scenario-type scoping)
+        policy_urgency_boost = 0.0
+        if policy_ctx is not None:
+            action_policy = evaluate_action_policy(
+                context=policy_ctx,
+                action_index=idx,
+                base_urgency=base_urgency,
+                time_to_act_hours=time_hours,
+            )
+            policy_urgency_boost = action_policy.urgency_boost
 
         # Urgency boost if sector is directly affected
-        urgency_boost = 0.15 if sector in relevant else 0.0
+        sector_boost = 0.15 if sector in relevant else 0.0
 
-        # Additional urgency from risk score
-        urgency = clamp(base_urgency + urgency_boost + risk_score * 0.10, 0.0, 1.0)
+        # Composite urgency
+        urgency = clamp(
+            base_urgency + sector_boost + policy_urgency_boost + regime_urgency_boost + risk_score * 0.10,
+            0.0, 1.0,
+        )
 
         # Loss avoided = fraction of total loss this action prevents
         sector_weight = {
@@ -219,7 +255,7 @@ def build_decision_actions(
             status = "WATCH"
 
         candidate_actions.append({
-            "action_id": f"ACT-{idx + 1:03d}",
+            "action_id": action_id,
             "sector": sector,
             "owner": owner,
             "action": action_en,
@@ -245,6 +281,16 @@ def build_decision_actions(
         action["rank"] = rank
 
     return candidate_actions[:5]
+
+
+# Legacy fallback: used only when scenario_id is empty (should never happen in production)
+_LEGACY_ACTIONS = [
+    {"action_id": f"LEG-{i+1:03d}", "sector": t[0], "owner": t[1],
+     "action_en": t[2], "action_ar": t[3], "base_urgency": t[4],
+     "cost_usd": t[5], "regulatory_risk": t[6], "feasibility": t[7],
+     "time_to_act_hours": t[8], "allowed_scenario_types": set()}
+    for i, t in enumerate(_ACTION_TEMPLATES)
+]
 
 
 # ---------------------------------------------------------------------------

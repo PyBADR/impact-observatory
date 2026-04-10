@@ -1,0 +1,499 @@
+{
+  "_meta": {
+    "description": "GCC Banking + Fintech Entity Seed Dataset",
+    "version": "1.0.0",
+    "created": "2026-04-10",
+    "entity_count": 18,
+    "edge_count": 12
+  },
+  "countries": [
+    {
+      "canonical_id": "country:sa",
+      "name_en": "Kingdom of Saudi Arabia",
+      "name_ar": "المملكة العربية السعودية",
+      "iso_alpha2": "SA",
+      "iso_alpha3": "SAU",
+      "currency_code": "SAR",
+      "central_bank_id": "authority:sa_sama",
+      "gdp_usd_billions": 1061.9,
+      "population_millions": 36.9,
+      "financial_sector_gdp_pct": 6.2,
+      "sovereign_credit_rating": "A1",
+      "fatf_status": "regular_follow_up",
+      "source_metadata": {
+        "source_system": "world_bank_wdi",
+        "extracted_by": "seed_loader",
+        "source_url": "https://data.worldbank.org"
+      },
+      "source_confidence": 0.95,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "country:ae",
+      "name_en": "United Arab Emirates",
+      "name_ar": "الإمارات العربية المتحدة",
+      "iso_alpha2": "AE",
+      "iso_alpha3": "ARE",
+      "currency_code": "AED",
+      "central_bank_id": "authority:ae_cbuae",
+      "gdp_usd_billions": 507.5,
+      "population_millions": 9.4,
+      "financial_sector_gdp_pct": 9.8,
+      "sovereign_credit_rating": "Aa2",
+      "fatf_status": "enhanced_follow_up",
+      "source_metadata": {
+        "source_system": "world_bank_wdi",
+        "extracted_by": "seed_loader",
+        "source_url": "https://data.worldbank.org"
+      },
+      "source_confidence": 0.95,
+      "validation_status": "ACTIVE"
+    }
+  ],
+  "authorities": [
+    {
+      "canonical_id": "authority:sa_sama",
+      "name_en": "Saudi Central Bank (SAMA)",
+      "name_ar": "البنك المركزي السعودي",
+      "authority_type": "central_bank",
+      "country_code": "SA",
+      "jurisdiction_scope": "national",
+      "supervisory_powers": ["license_grant", "license_revoke", "fine", "sanction", "audit", "resolution"],
+      "regulations_administered": ["SAMA_BCR", "SAMA_RNCF", "SAMA_AML_2024", "SAMA_OPENBANKING"],
+      "website_url": "https://www.sama.gov.sa",
+      "source_metadata": {
+        "source_system": "manual_entry",
+        "extracted_by": "seed_loader"
+      },
+      "source_confidence": 0.99,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "authority:ae_cbuae",
+      "name_en": "Central Bank of the UAE (CBUAE)",
+      "name_ar": "مصرف الإمارات العربية المتحدة المركزي",
+      "authority_type": "central_bank",
+      "country_code": "AE",
+      "jurisdiction_scope": "national",
+      "supervisory_powers": ["license_grant", "license_revoke", "fine", "sanction", "audit"],
+      "regulations_administered": ["CBUAE_RNCF", "CBUAE_STORED_VALUE", "CBUAE_AML"],
+      "website_url": "https://www.centralbank.ae",
+      "source_metadata": {
+        "source_system": "manual_entry",
+        "extracted_by": "seed_loader"
+      },
+      "source_confidence": 0.99,
+      "validation_status": "ACTIVE"
+    }
+  ],
+  "banks": [
+    {
+      "canonical_id": "bank:sa_snb",
+      "name_en": "Saudi National Bank (SNB)",
+      "name_ar": "البنك الأهلي السعودي",
+      "country_code": "SA",
+      "swift_code": "NCBKSAJE",
+      "license_type": "full_banking",
+      "bank_tier": "DSIB",
+      "regulator_id": "authority:sa_sama",
+      "total_assets_usd_millions": 268000,
+      "tier1_capital_ratio_pct": 17.2,
+      "npl_ratio_pct": 1.4,
+      "is_islamic": false,
+      "sectors_served": ["banking", "capital_markets", "insurance"],
+      "payment_rails": ["rail:sa_sarie", "rail:sa_sadad"],
+      "source_metadata": {
+        "source_system": "SAMA_registry",
+        "extracted_by": "seed_loader",
+        "source_document_id": "SAMA_BANK_LIST_2025"
+      },
+      "source_confidence": 0.95,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "bank:sa_rajhi",
+      "name_en": "Al Rajhi Bank",
+      "name_ar": "مصرف الراجحي",
+      "country_code": "SA",
+      "swift_code": "RJHISARI",
+      "license_type": "islamic_banking",
+      "bank_tier": "DSIB",
+      "regulator_id": "authority:sa_sama",
+      "total_assets_usd_millions": 193000,
+      "tier1_capital_ratio_pct": 19.5,
+      "npl_ratio_pct": 0.8,
+      "is_islamic": true,
+      "sectors_served": ["banking", "fintech"],
+      "payment_rails": ["rail:sa_sarie", "rail:sa_sadad"],
+      "source_metadata": {
+        "source_system": "SAMA_registry",
+        "extracted_by": "seed_loader"
+      },
+      "source_confidence": 0.95,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "bank:ae_fab",
+      "name_en": "First Abu Dhabi Bank (FAB)",
+      "name_ar": "بنك أبوظبي الأول",
+      "country_code": "AE",
+      "swift_code": "NBABORYX",
+      "license_type": "full_banking",
+      "bank_tier": "DSIB",
+      "regulator_id": "authority:ae_cbuae",
+      "total_assets_usd_millions": 320000,
+      "tier1_capital_ratio_pct": 16.0,
+      "npl_ratio_pct": 2.9,
+      "is_islamic": false,
+      "sectors_served": ["banking", "capital_markets"],
+      "payment_rails": ["rail:ae_uaeipp"],
+      "source_metadata": {
+        "source_system": "CBUAE_registry",
+        "extracted_by": "seed_loader"
+      },
+      "source_confidence": 0.93,
+      "validation_status": "ACTIVE"
+    }
+  ],
+  "fintechs": [
+    {
+      "canonical_id": "fintech:sa_stcpay",
+      "name_en": "stc pay",
+      "country_code": "SA",
+      "category": "payments",
+      "license_type": "emi",
+      "license_number": "SAMA_EMI_001",
+      "regulator_id": "authority:sa_sama",
+      "founding_year": 2018,
+      "total_funding_usd_millions": 200,
+      "active_users_estimate": 8000000,
+      "partner_bank_ids": ["bank:sa_snb"],
+      "payment_rails": ["rail:sa_sarie", "rail:sa_sadad"],
+      "api_connectivity": ["SAMA_OPEN_BANKING_V1"],
+      "source_metadata": {
+        "source_system": "SAMA_fintech_registry",
+        "extracted_by": "seed_loader"
+      },
+      "source_confidence": 0.88,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "fintech:sa_tabby",
+      "name_en": "Tabby",
+      "country_code": "SA",
+      "category": "bnpl",
+      "license_type": "payment_service",
+      "regulator_id": "authority:sa_sama",
+      "founding_year": 2019,
+      "total_funding_usd_millions": 950,
+      "active_users_estimate": 10000000,
+      "partner_bank_ids": ["bank:sa_snb", "bank:sa_rajhi"],
+      "payment_rails": ["rail:sa_sadad"],
+      "source_metadata": {
+        "source_system": "crunchbase",
+        "extracted_by": "seed_loader"
+      },
+      "source_confidence": 0.78,
+      "validation_status": "VALIDATED"
+    }
+  ],
+  "payment_rails": [
+    {
+      "canonical_id": "rail:sa_sarie",
+      "name_en": "SARIE (Saudi Arabian Riyal Interbank Express)",
+      "rail_type": "rtgs",
+      "operator_country": "SA",
+      "system_name": "SARIE",
+      "operator_authority_id": "authority:sa_sama",
+      "settlement_currency": "SAR",
+      "settlement_finality_minutes": 0.5,
+      "daily_volume_estimate_usd_millions": 45000,
+      "uptime_sla_pct": 99.95,
+      "connected_countries": ["SA"],
+      "is_cross_border": false,
+      "source_metadata": {
+        "source_system": "SAMA_infrastructure",
+        "extracted_by": "seed_loader"
+      },
+      "source_confidence": 0.97,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "rail:sa_sadad",
+      "name_en": "SADAD Payment System",
+      "rail_type": "domestic_ips",
+      "operator_country": "SA",
+      "system_name": "SADAD",
+      "operator_authority_id": "authority:sa_sama",
+      "settlement_currency": "SAR",
+      "settlement_finality_minutes": 2.0,
+      "daily_volume_estimate_usd_millions": 800,
+      "uptime_sla_pct": 99.9,
+      "connected_countries": ["SA"],
+      "is_cross_border": false,
+      "source_metadata": {
+        "source_system": "SAMA_infrastructure",
+        "extracted_by": "seed_loader"
+      },
+      "source_confidence": 0.95,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "rail:ae_uaeipp",
+      "name_en": "UAE Instant Payments Platform (IPP)",
+      "rail_type": "domestic_ips",
+      "operator_country": "AE",
+      "system_name": "UAE_IPP",
+      "operator_authority_id": "authority:ae_cbuae",
+      "settlement_currency": "AED",
+      "settlement_finality_minutes": 0.1,
+      "daily_volume_estimate_usd_millions": 2500,
+      "uptime_sla_pct": 99.99,
+      "connected_countries": ["AE"],
+      "is_cross_border": false,
+      "source_metadata": {
+        "source_system": "CBUAE_infrastructure",
+        "extracted_by": "seed_loader"
+      },
+      "source_confidence": 0.94,
+      "validation_status": "ACTIVE"
+    }
+  ],
+  "edges": [
+    {
+      "edge_type": "REGULATES",
+      "from_entity_id": "authority:sa_sama",
+      "to_entity_id": "bank:sa_snb",
+      "confidence": 0.99,
+      "regulatory_powers": ["license_grant", "fine", "audit", "sanction"],
+      "regulation_ids": ["SAMA_BCR"],
+      "source_references": [{"source_system": "SAMA_registry", "asserted_by": "seed_loader"}]
+    },
+    {
+      "edge_type": "REGULATES",
+      "from_entity_id": "authority:sa_sama",
+      "to_entity_id": "bank:sa_rajhi",
+      "confidence": 0.99,
+      "regulatory_powers": ["license_grant", "fine", "audit", "sanction"],
+      "regulation_ids": ["SAMA_BCR"],
+      "source_references": [{"source_system": "SAMA_registry", "asserted_by": "seed_loader"}]
+    },
+    {
+      "edge_type": "REGULATES",
+      "from_entity_id": "authority:sa_sama",
+      "to_entity_id": "fintech:sa_stcpay",
+      "confidence": 0.95,
+      "regulatory_powers": ["license_grant", "fine", "audit"],
+      "regulation_ids": ["SAMA_RNCF"],
+      "source_references": [{"source_system": "SAMA_fintech_registry", "asserted_by": "seed_loader"}]
+    },
+    {
+      "edge_type": "OPERATES_IN",
+      "from_entity_id": "bank:sa_snb",
+      "to_entity_id": "country:sa",
+      "confidence": 0.99,
+      "presence_type": "headquartered",
+      "source_references": [{"source_system": "SAMA_registry", "asserted_by": "seed_loader"}]
+    },
+    {
+      "edge_type": "DEPENDS_ON",
+      "from_entity_id": "fintech:sa_stcpay",
+      "to_entity_id": "rail:sa_sarie",
+      "confidence": 0.90,
+      "dependency_type": "settlement",
+      "criticality": 0.85,
+      "fallback_available": true,
+      "fallback_entity_id": "rail:sa_sadad",
+      "degradation_impact_description": "Settlement delayed from real-time to batch processing via SADAD",
+      "source_references": [{"source_system": "operational_analysis", "asserted_by": "seed_loader"}]
+    },
+    {
+      "edge_type": "PROPAGATES_TO",
+      "from_entity_id": "bank:sa_snb",
+      "to_entity_id": "bank:sa_rajhi",
+      "confidence": 0.75,
+      "transfer_mechanism": "liquidity_channel",
+      "delay_hours": 4.0,
+      "severity_transfer": 0.35,
+      "is_breakable": true,
+      "intervention_lever": "liquidity_injection",
+      "source_references": [{"source_system": "stress_test_2025", "asserted_by": "seed_loader"}]
+    }
+  ],
+  "sample_decision_contract": {
+    "decision_id": "dec:hormuz_liquidity_inject_20260410",
+    "scenario_id": "hormuz_chokepoint_disruption",
+    "title": "Emergency Liquidity Injection — Banking Sector Hormuz Response",
+    "sector": "banking",
+    "decision_type": "mitigating",
+    "primary_owner_id": "authority:sa_sama",
+    "approver_id": "authority:sa_sama",
+    "supporting_entity_ids": ["bank:sa_snb", "bank:sa_rajhi"],
+    "deadline_at": "2026-04-11T12:00:00Z",
+    "trigger_condition": "URS >= 0.65 AND sector == banking AND scenario == hormuz_chokepoint_disruption",
+    "escalation_threshold": 0.80,
+    "approval_required": true,
+    "legal_authority_basis": "SAMA_BCR_Art_42",
+    "reversibility": "partially_reversible",
+    "execution_feasibility": "ready",
+    "dependencies": [
+      {
+        "dependency_id": "bank:sa_snb",
+        "dependency_type": "system_ready",
+        "is_satisfied": true,
+        "blocker_description": null
+      }
+    ],
+    "rollback_plan": {
+      "is_rollback_possible": true,
+      "rollback_steps": [
+        "Withdraw excess liquidity via reverse repo",
+        "Restore normal reserve requirements",
+        "Communicate normalization to market"
+      ],
+      "rollback_owner_id": "authority:sa_sama",
+      "max_rollback_window_hours": 72.0,
+      "estimated_rollback_cost_usd": 5000000,
+      "side_effects_of_rollback": ["Potential short-term rate volatility"]
+    },
+    "observation_plan": {
+      "observation_windows_hours": [6.0, 24.0, 72.0, 168.0],
+      "primary_metric": "interbank_overnight_rate_spread_bps",
+      "secondary_metrics": ["banking_sector_liquidity_ratio", "npl_30day_migration_rate"],
+      "baseline_value": 25.0,
+      "target_value": 15.0,
+      "alert_threshold": 50.0,
+      "observer_entity_id": "authority:sa_sama"
+    }
+  },
+  "sample_counterfactual": {
+    "counterfactual_id": "cf:hormuz_liquidity_20260410",
+    "decision_id": "dec:hormuz_liquidity_inject_20260410",
+    "scenario_id": "hormuz_chokepoint_disruption",
+    "analysis_horizon_hours": 168,
+    "do_nothing": {
+      "branch_label": "do_nothing",
+      "description": "No liquidity intervention — let interbank market self-correct",
+      "expected_loss_usd": 850000000,
+      "expected_cost_usd": 0,
+      "expected_time_to_stabilize_hours": 336,
+      "downside_risk": {
+        "worst_case_loss_usd": 2100000000,
+        "probability_of_worst_case": 0.15,
+        "description": "Cascading liquidity failures across DSIB chain",
+        "tail_risk_multiplier": 2.5
+      },
+      "confidence": {
+        "directional_confidence": 0.85,
+        "impact_estimate_confidence": 0.60,
+        "execution_confidence": 1.0,
+        "data_sufficiency_confidence": 0.70
+      },
+      "delta_vs_baseline_usd": 0.0,
+      "assumptions": [
+        {
+          "assumption_id": "A001",
+          "description": "Oil price remains above $95/bbl during disruption",
+          "source": "Bloomberg consensus",
+          "sensitivity": 0.8
+        }
+      ]
+    },
+    "recommended_action": {
+      "branch_label": "recommended_action",
+      "description": "SAMA emergency repo facility activation + 50bps reserve requirement reduction",
+      "expected_loss_usd": 200000000,
+      "expected_cost_usd": 45000000,
+      "expected_time_to_stabilize_hours": 72,
+      "downside_risk": {
+        "worst_case_loss_usd": 500000000,
+        "probability_of_worst_case": 0.08,
+        "description": "Market interprets intervention as panic signal",
+        "tail_risk_multiplier": 1.5
+      },
+      "confidence": {
+        "directional_confidence": 0.90,
+        "impact_estimate_confidence": 0.72,
+        "execution_confidence": 0.88,
+        "data_sufficiency_confidence": 0.75
+      },
+      "delta_vs_baseline_usd": -605000000,
+      "assumptions": [
+        {
+          "assumption_id": "A001",
+          "description": "Oil price remains above $95/bbl during disruption",
+          "source": "Bloomberg consensus",
+          "sensitivity": 0.8
+        },
+        {
+          "assumption_id": "A002",
+          "description": "DSIB banks have sufficient collateral for repo facility",
+          "source": "SAMA Q4 2025 supervisory data",
+          "sensitivity": 0.6
+        }
+      ]
+    },
+    "delayed_action": {
+      "branch_label": "delayed_action",
+      "description": "Same intervention delayed by 48 hours",
+      "expected_loss_usd": 450000000,
+      "expected_cost_usd": 45000000,
+      "expected_time_to_stabilize_hours": 144,
+      "downside_risk": {
+        "worst_case_loss_usd": 900000000,
+        "probability_of_worst_case": 0.12,
+        "description": "Delay allows interbank stress to cascade to fintech layer",
+        "tail_risk_multiplier": 1.8
+      },
+      "confidence": {
+        "directional_confidence": 0.82,
+        "impact_estimate_confidence": 0.58,
+        "execution_confidence": 0.85,
+        "data_sufficiency_confidence": 0.65
+      },
+      "delta_vs_baseline_usd": -355000000,
+      "assumptions": [
+        {
+          "assumption_id": "A001",
+          "description": "Oil price remains above $95/bbl during disruption",
+          "source": "Bloomberg consensus",
+          "sensitivity": 0.8
+        }
+      ]
+    },
+    "alternative_action": {
+      "branch_label": "alternative_action",
+      "description": "Targeted bilateral credit lines to top-3 DSIBs only",
+      "expected_loss_usd": 350000000,
+      "expected_cost_usd": 25000000,
+      "expected_time_to_stabilize_hours": 120,
+      "downside_risk": {
+        "worst_case_loss_usd": 750000000,
+        "probability_of_worst_case": 0.10,
+        "description": "Non-DSIB banks excluded from support face liquidity squeeze",
+        "tail_risk_multiplier": 1.6
+      },
+      "confidence": {
+        "directional_confidence": 0.78,
+        "impact_estimate_confidence": 0.65,
+        "execution_confidence": 0.92,
+        "data_sufficiency_confidence": 0.72
+      },
+      "delta_vs_baseline_usd": -475000000,
+      "assumptions": [
+        {
+          "assumption_id": "A001",
+          "description": "Oil price remains above $95/bbl during disruption",
+          "source": "Bloomberg consensus",
+          "sensitivity": 0.8
+        },
+        {
+          "assumption_id": "A003",
+          "description": "Top-3 DSIBs represent 65% of interbank lending",
+          "source": "SAMA market share data",
+          "sensitivity": 0.7
+        }
+      ]
+    }
+  }
+}

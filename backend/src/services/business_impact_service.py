@@ -4,6 +4,9 @@ from __future__ import annotations
 import math
 from datetime import datetime, timezone, timedelta
 
+from src.policies.executive_policy import classify_executive_status_v2
+from src.policies.scenario_policy import resolve_scenario_type
+
 def compute_business_impact(run_result: dict) -> dict:
     """Compute full business impact from a completed run."""
     run_id = run_result["run_id"]
@@ -167,23 +170,34 @@ def compute_business_impact(run_result: dict) -> dict:
                 first_failure_type = ttf["failure_type"]
                 first_failure_ref = ttf["scope_ref"]
 
-    # Business severity mapping
+    # Business severity mapping (keep biz_severity for backward compat)
     loss_pct = peak_loss / max(1, headline_loss * num_steps) if headline_loss > 0 else 0
     if first_failure_hours and first_failure_hours < horizon_hours * 0.25:
         biz_severity = "severe"
-        exec_status = "crisis"
     elif first_failure_hours and first_failure_hours < horizon_hours * 0.75:
         biz_severity = "high"
-        exec_status = "escalate"
     elif first_failure_hours:
         biz_severity = "medium"
-        exec_status = "intervene"
     elif breach_count_critical > 0:
         biz_severity = "severe"
-        exec_status = "crisis"
     else:
         biz_severity = "low"
-        exec_status = "monitor"
+
+    # Dynamic executive classification (replaces static if/elif chain)
+    _base_loss = run_result.get("scenario", {}).get("base_loss_usd", max(headline_loss, 1.0))
+    _prop_speed = min(1.0, (
+        banking.get("aggregate_stress", 0.0)
+        + insurance.get("severity_index", 0.0)
+        + fintech.get("aggregate_stress", 0.0)
+    ) / 3.0 * 1.5)
+    _scenario_id = run_result.get("scenario", {}).get("scenario_id", "")
+    exec_status = classify_executive_status_v2(
+        severity=severity,
+        time_to_first_breach_hours=first_failure_hours,
+        loss_ratio=peak_loss / max(_base_loss, 1.0),
+        propagation_speed=_prop_speed,
+        scenario_type=resolve_scenario_type(_scenario_id),
+    )
 
     peak_ts = (start_time + timedelta(minutes=time_granularity_minutes * peak_step)).isoformat()
 

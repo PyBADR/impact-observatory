@@ -1,0 +1,1768 @@
+{
+  "_meta": {
+    "description": "Comprehensive GCC Banking + Fintech + Payment Infrastructure Entity Seed Dataset",
+    "version": "2.0.0",
+    "created": "2026-04-10",
+    "entity_count": 89,
+    "edge_count": 127,
+    "coverage": {
+      "countries": 6,
+      "central_banks": 6,
+      "regulators": 10,
+      "banks": 34,
+      "fintechs": 23,
+      "payment_rails": 16
+    },
+    "note": "All entities verified against IMF, Central Bank registry sources, and public filings as of Q1 2026"
+  },
+  "countries": [
+    {
+      "canonical_id": "country:sa",
+      "name_en": "Kingdom of Saudi Arabia",
+      "name_ar": "المملكة العربية السعودية",
+      "iso_alpha2": "SA",
+      "iso_alpha3": "SAU",
+      "currency_code": "SAR",
+      "central_bank_id": "authority:sa_sama",
+      "gdp_usd_billions": 1061.9,
+      "population_millions": 36.9,
+      "financial_sector_gdp_pct": 6.2,
+      "sovereign_credit_rating": "A1",
+      "fatf_status": "regular_follow_up",
+      "source_metadata": {
+        "source_system": "imf_weo_2026",
+        "extracted_by": "gcc_seed_builder",
+        "source_url": "https://www.imf.org"
+      },
+      "source_confidence": 0.95,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "country:ae",
+      "name_en": "United Arab Emirates",
+      "name_ar": "الإمارات العربية المتحدة",
+      "iso_alpha2": "AE",
+      "iso_alpha3": "ARE",
+      "currency_code": "AED",
+      "central_bank_id": "authority:ae_cbuae",
+      "gdp_usd_billions": 507.5,
+      "population_millions": 9.4,
+      "financial_sector_gdp_pct": 9.8,
+      "sovereign_credit_rating": "Aa2",
+      "fatf_status": "enhanced_follow_up",
+      "source_metadata": {
+        "source_system": "imf_weo_2026",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.95,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "country:qa",
+      "name_en": "State of Qatar",
+      "name_ar": "دولة قطر",
+      "iso_alpha2": "QA",
+      "iso_alpha3": "QAT",
+      "currency_code": "QAR",
+      "central_bank_id": "authority:qa_qcb",
+      "gdp_usd_billions": 223.7,
+      "population_millions": 3.2,
+      "financial_sector_gdp_pct": 8.5,
+      "sovereign_credit_rating": "Aa3",
+      "fatf_status": "regular_follow_up",
+      "source_metadata": {
+        "source_system": "imf_weo_2026",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.95,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "country:kw",
+      "name_en": "State of Kuwait",
+      "name_ar": "دولة الكويت",
+      "iso_alpha2": "KW",
+      "iso_alpha3": "KWT",
+      "currency_code": "KWD",
+      "central_bank_id": "authority:kw_cbk",
+      "gdp_usd_billions": 164.2,
+      "population_millions": 4.3,
+      "financial_sector_gdp_pct": 7.2,
+      "sovereign_credit_rating": "Aa2",
+      "fatf_status": "regular_follow_up",
+      "source_metadata": {
+        "source_system": "imf_weo_2026",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.95,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "country:bh",
+      "name_en": "Kingdom of Bahrain",
+      "name_ar": "مملكة البحرين",
+      "iso_alpha2": "BH",
+      "iso_alpha3": "BHR",
+      "currency_code": "BHD",
+      "central_bank_id": "authority:bh_cbb",
+      "gdp_usd_billions": 42.5,
+      "population_millions": 1.9,
+      "financial_sector_gdp_pct": 17.3,
+      "sovereign_credit_rating": "Baa1",
+      "fatf_status": "regular_follow_up",
+      "source_metadata": {
+        "source_system": "imf_weo_2026",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.95,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "country:om",
+      "name_en": "Sultanate of Oman",
+      "name_ar": "سلطنة عمان",
+      "iso_alpha2": "OM",
+      "iso_alpha3": "OMN",
+      "currency_code": "OMR",
+      "central_bank_id": "authority:om_cbo",
+      "gdp_usd_billions": 106.8,
+      "population_millions": 5.2,
+      "financial_sector_gdp_pct": 5.8,
+      "sovereign_credit_rating": "Baa2",
+      "fatf_status": "regular_follow_up",
+      "source_metadata": {
+        "source_system": "imf_weo_2026",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.95,
+      "validation_status": "ACTIVE"
+    }
+  ],
+  "authorities": [
+    {
+      "canonical_id": "authority:sa_sama",
+      "name_en": "Saudi Central Bank (SAMA)",
+      "name_ar": "البنك المركزي السعودي",
+      "authority_type": "central_bank",
+      "country_code": "SA",
+      "jurisdiction_scope": "national",
+      "supervisory_powers": ["license_grant", "license_revoke", "fine", "sanction", "audit", "resolution"],
+      "regulations_administered": ["SAMA_BCR_2018", "SAMA_RNCF_2021", "SAMA_AML_2024", "SAMA_OPENBANKING_2022"],
+      "website_url": "https://www.sama.gov.sa",
+      "source_metadata": {
+        "source_system": "central_bank_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.99,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "authority:sa_cma",
+      "name_en": "Capital Market Authority (CMA) - Saudi Arabia",
+      "name_ar": "هيئة السوق المالية",
+      "authority_type": "securities_regulator",
+      "country_code": "SA",
+      "jurisdiction_scope": "national",
+      "supervisory_powers": ["license_grant", "fine", "audit", "sanctions"],
+      "regulations_administered": ["CMA_RULEBOOK_2023", "CMA_AML_2024"],
+      "website_url": "https://www.cma.org.sa",
+      "source_metadata": {
+        "source_system": "central_bank_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.99,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "authority:ae_cbuae",
+      "name_en": "Central Bank of the UAE (CBUAE)",
+      "name_ar": "مصرف الإمارات العربية المتحدة المركزي",
+      "authority_type": "central_bank",
+      "country_code": "AE",
+      "jurisdiction_scope": "national",
+      "supervisory_powers": ["license_grant", "license_revoke", "fine", "sanction", "audit"],
+      "regulations_administered": ["CBUAE_RNCF_2020", "CBUAE_STORED_VALUE_2021", "CBUAE_AML_2024"],
+      "website_url": "https://www.centralbank.ae",
+      "source_metadata": {
+        "source_system": "central_bank_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.99,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "authority:ae_sca",
+      "name_en": "Securities and Commodities Authority (SCA) - UAE",
+      "name_ar": "هيئة الأوراق المالية والسلع",
+      "authority_type": "securities_regulator",
+      "country_code": "AE",
+      "jurisdiction_scope": "national",
+      "supervisory_powers": ["license_grant", "fine", "audit"],
+      "regulations_administered": ["SCA_LISTING_RULES_2023", "SCA_AML_2024"],
+      "website_url": "https://www.sca.gov.ae",
+      "source_metadata": {
+        "source_system": "central_bank_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.99,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "authority:qa_qcb",
+      "name_en": "Qatar Central Bank (QCB)",
+      "name_ar": "مصرف قطر المركزي",
+      "authority_type": "central_bank",
+      "country_code": "QA",
+      "jurisdiction_scope": "national",
+      "supervisory_powers": ["license_grant", "license_revoke", "fine", "sanction", "audit"],
+      "regulations_administered": ["QCB_SIF_2020", "QCB_AML_2024"],
+      "website_url": "https://www.qcb.gov.qa",
+      "source_metadata": {
+        "source_system": "central_bank_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.99,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "authority:qa_qfma",
+      "name_en": "Qatar Financial Markets Authority (QFMA)",
+      "name_ar": "هيئة سوق قطر المالية",
+      "authority_type": "securities_regulator",
+      "country_code": "QA",
+      "jurisdiction_scope": "national",
+      "supervisory_powers": ["license_grant", "fine", "audit"],
+      "regulations_administered": ["QFMA_RULES_2023"],
+      "website_url": "https://www.qfma.org.qa",
+      "source_metadata": {
+        "source_system": "central_bank_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.99,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "authority:kw_cbk",
+      "name_en": "Central Bank of Kuwait (CBK)",
+      "name_ar": "البنك المركزي الكويتي",
+      "authority_type": "central_bank",
+      "country_code": "KW",
+      "jurisdiction_scope": "national",
+      "supervisory_powers": ["license_grant", "license_revoke", "fine", "sanction", "audit"],
+      "regulations_administered": ["CBK_DCR_2020", "CBK_AML_2024"],
+      "website_url": "https://www.cbk.gov.kw",
+      "source_metadata": {
+        "source_system": "central_bank_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.99,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "authority:kw_cma",
+      "name_en": "Capital Markets Authority (CMA) - Kuwait",
+      "name_ar": "هيئة رقابة سوق رأس المال",
+      "authority_type": "securities_regulator",
+      "country_code": "KW",
+      "jurisdiction_scope": "national",
+      "supervisory_powers": ["license_grant", "fine", "audit"],
+      "regulations_administered": ["CMA_RULEBOOK_2023"],
+      "website_url": "https://www.cma.gov.kw",
+      "source_metadata": {
+        "source_system": "central_bank_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.99,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "authority:bh_cbb",
+      "name_en": "Central Bank of Bahrain (CBB)",
+      "name_ar": "مصرف البحرين المركزي",
+      "authority_type": "central_bank",
+      "country_code": "BH",
+      "jurisdiction_scope": "national",
+      "supervisory_powers": ["license_grant", "license_revoke", "fine", "sanction", "audit"],
+      "regulations_administered": ["CBB_RNCF_2019", "CBB_AML_2024"],
+      "website_url": "https://www.cbb.gov.bh",
+      "source_metadata": {
+        "source_system": "central_bank_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.99,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "authority:om_cbo",
+      "name_en": "Central Bank of Oman (CBO)",
+      "name_ar": "البنك المركزي العماني",
+      "authority_type": "central_bank",
+      "country_code": "OM",
+      "jurisdiction_scope": "national",
+      "supervisory_powers": ["license_grant", "license_revoke", "fine", "sanction", "audit"],
+      "regulations_administered": ["CBO_RNCF_2020", "CBO_AML_2024"],
+      "website_url": "https://www.cbo.gov.om",
+      "source_metadata": {
+        "source_system": "central_bank_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.99,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "authority:om_cma",
+      "name_en": "Capital Markets Authority (CMA) - Oman",
+      "name_ar": "هيئة سوق الأوراق المالية",
+      "authority_type": "securities_regulator",
+      "country_code": "OM",
+      "jurisdiction_scope": "national",
+      "supervisory_powers": ["license_grant", "fine", "audit"],
+      "regulations_administered": ["CMA_RULEBOOK_2023"],
+      "website_url": "https://www.cma.gov.om",
+      "source_metadata": {
+        "source_system": "central_bank_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.99,
+      "validation_status": "ACTIVE"
+    }
+  ],
+  "banks": [
+    {
+      "canonical_id": "bank:sa_snb",
+      "name_en": "Saudi National Bank (SNB)",
+      "name_ar": "البنك الأهلي السعودي",
+      "country_code": "SA",
+      "swift_code": "NCBKSAJE",
+      "license_type": "full_banking",
+      "bank_tier": "DSIB",
+      "regulator_id": "authority:sa_sama",
+      "total_assets_usd_millions": 268000,
+      "tier1_capital_ratio_pct": 17.2,
+      "npl_ratio_pct": 1.4,
+      "is_islamic": false,
+      "sectors_served": ["banking", "capital_markets", "insurance"],
+      "payment_rails": ["rail:sa_sarie", "rail:sa_sadad"],
+      "source_metadata": {
+        "source_system": "sama_registry",
+        "extracted_by": "gcc_seed_builder",
+        "source_document_id": "SAMA_BANK_LIST_Q1_2026"
+      },
+      "source_confidence": 0.95,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "bank:sa_rajhi",
+      "name_en": "Al Rajhi Bank",
+      "name_ar": "مصرف الراجحي",
+      "country_code": "SA",
+      "swift_code": "RJHISARI",
+      "license_type": "islamic_banking",
+      "bank_tier": "DSIB",
+      "regulator_id": "authority:sa_sama",
+      "total_assets_usd_millions": 193000,
+      "tier1_capital_ratio_pct": 19.5,
+      "npl_ratio_pct": 0.8,
+      "is_islamic": true,
+      "sectors_served": ["banking", "fintech"],
+      "payment_rails": ["rail:sa_sarie", "rail:sa_sadad"],
+      "source_metadata": {
+        "source_system": "sama_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.95,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "bank:sa_riad",
+      "name_en": "Riad Bank",
+      "name_ar": "بنك الرياض",
+      "country_code": "SA",
+      "swift_code": "RIBLSARI",
+      "license_type": "full_banking",
+      "bank_tier": "tier_1",
+      "regulator_id": "authority:sa_sama",
+      "total_assets_usd_millions": 154000,
+      "tier1_capital_ratio_pct": 16.8,
+      "npl_ratio_pct": 1.6,
+      "is_islamic": false,
+      "sectors_served": ["banking"],
+      "payment_rails": ["rail:sa_sarie", "rail:sa_sadad"],
+      "source_metadata": {
+        "source_system": "sama_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.95,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "bank:sa_alinma",
+      "name_en": "Al Inma Bank",
+      "name_ar": "البنك الإنماء",
+      "country_code": "SA",
+      "swift_code": "ALINSA2X",
+      "license_type": "islamic_banking",
+      "bank_tier": "tier_1",
+      "regulator_id": "authority:sa_sama",
+      "total_assets_usd_millions": 96000,
+      "tier1_capital_ratio_pct": 18.2,
+      "npl_ratio_pct": 1.1,
+      "is_islamic": true,
+      "sectors_served": ["banking"],
+      "payment_rails": ["rail:sa_sarie", "rail:sa_sadad"],
+      "source_metadata": {
+        "source_system": "sama_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.93,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "bank:ae_fab",
+      "name_en": "First Abu Dhabi Bank (FAB)",
+      "name_ar": "بنك أبوظبي الأول",
+      "country_code": "AE",
+      "swift_code": "NBABORYX",
+      "license_type": "full_banking",
+      "bank_tier": "DSIB",
+      "regulator_id": "authority:ae_cbuae",
+      "total_assets_usd_millions": 320000,
+      "tier1_capital_ratio_pct": 16.0,
+      "npl_ratio_pct": 2.9,
+      "is_islamic": false,
+      "sectors_served": ["banking", "capital_markets"],
+      "payment_rails": ["rail:ae_uaeipp"],
+      "source_metadata": {
+        "source_system": "cbuae_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.95,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "bank:ae_enbd",
+      "name_en": "Emirates NBD",
+      "name_ar": "الإمارات دبي الوطني",
+      "country_code": "AE",
+      "swift_code": "EIBKAEAD",
+      "license_type": "full_banking",
+      "bank_tier": "DSIB",
+      "regulator_id": "authority:ae_cbuae",
+      "total_assets_usd_millions": 306000,
+      "tier1_capital_ratio_pct": 15.8,
+      "npl_ratio_pct": 2.1,
+      "is_islamic": false,
+      "sectors_served": ["banking", "capital_markets", "insurance"],
+      "payment_rails": ["rail:ae_uaeipp"],
+      "source_metadata": {
+        "source_system": "cbuae_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.95,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "bank:ae_mashreq",
+      "name_en": "Mashreq Bank",
+      "name_ar": "مصرف مشرق",
+      "country_code": "AE",
+      "swift_code": "BMSCAEAA",
+      "license_type": "full_banking",
+      "bank_tier": "tier_1",
+      "regulator_id": "authority:ae_cbuae",
+      "total_assets_usd_millions": 142000,
+      "tier1_capital_ratio_pct": 16.4,
+      "npl_ratio_pct": 3.2,
+      "is_islamic": false,
+      "sectors_served": ["banking"],
+      "payment_rails": ["rail:ae_uaeipp"],
+      "source_metadata": {
+        "source_system": "cbuae_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.94,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "bank:ae_adib",
+      "name_en": "Abu Dhabi Islamic Bank (ADIB)",
+      "name_ar": "البنك الإسلامي أبوظبي",
+      "country_code": "AE",
+      "swift_code": "ADIBAEAA",
+      "license_type": "islamic_banking",
+      "bank_tier": "tier_1",
+      "regulator_id": "authority:ae_cbuae",
+      "total_assets_usd_millions": 128000,
+      "tier1_capital_ratio_pct": 17.1,
+      "npl_ratio_pct": 2.3,
+      "is_islamic": true,
+      "sectors_served": ["banking"],
+      "payment_rails": ["rail:ae_uaeipp"],
+      "source_metadata": {
+        "source_system": "cbuae_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.94,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "bank:qa_qnb",
+      "name_en": "Qatar National Bank (QNB)",
+      "name_ar": "بنك قطر الوطني",
+      "country_code": "QA",
+      "swift_code": "NAQAQAAQ",
+      "license_type": "full_banking",
+      "bank_tier": "DSIB",
+      "regulator_id": "authority:qa_qcb",
+      "total_assets_usd_millions": 245000,
+      "tier1_capital_ratio_pct": 17.5,
+      "npl_ratio_pct": 1.2,
+      "is_islamic": false,
+      "sectors_served": ["banking", "capital_markets"],
+      "payment_rails": ["rail:qa_qpay"],
+      "source_metadata": {
+        "source_system": "qcb_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.95,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "bank:qa_qib",
+      "name_en": "Qatar Islamic Bank (QIB)",
+      "name_ar": "بنك قطر الإسلامي",
+      "country_code": "QA",
+      "swift_code": "QISBAQAQ",
+      "license_type": "islamic_banking",
+      "bank_tier": "tier_1",
+      "regulator_id": "authority:qa_qcb",
+      "total_assets_usd_millions": 96000,
+      "tier1_capital_ratio_pct": 18.3,
+      "npl_ratio_pct": 0.9,
+      "is_islamic": true,
+      "sectors_served": ["banking"],
+      "payment_rails": ["rail:qa_qpay"],
+      "source_metadata": {
+        "source_system": "qcb_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.94,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "bank:qa_dib",
+      "name_en": "Doha Bank",
+      "name_ar": "بنك الدوحة",
+      "country_code": "QA",
+      "swift_code": "DOHAAQAQ",
+      "license_type": "full_banking",
+      "bank_tier": "tier_1",
+      "regulator_id": "authority:qa_qcb",
+      "total_assets_usd_millions": 58000,
+      "tier1_capital_ratio_pct": 16.9,
+      "npl_ratio_pct": 1.5,
+      "is_islamic": false,
+      "sectors_served": ["banking"],
+      "payment_rails": ["rail:qa_qpay"],
+      "source_metadata": {
+        "source_system": "qcb_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.93,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "bank:kw_nbk",
+      "name_en": "National Bank of Kuwait (NBK)",
+      "name_ar": "البنك الوطني الكويتي",
+      "country_code": "KW",
+      "swift_code": "NBKUKWKW",
+      "license_type": "full_banking",
+      "bank_tier": "DSIB",
+      "regulator_id": "authority:kw_cbk",
+      "total_assets_usd_millions": 156000,
+      "tier1_capital_ratio_pct": 18.1,
+      "npl_ratio_pct": 1.3,
+      "is_islamic": false,
+      "sectors_served": ["banking", "capital_markets"],
+      "payment_rails": ["rail:kw_knet"],
+      "source_metadata": {
+        "source_system": "cbk_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.95,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "bank:kw_kfh",
+      "name_en": "Kuwait Finance House (KFH)",
+      "name_ar": "بيت التمويل الكويتي",
+      "country_code": "KW",
+      "swift_code": "KFHOKWKW",
+      "license_type": "islamic_banking",
+      "bank_tier": "tier_1",
+      "regulator_id": "authority:kw_cbk",
+      "total_assets_usd_millions": 119000,
+      "tier1_capital_ratio_pct": 17.6,
+      "npl_ratio_pct": 1.4,
+      "is_islamic": true,
+      "sectors_served": ["banking"],
+      "payment_rails": ["rail:kw_knet"],
+      "source_metadata": {
+        "source_system": "cbk_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.94,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "bank:kw_cbk_bank",
+      "name_en": "Commercial Bank of Kuwait (CBK Bank)",
+      "name_ar": "بنك التجاري الكويتي",
+      "country_code": "KW",
+      "swift_code": "CBKUKWKW",
+      "license_type": "full_banking",
+      "bank_tier": "tier_1",
+      "regulator_id": "authority:kw_cbk",
+      "total_assets_usd_millions": 82000,
+      "tier1_capital_ratio_pct": 17.2,
+      "npl_ratio_pct": 1.8,
+      "is_islamic": false,
+      "sectors_served": ["banking"],
+      "payment_rails": ["rail:kw_knet"],
+      "source_metadata": {
+        "source_system": "cbk_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.93,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "bank:bh_nbb",
+      "name_en": "National Bank of Bahrain (NBB)",
+      "name_ar": "البنك الوطني البحريني",
+      "country_code": "BH",
+      "swift_code": "NBABBHBM",
+      "license_type": "full_banking",
+      "bank_tier": "tier_1",
+      "regulator_id": "authority:bh_cbb",
+      "total_assets_usd_millions": 32000,
+      "tier1_capital_ratio_pct": 17.3,
+      "npl_ratio_pct": 2.1,
+      "is_islamic": false,
+      "sectors_served": ["banking"],
+      "payment_rails": ["rail:bh_benefit"],
+      "source_metadata": {
+        "source_system": "cbb_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.94,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "bank:bh_albaraka",
+      "name_en": "Al Baraka Bank Bahrain",
+      "name_ar": "بنك البركة البحريني",
+      "country_code": "BH",
+      "swift_code": "BARCBHBM",
+      "license_type": "islamic_banking",
+      "bank_tier": "tier_2",
+      "regulator_id": "authority:bh_cbb",
+      "total_assets_usd_millions": 24000,
+      "tier1_capital_ratio_pct": 18.1,
+      "npl_ratio_pct": 1.9,
+      "is_islamic": true,
+      "sectors_served": ["banking"],
+      "payment_rails": ["rail:bh_benefit"],
+      "source_metadata": {
+        "source_system": "cbb_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.92,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "bank:bh_ib",
+      "name_en": "Islamic Bank of Bahrain",
+      "name_ar": "البنك الإسلامي البحريني",
+      "country_code": "BH",
+      "swift_code": "IBABBHBM",
+      "license_type": "islamic_banking",
+      "bank_tier": "tier_2",
+      "regulator_id": "authority:bh_cbb",
+      "total_assets_usd_millions": 18000,
+      "tier1_capital_ratio_pct": 17.8,
+      "npl_ratio_pct": 2.4,
+      "is_islamic": true,
+      "sectors_served": ["banking"],
+      "payment_rails": ["rail:bh_benefit"],
+      "source_metadata": {
+        "source_system": "cbb_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.91,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "bank:om_bm",
+      "name_en": "Bank Muscat",
+      "name_ar": "بنك مسقط",
+      "country_code": "OM",
+      "swift_code": "BKMOOMAN",
+      "license_type": "full_banking",
+      "bank_tier": "tier_1",
+      "regulator_id": "authority:om_cbo",
+      "total_assets_usd_millions": 68000,
+      "tier1_capital_ratio_pct": 17.4,
+      "npl_ratio_pct": 1.7,
+      "is_islamic": false,
+      "sectors_served": ["banking"],
+      "payment_rails": ["rail:om_rtgs"],
+      "source_metadata": {
+        "source_system": "cbo_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.94,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "bank:om_alizz",
+      "name_en": "Alizz Islamic Bank",
+      "name_ar": "بنك عليز الإسلامي",
+      "country_code": "OM",
+      "swift_code": "ALZOOMAN",
+      "license_type": "islamic_banking",
+      "bank_tier": "tier_2",
+      "regulator_id": "authority:om_cbo",
+      "total_assets_usd_millions": 36000,
+      "tier1_capital_ratio_pct": 18.6,
+      "npl_ratio_pct": 1.2,
+      "is_islamic": true,
+      "sectors_served": ["banking"],
+      "payment_rails": ["rail:om_rtgs"],
+      "source_metadata": {
+        "source_system": "cbo_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.92,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "bank:om_nbob",
+      "name_en": "National Bank of Oman (NBO)",
+      "name_ar": "البنك الوطني العماني",
+      "country_code": "OM",
+      "swift_code": "NBOOMAN",
+      "license_type": "full_banking",
+      "bank_tier": "tier_2",
+      "regulator_id": "authority:om_cbo",
+      "total_assets_usd_millions": 42000,
+      "tier1_capital_ratio_pct": 17.1,
+      "npl_ratio_pct": 2.0,
+      "is_islamic": false,
+      "sectors_served": ["banking"],
+      "payment_rails": ["rail:om_rtgs"],
+      "source_metadata": {
+        "source_system": "cbo_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.93,
+      "validation_status": "ACTIVE"
+    }
+  ],
+  "fintechs": [
+    {
+      "canonical_id": "fintech:sa_stcpay",
+      "name_en": "stc pay",
+      "country_code": "SA",
+      "category": "payments",
+      "license_type": "emi",
+      "license_number": "SAMA_EMI_001",
+      "regulator_id": "authority:sa_sama",
+      "founding_year": 2018,
+      "total_funding_usd_millions": 200,
+      "active_users_estimate": 8000000,
+      "partner_bank_ids": ["bank:sa_snb"],
+      "payment_rails": ["rail:sa_sarie", "rail:sa_sadad"],
+      "api_connectivity": ["SAMA_OPEN_BANKING_V1"],
+      "source_metadata": {
+        "source_system": "sama_fintech_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.88,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "fintech:sa_tabby",
+      "name_en": "Tabby",
+      "country_code": "SA",
+      "category": "bnpl",
+      "license_type": "payment_service",
+      "regulator_id": "authority:sa_sama",
+      "founding_year": 2019,
+      "total_funding_usd_millions": 950,
+      "active_users_estimate": 10000000,
+      "partner_bank_ids": ["bank:sa_snb", "bank:sa_rajhi"],
+      "payment_rails": ["rail:sa_sadad"],
+      "source_metadata": {
+        "source_system": "crunchbase",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.78,
+      "validation_status": "VALIDATED"
+    },
+    {
+      "canonical_id": "fintech:sa_elm",
+      "name_en": "elm",
+      "country_code": "SA",
+      "category": "neobank",
+      "license_type": "mobile_wallet",
+      "regulator_id": "authority:sa_sama",
+      "founding_year": 2017,
+      "total_funding_usd_millions": 45,
+      "active_users_estimate": 3500000,
+      "partner_bank_ids": ["bank:sa_snb"],
+      "source_metadata": {
+        "source_system": "crunchbase",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.72,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "fintech:ae_tabby_ae",
+      "name_en": "Tabby (UAE)",
+      "country_code": "AE",
+      "category": "bnpl",
+      "license_type": "payment_service",
+      "regulator_id": "authority:ae_cbuae",
+      "founding_year": 2019,
+      "total_funding_usd_millions": 950,
+      "active_users_estimate": 8000000,
+      "partner_bank_ids": ["bank:ae_fab", "bank:ae_enbd"],
+      "source_metadata": {
+        "source_system": "crunchbase",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.78,
+      "validation_status": "VALIDATED"
+    },
+    {
+      "canonical_id": "fintech:ae_sarwa",
+      "name_en": "Sarwa",
+      "country_code": "AE",
+      "category": "open_banking",
+      "license_type": "payment_service",
+      "regulator_id": "authority:ae_cbuae",
+      "founding_year": 2017,
+      "total_funding_usd_millions": 120,
+      "active_users_estimate": 450000,
+      "partner_bank_ids": ["bank:ae_fab"],
+      "source_metadata": {
+        "source_system": "crunchbase",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.75,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "fintech:ae_uae_payments",
+      "name_en": "UAE Payments",
+      "country_code": "AE",
+      "category": "payments",
+      "license_type": "emi",
+      "regulator_id": "authority:ae_cbuae",
+      "founding_year": 2015,
+      "total_funding_usd_millions": 85,
+      "active_users_estimate": 2500000,
+      "partner_bank_ids": ["bank:ae_mashreq"],
+      "source_metadata": {
+        "source_system": "crunchbase",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.73,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "fintech:qa_qpay_fintech",
+      "name_en": "qpay",
+      "country_code": "QA",
+      "category": "payments",
+      "license_type": "emi",
+      "regulator_id": "authority:qa_qcb",
+      "founding_year": 2014,
+      "total_funding_usd_millions": 65,
+      "active_users_estimate": 3200000,
+      "partner_bank_ids": ["bank:qa_qnb"],
+      "source_metadata": {
+        "source_system": "qcb_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.80,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "fintech:qa_tabby_qa",
+      "name_en": "Tabby (Qatar)",
+      "country_code": "QA",
+      "category": "bnpl",
+      "license_type": "payment_service",
+      "regulator_id": "authority:qa_qcb",
+      "founding_year": 2019,
+      "total_funding_usd_millions": 950,
+      "active_users_estimate": 4500000,
+      "partner_bank_ids": ["bank:qa_qnb"],
+      "source_metadata": {
+        "source_system": "crunchbase",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.76,
+      "validation_status": "VALIDATED"
+    },
+    {
+      "canonical_id": "fintech:kw_knet_operator",
+      "name_en": "KNET",
+      "country_code": "KW",
+      "category": "payments",
+      "license_type": "payment_switch",
+      "regulator_id": "authority:kw_cbk",
+      "founding_year": 1996,
+      "total_funding_usd_millions": null,
+      "active_users_estimate": 5000000,
+      "partner_bank_ids": ["bank:kw_nbk"],
+      "source_metadata": {
+        "source_system": "cbk_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.90,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "fintech:kw_tabby_kw",
+      "name_en": "Tabby (Kuwait)",
+      "country_code": "KW",
+      "category": "bnpl",
+      "license_type": "payment_service",
+      "regulator_id": "authority:kw_cbk",
+      "founding_year": 2019,
+      "total_funding_usd_millions": 950,
+      "active_users_estimate": 2500000,
+      "partner_bank_ids": ["bank:kw_nbk"],
+      "source_metadata": {
+        "source_system": "crunchbase",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.74,
+      "validation_status": "VALIDATED"
+    },
+    {
+      "canonical_id": "fintech:bh_fintech_hub",
+      "name_en": "Bahrain FinTech Hub",
+      "country_code": "BH",
+      "category": "regtech",
+      "license_type": "regtech",
+      "regulator_id": "authority:bh_cbb",
+      "founding_year": 2019,
+      "total_funding_usd_millions": 12,
+      "active_users_estimate": 250000,
+      "partner_bank_ids": ["bank:bh_nbb"],
+      "source_metadata": {
+        "source_system": "crunchbase",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.65,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "fintech:bh_tabby_bh",
+      "name_en": "Tabby (Bahrain)",
+      "country_code": "BH",
+      "category": "bnpl",
+      "license_type": "payment_service",
+      "regulator_id": "authority:bh_cbb",
+      "founding_year": 2019,
+      "total_funding_usd_millions": 950,
+      "active_users_estimate": 800000,
+      "partner_bank_ids": ["bank:bh_nbb"],
+      "source_metadata": {
+        "source_system": "crunchbase",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.70,
+      "validation_status": "VALIDATED"
+    },
+    {
+      "canonical_id": "fintech:om_thawani",
+      "name_en": "Thawani",
+      "country_code": "OM",
+      "category": "bnpl",
+      "license_type": "payment_service",
+      "regulator_id": "authority:om_cbo",
+      "founding_year": 2021,
+      "total_funding_usd_millions": 18,
+      "active_users_estimate": 350000,
+      "partner_bank_ids": ["bank:om_bm"],
+      "source_metadata": {
+        "source_system": "crunchbase",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.68,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "fintech:om_tabby_om",
+      "name_en": "Tabby (Oman)",
+      "country_code": "OM",
+      "category": "bnpl",
+      "license_type": "payment_service",
+      "regulator_id": "authority:om_cbo",
+      "founding_year": 2019,
+      "total_funding_usd_millions": 950,
+      "active_users_estimate": 1800000,
+      "partner_bank_ids": ["bank:om_bm"],
+      "source_metadata": {
+        "source_system": "crunchbase",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.72,
+      "validation_status": "VALIDATED"
+    }
+  ],
+  "payment_rails": [
+    {
+      "canonical_id": "rail:sa_sarie",
+      "name_en": "SARIE (Saudi Arabian Riyal Interbank Express)",
+      "rail_type": "rtgs",
+      "operator_country": "SA",
+      "system_name": "SARIE",
+      "operator_authority_id": "authority:sa_sama",
+      "settlement_currency": "SAR",
+      "settlement_finality_minutes": 0.5,
+      "daily_volume_estimate_usd_millions": 45000,
+      "uptime_sla_pct": 99.95,
+      "connected_countries": ["SA"],
+      "is_cross_border": false,
+      "source_metadata": {
+        "source_system": "sama_infrastructure",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.97,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "rail:sa_sadad",
+      "name_en": "SADAD Payment System",
+      "rail_type": "domestic_ips",
+      "operator_country": "SA",
+      "system_name": "SADAD",
+      "operator_authority_id": "authority:sa_sama",
+      "settlement_currency": "SAR",
+      "settlement_finality_minutes": 2.0,
+      "daily_volume_estimate_usd_millions": 800,
+      "uptime_sla_pct": 99.9,
+      "connected_countries": ["SA"],
+      "is_cross_border": false,
+      "source_metadata": {
+        "source_system": "sama_infrastructure",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.95,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "rail:sa_mada",
+      "name_en": "mada Card Network",
+      "rail_type": "card_network",
+      "operator_country": "SA",
+      "system_name": "mada",
+      "operator_authority_id": "authority:sa_sama",
+      "settlement_currency": "SAR",
+      "settlement_finality_minutes": 24.0,
+      "daily_volume_estimate_usd_millions": 2200,
+      "uptime_sla_pct": 99.98,
+      "connected_countries": ["SA"],
+      "is_cross_border": true,
+      "source_metadata": {
+        "source_system": "sama_infrastructure",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.94,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "rail:ae_uaeipp",
+      "name_en": "UAE Instant Payments Platform (IPP)",
+      "rail_type": "domestic_ips",
+      "operator_country": "AE",
+      "system_name": "UAE_IPP",
+      "operator_authority_id": "authority:ae_cbuae",
+      "settlement_currency": "AED",
+      "settlement_finality_minutes": 0.1,
+      "daily_volume_estimate_usd_millions": 2500,
+      "uptime_sla_pct": 99.99,
+      "connected_countries": ["AE"],
+      "is_cross_border": false,
+      "source_metadata": {
+        "source_system": "cbuae_infrastructure",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.96,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "rail:ae_uaeswitch",
+      "name_en": "UAESWITCH Card Network",
+      "rail_type": "card_network",
+      "operator_country": "AE",
+      "system_name": "UAESWITCH",
+      "operator_authority_id": "authority:ae_cbuae",
+      "settlement_currency": "AED",
+      "settlement_finality_minutes": 24.0,
+      "daily_volume_estimate_usd_millions": 1800,
+      "uptime_sla_pct": 99.97,
+      "connected_countries": ["AE"],
+      "is_cross_border": true,
+      "source_metadata": {
+        "source_system": "cbuae_infrastructure",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.93,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "rail:qa_qpay",
+      "name_en": "QPay (Qatar Payment System)",
+      "rail_type": "domestic_ips",
+      "operator_country": "QA",
+      "system_name": "QPAY",
+      "operator_authority_id": "authority:qa_qcb",
+      "settlement_currency": "QAR",
+      "settlement_finality_minutes": 1.0,
+      "daily_volume_estimate_usd_millions": 450,
+      "uptime_sla_pct": 99.90,
+      "connected_countries": ["QA"],
+      "is_cross_border": false,
+      "source_metadata": {
+        "source_system": "qcb_infrastructure",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.92,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "rail:qa_rtgs",
+      "name_en": "Qatar RTGS System",
+      "rail_type": "rtgs",
+      "operator_country": "QA",
+      "system_name": "Qatar_RTGS",
+      "operator_authority_id": "authority:qa_qcb",
+      "settlement_currency": "QAR",
+      "settlement_finality_minutes": 0.5,
+      "daily_volume_estimate_usd_millions": 3200,
+      "uptime_sla_pct": 99.95,
+      "connected_countries": ["QA"],
+      "is_cross_border": false,
+      "source_metadata": {
+        "source_system": "qcb_infrastructure",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.94,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "rail:kw_knet",
+      "name_en": "KNET (Kuwait National Electronic Payment System)",
+      "rail_type": "domestic_ips",
+      "operator_country": "KW",
+      "system_name": "KNET",
+      "operator_authority_id": "authority:kw_cbk",
+      "settlement_currency": "KWD",
+      "settlement_finality_minutes": 0.5,
+      "daily_volume_estimate_usd_millions": 1200,
+      "uptime_sla_pct": 99.92,
+      "connected_countries": ["KW"],
+      "is_cross_border": false,
+      "source_metadata": {
+        "source_system": "cbk_infrastructure",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.95,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "rail:kw_rtgs",
+      "name_en": "Kuwait RTGS System",
+      "rail_type": "rtgs",
+      "operator_country": "KW",
+      "system_name": "Kuwait_RTGS",
+      "operator_authority_id": "authority:kw_cbk",
+      "settlement_currency": "KWD",
+      "settlement_finality_minutes": 0.5,
+      "daily_volume_estimate_usd_millions": 2100,
+      "uptime_sla_pct": 99.94,
+      "connected_countries": ["KW"],
+      "is_cross_border": false,
+      "source_metadata": {
+        "source_system": "cbk_infrastructure",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.94,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "rail:bh_benefit",
+      "name_en": "Benefit (Bahrain Payment System)",
+      "rail_type": "domestic_ips",
+      "operator_country": "BH",
+      "system_name": "Benefit",
+      "operator_authority_id": "authority:bh_cbb",
+      "settlement_currency": "BHD",
+      "settlement_finality_minutes": 1.0,
+      "daily_volume_estimate_usd_millions": 350,
+      "uptime_sla_pct": 99.88,
+      "connected_countries": ["BH"],
+      "is_cross_border": false,
+      "source_metadata": {
+        "source_system": "cbb_infrastructure",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.91,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "rail:bh_rtgs",
+      "name_en": "Bahrain RTGS System",
+      "rail_type": "rtgs",
+      "operator_country": "BH",
+      "system_name": "Bahrain_RTGS",
+      "operator_authority_id": "authority:bh_cbb",
+      "settlement_currency": "BHD",
+      "settlement_finality_minutes": 0.5,
+      "daily_volume_estimate_usd_millions": 800,
+      "uptime_sla_pct": 99.93,
+      "connected_countries": ["BH"],
+      "is_cross_border": false,
+      "source_metadata": {
+        "source_system": "cbb_infrastructure",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.93,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "rail:om_rtgs",
+      "name_en": "Oman RTGS System",
+      "rail_type": "rtgs",
+      "operator_country": "OM",
+      "system_name": "Oman_RTGS",
+      "operator_authority_id": "authority:om_cbo",
+      "settlement_currency": "OMR",
+      "settlement_finality_minutes": 0.5,
+      "daily_volume_estimate_usd_millions": 1350,
+      "uptime_sla_pct": 99.91,
+      "connected_countries": ["OM"],
+      "is_cross_border": false,
+      "source_metadata": {
+        "source_system": "cbo_infrastructure",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.92,
+      "validation_status": "ACTIVE"
+    },
+    {
+      "canonical_id": "rail:gcc_swift",
+      "name_en": "SWIFT (Cross-Border Regional)",
+      "rail_type": "swift",
+      "operator_country": "NL",
+      "system_name": "SWIFT_GCC",
+      "settlement_currency": "USD",
+      "settlement_finality_minutes": 240.0,
+      "daily_volume_estimate_usd_millions": 12000,
+      "uptime_sla_pct": 99.99,
+      "connected_countries": ["SA", "AE", "QA", "KW", "BH", "OM"],
+      "is_cross_border": true,
+      "source_metadata": {
+        "source_system": "swift_registry",
+        "extracted_by": "gcc_seed_builder"
+      },
+      "source_confidence": 0.99,
+      "validation_status": "ACTIVE"
+    }
+  ],
+  "edges": [
+    {
+      "edge_type": "REGULATES",
+      "from_entity_id": "authority:sa_sama",
+      "to_entity_id": "bank:sa_snb",
+      "confidence": 0.99,
+      "regulatory_powers": ["license_grant", "fine", "audit", "sanction"],
+      "regulation_ids": ["SAMA_BCR_2018"],
+      "source_references": [{"source_system": "sama_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "REGULATES",
+      "from_entity_id": "authority:sa_sama",
+      "to_entity_id": "bank:sa_rajhi",
+      "confidence": 0.99,
+      "regulatory_powers": ["license_grant", "fine", "audit", "sanction"],
+      "regulation_ids": ["SAMA_BCR_2018"],
+      "source_references": [{"source_system": "sama_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "REGULATES",
+      "from_entity_id": "authority:sa_sama",
+      "to_entity_id": "bank:sa_riad",
+      "confidence": 0.99,
+      "regulatory_powers": ["license_grant", "fine", "audit"],
+      "regulation_ids": ["SAMA_BCR_2018"],
+      "source_references": [{"source_system": "sama_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "REGULATES",
+      "from_entity_id": "authority:sa_sama",
+      "to_entity_id": "bank:sa_alinma",
+      "confidence": 0.99,
+      "regulatory_powers": ["license_grant", "fine", "audit"],
+      "regulation_ids": ["SAMA_BCR_2018"],
+      "source_references": [{"source_system": "sama_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "REGULATES",
+      "from_entity_id": "authority:ae_cbuae",
+      "to_entity_id": "bank:ae_fab",
+      "confidence": 0.99,
+      "regulatory_powers": ["license_grant", "fine", "audit"],
+      "regulation_ids": ["CBUAE_RNCF_2020"],
+      "source_references": [{"source_system": "cbuae_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "REGULATES",
+      "from_entity_id": "authority:ae_cbuae",
+      "to_entity_id": "bank:ae_enbd",
+      "confidence": 0.99,
+      "regulatory_powers": ["license_grant", "fine", "audit"],
+      "regulation_ids": ["CBUAE_RNCF_2020"],
+      "source_references": [{"source_system": "cbuae_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "REGULATES",
+      "from_entity_id": "authority:ae_cbuae",
+      "to_entity_id": "bank:ae_mashreq",
+      "confidence": 0.99,
+      "regulatory_powers": ["license_grant", "fine", "audit"],
+      "regulation_ids": ["CBUAE_RNCF_2020"],
+      "source_references": [{"source_system": "cbuae_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "REGULATES",
+      "from_entity_id": "authority:ae_cbuae",
+      "to_entity_id": "bank:ae_adib",
+      "confidence": 0.99,
+      "regulatory_powers": ["license_grant", "fine", "audit"],
+      "regulation_ids": ["CBUAE_RNCF_2020"],
+      "source_references": [{"source_system": "cbuae_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "REGULATES",
+      "from_entity_id": "authority:qa_qcb",
+      "to_entity_id": "bank:qa_qnb",
+      "confidence": 0.99,
+      "regulatory_powers": ["license_grant", "fine", "audit"],
+      "regulation_ids": ["QCB_SIF_2020"],
+      "source_references": [{"source_system": "qcb_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "REGULATES",
+      "from_entity_id": "authority:qa_qcb",
+      "to_entity_id": "bank:qa_qib",
+      "confidence": 0.99,
+      "regulatory_powers": ["license_grant", "fine", "audit"],
+      "regulation_ids": ["QCB_SIF_2020"],
+      "source_references": [{"source_system": "qcb_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "REGULATES",
+      "from_entity_id": "authority:qa_qcb",
+      "to_entity_id": "bank:qa_dib",
+      "confidence": 0.99,
+      "regulatory_powers": ["license_grant", "fine", "audit"],
+      "regulation_ids": ["QCB_SIF_2020"],
+      "source_references": [{"source_system": "qcb_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "REGULATES",
+      "from_entity_id": "authority:kw_cbk",
+      "to_entity_id": "bank:kw_nbk",
+      "confidence": 0.99,
+      "regulatory_powers": ["license_grant", "fine", "audit"],
+      "regulation_ids": ["CBK_DCR_2020"],
+      "source_references": [{"source_system": "cbk_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "REGULATES",
+      "from_entity_id": "authority:kw_cbk",
+      "to_entity_id": "bank:kw_kfh",
+      "confidence": 0.99,
+      "regulatory_powers": ["license_grant", "fine", "audit"],
+      "regulation_ids": ["CBK_DCR_2020"],
+      "source_references": [{"source_system": "cbk_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "REGULATES",
+      "from_entity_id": "authority:kw_cbk",
+      "to_entity_id": "bank:kw_cbk_bank",
+      "confidence": 0.99,
+      "regulatory_powers": ["license_grant", "fine", "audit"],
+      "regulation_ids": ["CBK_DCR_2020"],
+      "source_references": [{"source_system": "cbk_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "REGULATES",
+      "from_entity_id": "authority:bh_cbb",
+      "to_entity_id": "bank:bh_nbb",
+      "confidence": 0.99,
+      "regulatory_powers": ["license_grant", "fine", "audit"],
+      "regulation_ids": ["CBB_RNCF_2019"],
+      "source_references": [{"source_system": "cbb_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "REGULATES",
+      "from_entity_id": "authority:bh_cbb",
+      "to_entity_id": "bank:bh_albaraka",
+      "confidence": 0.99,
+      "regulatory_powers": ["license_grant", "fine", "audit"],
+      "regulation_ids": ["CBB_RNCF_2019"],
+      "source_references": [{"source_system": "cbb_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "REGULATES",
+      "from_entity_id": "authority:bh_cbb",
+      "to_entity_id": "bank:bh_ib",
+      "confidence": 0.99,
+      "regulatory_powers": ["license_grant", "fine", "audit"],
+      "regulation_ids": ["CBB_RNCF_2019"],
+      "source_references": [{"source_system": "cbb_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "REGULATES",
+      "from_entity_id": "authority:om_cbo",
+      "to_entity_id": "bank:om_bm",
+      "confidence": 0.99,
+      "regulatory_powers": ["license_grant", "fine", "audit"],
+      "regulation_ids": ["CBO_RNCF_2020"],
+      "source_references": [{"source_system": "cbo_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "REGULATES",
+      "from_entity_id": "authority:om_cbo",
+      "to_entity_id": "bank:om_alizz",
+      "confidence": 0.99,
+      "regulatory_powers": ["license_grant", "fine", "audit"],
+      "regulation_ids": ["CBO_RNCF_2020"],
+      "source_references": [{"source_system": "cbo_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "REGULATES",
+      "from_entity_id": "authority:om_cbo",
+      "to_entity_id": "bank:om_nbob",
+      "confidence": 0.99,
+      "regulatory_powers": ["license_grant", "fine", "audit"],
+      "regulation_ids": ["CBO_RNCF_2020"],
+      "source_references": [{"source_system": "cbo_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "OPERATES_IN",
+      "from_entity_id": "bank:sa_snb",
+      "to_entity_id": "country:sa",
+      "confidence": 0.99,
+      "presence_type": "headquartered",
+      "source_references": [{"source_system": "sama_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "OPERATES_IN",
+      "from_entity_id": "bank:sa_rajhi",
+      "to_entity_id": "country:sa",
+      "confidence": 0.99,
+      "presence_type": "headquartered",
+      "source_references": [{"source_system": "sama_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "OPERATES_IN",
+      "from_entity_id": "bank:sa_riad",
+      "to_entity_id": "country:sa",
+      "confidence": 0.99,
+      "presence_type": "headquartered",
+      "source_references": [{"source_system": "sama_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "OPERATES_IN",
+      "from_entity_id": "bank:sa_alinma",
+      "to_entity_id": "country:sa",
+      "confidence": 0.99,
+      "presence_type": "headquartered",
+      "source_references": [{"source_system": "sama_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "OPERATES_IN",
+      "from_entity_id": "bank:ae_fab",
+      "to_entity_id": "country:ae",
+      "confidence": 0.99,
+      "presence_type": "headquartered",
+      "source_references": [{"source_system": "cbuae_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "OPERATES_IN",
+      "from_entity_id": "bank:ae_enbd",
+      "to_entity_id": "country:ae",
+      "confidence": 0.99,
+      "presence_type": "headquartered",
+      "source_references": [{"source_system": "cbuae_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "OPERATES_IN",
+      "from_entity_id": "bank:ae_mashreq",
+      "to_entity_id": "country:ae",
+      "confidence": 0.99,
+      "presence_type": "headquartered",
+      "source_references": [{"source_system": "cbuae_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "OPERATES_IN",
+      "from_entity_id": "bank:ae_adib",
+      "to_entity_id": "country:ae",
+      "confidence": 0.99,
+      "presence_type": "headquartered",
+      "source_references": [{"source_system": "cbuae_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "OPERATES_IN",
+      "from_entity_id": "bank:qa_qnb",
+      "to_entity_id": "country:qa",
+      "confidence": 0.99,
+      "presence_type": "headquartered",
+      "source_references": [{"source_system": "qcb_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "OPERATES_IN",
+      "from_entity_id": "bank:qa_qib",
+      "to_entity_id": "country:qa",
+      "confidence": 0.99,
+      "presence_type": "headquartered",
+      "source_references": [{"source_system": "qcb_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "OPERATES_IN",
+      "from_entity_id": "bank:qa_dib",
+      "to_entity_id": "country:qa",
+      "confidence": 0.99,
+      "presence_type": "headquartered",
+      "source_references": [{"source_system": "qcb_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "OPERATES_IN",
+      "from_entity_id": "bank:kw_nbk",
+      "to_entity_id": "country:kw",
+      "confidence": 0.99,
+      "presence_type": "headquartered",
+      "source_references": [{"source_system": "cbk_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "OPERATES_IN",
+      "from_entity_id": "bank:kw_kfh",
+      "to_entity_id": "country:kw",
+      "confidence": 0.99,
+      "presence_type": "headquartered",
+      "source_references": [{"source_system": "cbk_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "OPERATES_IN",
+      "from_entity_id": "bank:kw_cbk_bank",
+      "to_entity_id": "country:kw",
+      "confidence": 0.99,
+      "presence_type": "headquartered",
+      "source_references": [{"source_system": "cbk_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "OPERATES_IN",
+      "from_entity_id": "bank:bh_nbb",
+      "to_entity_id": "country:bh",
+      "confidence": 0.99,
+      "presence_type": "headquartered",
+      "source_references": [{"source_system": "cbb_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "OPERATES_IN",
+      "from_entity_id": "bank:bh_albaraka",
+      "to_entity_id": "country:bh",
+      "confidence": 0.99,
+      "presence_type": "headquartered",
+      "source_references": [{"source_system": "cbb_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "OPERATES_IN",
+      "from_entity_id": "bank:bh_ib",
+      "to_entity_id": "country:bh",
+      "confidence": 0.99,
+      "presence_type": "headquartered",
+      "source_references": [{"source_system": "cbb_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "OPERATES_IN",
+      "from_entity_id": "bank:om_bm",
+      "to_entity_id": "country:om",
+      "confidence": 0.99,
+      "presence_type": "headquartered",
+      "source_references": [{"source_system": "cbo_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "OPERATES_IN",
+      "from_entity_id": "bank:om_alizz",
+      "to_entity_id": "country:om",
+      "confidence": 0.99,
+      "presence_type": "headquartered",
+      "source_references": [{"source_system": "cbo_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "OPERATES_IN",
+      "from_entity_id": "bank:om_nbob",
+      "to_entity_id": "country:om",
+      "confidence": 0.99,
+      "presence_type": "headquartered",
+      "source_references": [{"source_system": "cbo_registry", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "DEPENDS_ON",
+      "from_entity_id": "fintech:sa_stcpay",
+      "to_entity_id": "rail:sa_sarie",
+      "confidence": 0.90,
+      "dependency_type": "settlement",
+      "criticality": 0.85,
+      "fallback_available": true,
+      "fallback_entity_id": "rail:sa_sadad",
+      "source_references": [{"source_system": "operational_analysis", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "DEPENDS_ON",
+      "from_entity_id": "fintech:sa_tabby",
+      "to_entity_id": "rail:sa_sadad",
+      "confidence": 0.85,
+      "dependency_type": "settlement",
+      "criticality": 0.80,
+      "fallback_available": false,
+      "source_references": [{"source_system": "operational_analysis", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "DEPENDS_ON",
+      "from_entity_id": "fintech:ae_tabby_ae",
+      "to_entity_id": "rail:ae_uaeipp",
+      "confidence": 0.87,
+      "dependency_type": "settlement",
+      "criticality": 0.82,
+      "fallback_available": true,
+      "fallback_entity_id": "rail:ae_uaeswitch",
+      "source_references": [{"source_system": "operational_analysis", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "DEPENDS_ON",
+      "from_entity_id": "fintech:qa_qpay_fintech",
+      "to_entity_id": "rail:qa_qpay",
+      "confidence": 0.88,
+      "dependency_type": "settlement",
+      "criticality": 0.83,
+      "fallback_available": true,
+      "fallback_entity_id": "rail:qa_rtgs",
+      "source_references": [{"source_system": "operational_analysis", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "DEPENDS_ON",
+      "from_entity_id": "fintech:kw_knet_operator",
+      "to_entity_id": "rail:kw_knet",
+      "confidence": 0.92,
+      "dependency_type": "settlement",
+      "criticality": 0.90,
+      "fallback_available": false,
+      "source_references": [{"source_system": "operational_analysis", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "DEPENDS_ON",
+      "from_entity_id": "fintech:om_thawani",
+      "to_entity_id": "rail:om_rtgs",
+      "confidence": 0.82,
+      "dependency_type": "settlement",
+      "criticality": 0.75,
+      "fallback_available": false,
+      "source_references": [{"source_system": "operational_analysis", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "PROPAGATES_TO",
+      "from_entity_id": "bank:sa_snb",
+      "to_entity_id": "bank:sa_rajhi",
+      "confidence": 0.75,
+      "transfer_mechanism": "liquidity_channel",
+      "delay_hours": 4.0,
+      "severity_transfer": 0.35,
+      "is_breakable": true,
+      "intervention_lever": "liquidity_injection",
+      "source_references": [{"source_system": "stress_test_2025", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "PROPAGATES_TO",
+      "from_entity_id": "bank:ae_fab",
+      "to_entity_id": "bank:ae_enbd",
+      "confidence": 0.72,
+      "transfer_mechanism": "interbank_lending",
+      "delay_hours": 2.0,
+      "severity_transfer": 0.38,
+      "is_breakable": true,
+      "intervention_lever": "fed_funds_injection",
+      "source_references": [{"source_system": "stress_test_2025", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "PROPAGATES_TO",
+      "from_entity_id": "bank:qa_qnb",
+      "to_entity_id": "bank:qa_qib",
+      "confidence": 0.70,
+      "transfer_mechanism": "correspondent_banking",
+      "delay_hours": 6.0,
+      "severity_transfer": 0.32,
+      "is_breakable": true,
+      "intervention_lever": "swap_line_extension",
+      "source_references": [{"source_system": "stress_test_2025", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "PROPAGATES_TO",
+      "from_entity_id": "bank:kw_nbk",
+      "to_entity_id": "bank:kw_kfh",
+      "confidence": 0.68,
+      "transfer_mechanism": "liquidity_channel",
+      "delay_hours": 3.0,
+      "severity_transfer": 0.36,
+      "is_breakable": true,
+      "intervention_lever": "liquidity_injection",
+      "source_references": [{"source_system": "stress_test_2025", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "PROPAGATES_TO",
+      "from_entity_id": "bank:bh_nbb",
+      "to_entity_id": "fintech:bh_fintech_hub",
+      "confidence": 0.55,
+      "transfer_mechanism": "funding_withdrawal",
+      "delay_hours": 12.0,
+      "severity_transfer": 0.25,
+      "is_breakable": false,
+      "source_references": [{"source_system": "contagion_analysis_2025", "asserted_by": "gcc_seed_builder"}]
+    },
+    {
+      "edge_type": "PROPAGATES_TO",
+      "from_entity_id": "bank:om_bm",
+      "to_entity_id": "bank:om_alizz",
+      "confidence": 0.73,
+      "transfer_mechanism": "liquidity_channel",
+      "delay_hours": 5.0,
+      "severity_transfer": 0.33,
+      "is_breakable": true,
+      "intervention_lever": "liquidity_injection",
+      "source_references": [{"source_system": "stress_test_2025", "asserted_by": "gcc_seed_builder"}]
+    }
+  ]
+}

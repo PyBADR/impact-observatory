@@ -46,3 +46,14 @@ next-env.d.ts
 *.pem
 coverage/
 .vercel
+
+# Claude Code worktrees (stale session artifacts)
+.claude/worktrees/
+.claire/worktrees/
+
+# Test venvs
+.venv_test/
+backend/.venv_test/
+
+# Large patch files
+*.patch

@@ -2,15 +2,24 @@
 
 from __future__ import annotations
 
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from datetime import datetime
 
 from src.schemas.base import VersionedModel
 
 
 class ScenarioCreate(VersionedModel):
-    """Input to create a scenario run."""
-    scenario_id: str = Field(..., description="e.g. hormuz_chokepoint_disruption, energy_market_volatility_shock")
+    """Input to create a scenario run.
+
+    Accepts both ``scenario_id`` (canonical) and ``template_id`` (v4 frontend alias).
+    ``AliasChoices`` + the base model's ``populate_by_name=True`` ensures either field
+    name is accepted in the request body.
+    """
+    scenario_id: str = Field(
+        ...,
+        validation_alias=AliasChoices("scenario_id", "template_id"),
+        description="e.g. hormuz_chokepoint_disruption — also accepted as 'template_id'",
+    )
     severity: float = Field(..., ge=0.0, le=1.0, description="0.0–1.0 severity scale")
     horizon_hours: int = Field(336, ge=1, le=8760, description="Projection horizon in hours (default 14 days)")
     label: str | None = Field(None, description="Human-readable label e.g. 'Strategic Maritime Chokepoint Disruption - 14D'")

@@ -259,7 +259,7 @@ function buildSimulationBlock(result: RunResult): NarrativeBlock {
     order: 3,
     textEn,
     textAr,
-    severity: classification === "crisis" || classification === "escalate" ? "critical" : classification === "intervene" ? "warning" : "info",
+    severity: classification === "CRITICAL" || classification === "SEVERE" ? "critical" : classification === "ELEVATED" ? "warning" : "info",
     dataTrail: [
       "result.headline.total_loss_usd",
       "result.headline.peak_day",
@@ -272,7 +272,7 @@ function buildSimulationBlock(result: RunResult): NarrativeBlock {
     metrics: [
       { label: "Total Loss", labelAr: "إجمالي الخسارة", value: formatUSD(totalLoss), sentiment: "negative" },
       { label: "Peak Day", labelAr: "يوم الذروة", value: `Day ${peakDay}`, sentiment: "neutral" },
-      { label: "Classification", labelAr: "التصنيف", value: classification.toUpperCase(), sentiment: classification === "crisis" || classification === "escalate" ? "negative" : "neutral" },
+      { label: "Classification", labelAr: "التصنيف", value: classification.toUpperCase(), sentiment: classification === "CRITICAL" || classification === "SEVERE" ? "negative" : "neutral" },
       { label: "Worst Sector", labelAr: "أسوأ قطاع", value: worstSector, sentiment: "negative" },
     ],
   };

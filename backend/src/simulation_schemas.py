@@ -729,6 +729,8 @@ class PortfolioValue(BaseModel):
     best_decision_id: Optional[str] = None
     worst_decision_id: Optional[str] = None
     roi_ratio: float = 0.0
+    scenario_id: str = ""
+    run_id: str = ""
 
 
 class DecisionValuePayload(BaseModel):

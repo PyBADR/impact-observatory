@@ -868,6 +868,7 @@ class SimulationEngine:
             insurance_stress=insurance_stress,
             unified_risk=unified_risk,
             total_loss_usd=total_loss_usd,
+            scenario_id=scenario_id,
         )
         five_q = build_five_questions(
             scenario_id=scenario_id,

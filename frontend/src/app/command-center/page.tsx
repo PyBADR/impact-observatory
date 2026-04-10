@@ -84,6 +84,9 @@ import { EvidenceGovernancePanel } from "@/features/command-center/components/Ev
 // Phase 6 — Pilot Readiness & Operating Proof
 import { PilotPanel } from "@/features/command-center/components/PilotPanel";
 
+// Phase 7 — Banking Intelligence (Contract Chain)
+import { BankingDecisionView } from "@/features/banking/BankingDecisionView";
+
 // ── Loading Skeleton ──────────────────────────────────────────────────
 
 function LoadingSkeleton() {
@@ -412,7 +415,20 @@ function CommandCenterInner() {
       {/* ── PHASE 6: Pilot Readiness & Operating Proof ── */}
       <PilotPanel pilot={pilot} />
 
-      {/* ── ZONE 1: GCC Macro Overview (hero) ───────────── */}
+      {/* ── PHASE 7: Banking Intelligence (Contract Chain) ── */}
+      <BankingDecisionView
+        runId={runId}
+        scenarioId={scenario.templateId}
+        lang="en"
+      />
+
+      {/* ── ZONE 1: Propagation Channels (PRIMARY OUTPUT) ── */}
+      <TransmissionChannels
+        nodes={graphNodes}
+        edges={graphEdges}
+      />
+
+      {/* ── ZONE 2: GCC Macro Overview ──────────────────── */}
       <MacroOverviewHeader
         systemRiskIndex={headline.averageStress}
         totalExposureUsd={headline.totalLossUsd}
@@ -429,12 +445,6 @@ function CommandCenterInner() {
         horizonHours={scenario.horizonHours}
         triggerTime={scenario.triggerTime}
         pipelineStages={trust?.stagesCompleted ?? []}
-      />
-
-      {/* ── ZONE 2: Transmission Channels ───────────────── */}
-      <TransmissionChannels
-        nodes={graphNodes}
-        edges={graphEdges}
       />
 
       {/* ── ZONE 3: Country & Sector Exposure ──────────── */}

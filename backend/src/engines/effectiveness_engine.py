@@ -35,6 +35,7 @@ _NEUTRAL_BAND: float = 0.15           # |variance_ratio| < this → NEUTRAL
 def compute_effectiveness(
     expected_actual: dict,
     value_attribution: dict,
+    scenario_id: str = "",
 ) -> dict:
     """Classify decision effectiveness.
 
@@ -87,17 +88,19 @@ def compute_effectiveness(
         "decision_id": decision_id,
         "score": score,
         "classification": classification,
+        "scenario_id": scenario_id,
     }
 
 
 def compute_all_effectiveness(
     expected_actuals: list[dict],
     value_attributions: list[dict],
+    scenario_id: str = "",
 ) -> list[dict]:
     """Classify effectiveness for all decisions."""
     results = []
     for i, ea in enumerate(expected_actuals):
         va = value_attributions[i] if i < len(value_attributions) else {}
-        eff = compute_effectiveness(ea, va)
+        eff = compute_effectiveness(ea, va, scenario_id=scenario_id)
         results.append(eff)
     return results

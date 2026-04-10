@@ -33,6 +33,7 @@ def compute_expected_vs_actual(
     lifecycle: dict | None = None,
     total_loss_usd: float = 0.0,
     severity: float = 0.5,
+    scenario_id: str = "",
 ) -> dict:
     """Compare expected outcome against actual outcome for a single decision.
 
@@ -40,7 +41,7 @@ def compute_expected_vs_actual(
     Actual outcome = derived from lifecycle status + execution effectiveness
 
     Returns:
-        {decision_id, expected_outcome, actual_outcome, delta, variance_ratio}
+        {decision_id, expected_outcome, actual_outcome, delta, variance_ratio, scenario_id}
     """
     decision_id = _ss(
         decision.get("id") or decision.get("action_id") or decision.get("rank"),
@@ -111,6 +112,7 @@ def compute_expected_vs_actual(
         "actual_outcome": actual_outcome,
         "delta": delta,
         "variance_ratio": variance_ratio,
+        "scenario_id": scenario_id,
     }
 
 
@@ -121,6 +123,7 @@ def compute_all_expected_actual(
     lifecycles: list[dict] | None = None,
     total_loss_usd: float = 0.0,
     severity: float = 0.5,
+    scenario_id: str = "",
 ) -> list[dict]:
     """Compute expected vs actual for all actions."""
     lc_list = lifecycles or []
@@ -135,6 +138,7 @@ def compute_all_expected_actual(
             lifecycle=lc,
             total_loss_usd=total_loss_usd,
             severity=severity,
+            scenario_id=scenario_id,
         )
         results.append(ea)
     return results

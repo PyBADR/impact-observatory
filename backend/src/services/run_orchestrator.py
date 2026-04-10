@@ -16,6 +16,12 @@ import time
 from src.schemas.scenario import ScenarioCreate
 from src.simulation_engine import SimulationEngine, SCENARIO_CATALOG
 from src.services import audit_service
+from src.policies.executive_policy import classify_executive_status_v2
+from src.policies.scenario_policy import resolve_scenario_type
+from src.engines.sanity_guard import sanitize_run_result
+from src.events.event_store import event_store
+from src.validation.contracts import validate_metrics
+from src.engines.map_payload_engine import build_map_payload, build_graph_payload, build_propagation_steps
 from src.engines.transmission_engine import build_transmission_chain
 from src.engines.counterfactual_engine import calibrate_counterfactual
 from src.engines.action_pathways_engine import classify_actions
@@ -38,6 +44,35 @@ from src.engines.kpi_engine import compute_pilot_kpi
 from src.engines.shadow_engine import run_all_shadow_comparisons
 from src.engines.pilot_report_engine import generate_pilot_report
 from src.engines.failure_engine import evaluate_failure_modes
+from src.engines.propagation_headline_engine import build_propagation_headline
+from src.engines.impact_map_engine import build_impact_map
+from src.engines.decision_overlay_engine import build_decision_overlays
+from src.engines.impact_map_validator import validate_impact_map
+from src.regime.regime_engine import classify_regime_from_result, build_regime_inputs
+from src.regime.regime_graph_adapter import apply_regime_to_graph
+from src.regime.decision_trigger_engine import build_decision_triggers_from_regime_state
+from src.decision_intelligence.pipeline import (
+    run_decision_intelligence_pipeline,
+    DecisionIntelligenceResult,
+)
+from src.decision_quality.pipeline import (
+    run_decision_quality_pipeline,
+    DecisionQualityResult,
+)
+from src.decision_calibration.pipeline import (
+    run_calibration_pipeline,
+    CalibrationLayerResult,
+)
+from src.decision_trust.pipeline import (
+    run_trust_pipeline,
+    TrustLayerResult,
+)
+from src.actions.action_registry import get_actions_for_scenario_id
+from src.services.institutional_audit import (
+    persist_calibration_audit,
+    persist_trust_audit,
+)
+from src.metrics_provenance.pipeline import run_provenance_pipeline
 
 logger = logging.getLogger(__name__)
 
@@ -87,9 +122,74 @@ def execute_run(params: ScenarioCreate) -> dict:
     run_id = result["run_id"]
     _log_stage("simulation_engine", run_id, stage_timings["simulation_engine"], 17)
 
+    # ── Stage 17a: Early Validation Firewall ──────────────────────────────
+    # Catches invalid values BEFORE they propagate through 24+ downstream stages
+    t0 = time.monotonic()
+    early_validation_flags = validate_metrics(result, scenario_window_hours=float(horizon_hours))
+    if early_validation_flags:
+        logger.warning(
+            "Early validation flags for run %s: %d issues detected (pre-downstream)",
+            run_id, len(early_validation_flags),
+        )
+    stage_timings["early_validation"] = round((time.monotonic() - t0) * 1000, 1)
+
+    # ── Stage 17b: Regime Classification ──────────────────────────────────
+    t0 = time.monotonic()
+    regime_state = classify_regime_from_result(result)
+    regime_inputs = build_regime_inputs(result)
+    stage_timings["regime_classification"] = round((time.monotonic() - t0) * 1000, 1)
+    _log_stage("regime_classification", run_id, stage_timings["regime_classification"], 17)
+
+    # ── Stage 17c: Regime Graph Modifiers ──────────────────────────────────
+    t0 = time.monotonic()
+    try:
+        from src.simulation_engine import GCC_NODES as _gcc_nodes_regime
+        from src.simulation_engine import GCC_ADJACENCY as _gcc_adj_regime
+    except ImportError:
+        _gcc_nodes_regime = []
+        _gcc_adj_regime = None
+    regime_graph_modifiers = apply_regime_to_graph(
+        regime_id=regime_state.regime_id,
+        gcc_nodes=_gcc_nodes_regime,
+        gcc_adjacency=_gcc_adj_regime,
+    )
+    stage_timings["regime_graph_adapter"] = round((time.monotonic() - t0) * 1000, 1)
+    _log_stage("regime_graph_adapter", run_id, stage_timings["regime_graph_adapter"], 17)
+
+    # ── Stage 17d: Decision Triggers (regime → decisions) ──────────────────
+    t0 = time.monotonic()
+    decision_triggers = build_decision_triggers_from_regime_state(regime_state, regime_inputs)
+    stage_timings["decision_triggers"] = round((time.monotonic() - t0) * 1000, 1)
+    _log_stage("decision_triggers", run_id, stage_timings["decision_triggers"], 17)
+
+    # ── Event: SCENARIO_STARTED ─────────────────────────────────────────────
+    event_store.emit(
+        "SCENARIO_STARTED", run_id, scenario_id,
+        {"severity": severity, "horizon_hours": horizon_hours, "label": label},
+    )
+
     # ── Stage 18: Audit ──────────────────────────────────��────────────────
     t0 = time.monotonic()
     headline = result["headline"]
+    # Enrich headline with fields the frontend's UnifiedRunResult expects
+    headline.setdefault("total_nodes_impacted", headline.get("affected_entities", 0))
+    headline.setdefault("propagation_depth", len(result.get("propagation_chain", result.get("propagation", []))))
+
+    # ── Propagation headline — executive-facing causal narrative ────────────
+    try:
+        from src.simulation_engine import GCC_NODES as _gcc_nodes_hl
+        _prop_hl = build_propagation_headline(
+            propagation_chain=result.get("propagation_chain", result.get("propagation", [])),
+            gcc_nodes=_gcc_nodes_hl,
+            scenario_id=scenario_id,
+        )
+        headline["propagation_headline_en"] = _prop_hl["propagation_headline_en"]
+        headline["propagation_headline_ar"] = _prop_hl["propagation_headline_ar"]
+    except Exception as hl_err:
+        logger.warning("propagation_headline build failed: %s", hl_err)
+        headline.setdefault("propagation_headline_en", "")
+        headline.setdefault("propagation_headline_ar", "")
+
     decision_plan = result.get("decision_plan", {})
     actions = decision_plan.get("actions", [])
 
@@ -117,6 +217,21 @@ def execute_run(params: ScenarioCreate) -> dict:
             )
     stage_timings["audit"] = round((time.monotonic() - t0) * 1000, 1)
     _log_stage("audit", run_id, stage_timings["audit"], 18)
+
+    # ── Events: ACTION_RECOMMENDED for top actions ──────────────────────────
+    for action in actions[:5]:
+        if isinstance(action, dict):
+            event_store.emit(
+                "ACTION_RECOMMENDED", run_id, scenario_id,
+                {
+                    "action_id": action.get("action_id", ""),
+                    "action": action.get("action", ""),
+                    "loss_avoided_usd": action.get("loss_avoided_usd", 0),
+                    "cost_usd": action.get("cost_usd", 0),
+                    "priority_score": action.get("priority_score", 0),
+                    "urgency": action.get("urgency", 0),
+                },
+            )
 
     # ── Stage 19: Transmission Path Engine ───────────────────────────────
     t0 = time.monotonic()
@@ -242,6 +357,7 @@ def execute_run(params: ScenarioCreate) -> dict:
         lifecycles=decision_lifecycle,
         total_loss_usd=headline.get("total_loss_usd", 0.0),
         severity=severity,
+        scenario_id=scenario_id,
     )
     stage_timings["expected_actual_engine"] = round((time.monotonic() - t0) * 1000, 1)
     _log_stage("expected_actual_engine", run_id, stage_timings["expected_actual_engine"], 29)
@@ -253,6 +369,7 @@ def execute_run(params: ScenarioCreate) -> dict:
         actions=actions,
         action_confidences=decision_trust.get("action_confidence", []),
         data_completeness=decision_trust.get("model_dependency", {}).get("data_completeness", 0.70),
+        scenario_id=scenario_id,
     )
     stage_timings["value_attribution_engine"] = round((time.monotonic() - t0) * 1000, 1)
     _log_stage("value_attribution_engine", run_id, stage_timings["value_attribution_engine"], 30)
@@ -262,6 +379,7 @@ def execute_run(params: ScenarioCreate) -> dict:
     effectiveness_results = compute_all_effectiveness(
         expected_actuals=expected_actuals,
         value_attributions=value_attributions,
+        scenario_id=scenario_id,
     )
     stage_timings["effectiveness_engine"] = round((time.monotonic() - t0) * 1000, 1)
     _log_stage("effectiveness_engine", run_id, stage_timings["effectiveness_engine"], 31)
@@ -272,6 +390,8 @@ def execute_run(params: ScenarioCreate) -> dict:
         expected_actuals=expected_actuals,
         value_attributions=value_attributions,
         effectiveness_results=effectiveness_results,
+        scenario_id=scenario_id,
+        run_id=run_id,
     )
     stage_timings["portfolio_engine"] = round((time.monotonic() - t0) * 1000, 1)
     _log_stage("portfolio_engine", run_id, stage_timings["portfolio_engine"], 32)
@@ -381,6 +501,114 @@ def execute_run(params: ScenarioCreate) -> dict:
     stage_timings["failure_engine"] = round((time.monotonic() - t0) * 1000, 1)
     _log_stage("failure_engine", run_id, stage_timings["failure_engine"], 41)
 
+    # ── Stage 42: Impact Intelligence Layer ────────────────────────────────
+    t0 = time.monotonic()
+    try:
+        from src.simulation_engine import GCC_NODES as _gcc_nodes_42, GCC_ADJACENCY as _gcc_adj_42
+        impact_map = build_impact_map(
+            result=result,
+            gcc_nodes=_gcc_nodes_42,
+            gcc_adjacency=_gcc_adj_42,
+            regime_modifiers=regime_graph_modifiers,
+            transmission_chain=transmission_chain,
+            scenario_id=scenario_id,
+            run_id=run_id,
+        )
+        # Inject decision overlays from actions
+        impact_map_overlays = build_decision_overlays(actions, _gcc_adj_42)
+        impact_map.decision_overlays = impact_map_overlays
+        # Validate — attaches flags, sanitizes in place
+        impact_map = validate_impact_map(impact_map)
+    except Exception as im_err:
+        logger.warning("Impact map build failed: %s", im_err, exc_info=True)
+        from src.schemas.impact_map import ImpactMapResponse as _IMR
+        impact_map = _IMR(run_id=run_id, scenario_id=scenario_id)
+    stage_timings["impact_intelligence_layer"] = round((time.monotonic() - t0) * 1000, 1)
+    _log_stage("impact_intelligence_layer", run_id, stage_timings["impact_intelligence_layer"], 42)
+
+    # ── Stage 50: Decision Intelligence Pipeline ──────────────────────────
+    t0 = time.monotonic()
+    try:
+        # Build action_costs and action_registry_lookup from the action registry
+        _action_templates = get_actions_for_scenario_id(scenario_id)
+        _action_costs: dict[str, float] = {
+            a["action_id"]: float(a.get("cost_usd", 0))
+            for a in _action_templates
+        }
+        _action_registry_lookup: dict[str, dict] = {
+            a["action_id"]: dict(a)
+            for a in _action_templates
+        }
+        di_result = run_decision_intelligence_pipeline(
+            impact_map=impact_map,
+            action_costs=_action_costs,
+            action_registry_lookup=_action_registry_lookup,
+        )
+    except Exception as di_err:
+        logger.warning("Decision Intelligence pipeline failed: %s", di_err, exc_info=True)
+        di_result = DecisionIntelligenceResult()
+    stage_timings["decision_intelligence"] = round((time.monotonic() - t0) * 1000, 1)
+    _log_stage("decision_intelligence", run_id, stage_timings["decision_intelligence"], 50)
+
+    # ── Stage 60: Decision Quality Layer ──────────────────────────────────
+    t0 = time.monotonic()
+    try:
+        dq_result = run_decision_quality_pipeline(
+            di_result=di_result,
+            action_registry_lookup=_action_registry_lookup,
+        )
+    except Exception as dq_err:
+        logger.warning("Decision Quality pipeline failed: %s", dq_err, exc_info=True)
+        dq_result = DecisionQualityResult()
+    stage_timings["decision_quality"] = round((time.monotonic() - t0) * 1000, 1)
+    _log_stage("decision_quality", run_id, stage_timings["decision_quality"], 60)
+
+    # ── Stage 70: Decision Quality Calibration Layer ─────────────────────
+    t0 = time.monotonic()
+    try:
+        cal_result = run_calibration_pipeline(
+            dq_result=dq_result,
+            impact_map=impact_map,
+            scenario_id=scenario_id,
+            action_registry_lookup=_action_registry_lookup,
+        )
+    except Exception as cal_err:
+        logger.warning("Calibration pipeline failed: %s", cal_err, exc_info=True)
+        cal_result = CalibrationLayerResult()
+    stage_timings["decision_calibration"] = round((time.monotonic() - t0) * 1000, 1)
+    _log_stage("decision_calibration", run_id, stage_timings["decision_calibration"], 70)
+
+    # ── Stage 70a: Persist calibration audit trail ───────────────────────
+    try:
+        persist_calibration_audit(run_id, cal_result.to_dict())
+    except Exception as audit_cal_err:
+        logger.warning("Calibration audit persistence failed: %s", audit_cal_err)
+
+    # ── Stage 80: Decision Trust Layer ────────────────────────────────────
+    t0 = time.monotonic()
+    try:
+        from src.simulation_engine import SCENARIO_CATALOG as _SC
+        _catalog_entry = _SC.get(scenario_id, None)
+        trust_result = run_trust_pipeline(
+            dq_result=dq_result,
+            cal_result=cal_result,
+            impact_map=impact_map,
+            scenario_id=scenario_id,
+            action_registry_lookup=_action_registry_lookup,
+            scenario_catalog_entry=_catalog_entry,
+        )
+    except Exception as trust_err:
+        logger.warning("Trust pipeline failed: %s", trust_err, exc_info=True)
+        trust_result = TrustLayerResult()
+    stage_timings["decision_trust"] = round((time.monotonic() - t0) * 1000, 1)
+    _log_stage("decision_trust", run_id, stage_timings["decision_trust"], 80)
+
+    # ── Stage 80a: Persist trust audit trail ─────────────────────────────
+    try:
+        persist_trust_audit(run_id, trust_result.to_dict())
+    except Exception as audit_trust_err:
+        logger.warning("Trust audit persistence failed: %s", audit_trust_err)
+
     # ── Map engine output → unified API response format ───────────────────
     financial_list = result.get("financial_impact", {}).get("top_entities", [])
     banking_dict = result.get("banking_stress", {})
@@ -433,6 +661,41 @@ def execute_run(params: ScenarioCreate) -> dict:
 
     total_ms = int(round((time.monotonic() - t_total) * 1000))
 
+    # ── Build map / graph payloads for Impact Map frontend ────────────────
+    from src.simulation_engine import GCC_NODES
+    try:
+        from src.simulation_engine import GCC_ADJACENCY as _adj
+    except ImportError:
+        _adj = None
+
+    _map_result_proxy = {
+        "financial": financial_list,
+        "bottlenecks": result.get("bottlenecks", []),
+        "banking_stress": banking_dict,
+        "insurance_stress": insurance_dict,
+        "fintech_stress": fintech_dict,
+        "propagation_chain": propagation_chain,
+        "event_severity": result.get("event_severity", severity),
+        "severity": severity,
+    }
+    try:
+        map_payload = build_map_payload(_map_result_proxy, GCC_NODES, scenario_id, regime_graph_modifiers)
+    except Exception as map_err:
+        logger.warning("map_payload build failed: %s", map_err)
+        map_payload = {"impacted_entities": [], "total_estimated_loss_usd": 0}
+
+    try:
+        graph_payload = build_graph_payload(_map_result_proxy, GCC_NODES, _adj)
+    except Exception as graph_err:
+        logger.warning("graph_payload build failed: %s", graph_err)
+        graph_payload = {"nodes": [], "edges": [], "categories": []}
+
+    try:
+        propagation_steps = build_propagation_steps(_map_result_proxy, GCC_NODES)
+    except Exception as prop_err:
+        logger.warning("propagation_steps build failed: %s", prop_err)
+        propagation_steps = []
+
     # ── Assemble final unified response ───────────────────────────────────
     response = {
         # Identity
@@ -440,7 +703,7 @@ def execute_run(params: ScenarioCreate) -> dict:
         "run_id": run_id,
         "model_version": result.get("model_version", "2.1.0"),
         "status": "completed",
-        "pipeline_stages_completed": 41,
+        "pipeline_stages_completed": 80,
         "stage_timings": stage_timings,
         "duration_ms": total_ms,
 
@@ -544,7 +807,13 @@ def execute_run(params: ScenarioCreate) -> dict:
                 "business_severity": decision_plan.get("business_severity", "moderate"),
                 "peak_cumulative_loss": headline.get("total_loss_usd", 0),
                 "peak_loss_timestamp": f"Day {headline.get('peak_day', 0)}",
-                "executive_status": "escalate" if system_stress >= 0.65 else "monitor",
+                "executive_status": classify_executive_status_v2(
+                    severity=result.get("event_severity", 0.0),
+                    time_to_first_breach_hours=decision_plan.get("time_to_first_failure_hours"),
+                    loss_ratio=headline.get("total_loss_usd", 0.0) / max(scenario_meta.get("base_loss_usd", 1.0), 1.0),
+                    propagation_speed=min(1.0, system_stress * 1.2),
+                    scenario_type=resolve_scenario_type(scenario_id),
+                ),
             },
             "regulatory_breach_events": [],
         },
@@ -600,15 +869,152 @@ def execute_run(params: ScenarioCreate) -> dict:
         "shadow_comparisons": shadow_comparisons,
         "pilot_report": pilot_report,
         "failure_modes": failure_modes,
+
+        # ── Impact Map payloads (graph + geo) ─────────────────────────
+        "map_payload": map_payload,
+        "graph_payload": graph_payload,
+        "propagation_steps": propagation_steps,
+
+        # ── Impact Intelligence Layer (unified causal decision surface) ──
+        "impact_map": impact_map.model_dump(),
+
+        # ── Decision Intelligence (Stage 50) ─────────────────────────
+        "decision_intelligence": di_result.to_dict(),
+
+        # ── Decision Quality (Stage 60) ──────────────────────────────
+        "decision_quality": dq_result.to_dict(),
+
+        # ── Decision Calibration (Stage 70) ──────────────────────────
+        "decision_calibration": cal_result.to_dict(),
+
+        # ── Decision Trust (Stage 80) ────────────────────────────────
+        "decision_trust": trust_result.to_dict(),
+
+        # ── Regime Layer (system-state intelligence) ─────────────────
+        "regime_state": regime_state.to_dict(),
+        "regime_graph_modifiers": regime_graph_modifiers.to_dict(),
+        "decision_triggers": [dt.to_dict() for dt in decision_triggers],
+
+        # ── UnifiedRunResult compatibility fields for ImpactOverlay ──
+        "sector_rollups": {
+            "banking": {
+                "aggregate_stress": banking_dict.get("aggregate_stress", 0.0),
+                "total_loss": sum(
+                    fi.get("loss_usd", 0)
+                    for fi in financial_list
+                    if isinstance(fi, dict) and fi.get("sector", "").lower() == "banking"
+                ),
+                "node_count": sum(
+                    1 for fi in financial_list
+                    if isinstance(fi, dict) and fi.get("sector", "").lower() == "banking"
+                ),
+                "classification": banking_dict.get("classification", "MODERATE"),
+            },
+            "insurance": {
+                "aggregate_stress": insurance_dict.get("aggregate_stress", insurance_dict.get("severity_index", 0.0)),
+                "total_loss": sum(
+                    fi.get("loss_usd", 0)
+                    for fi in financial_list
+                    if isinstance(fi, dict) and fi.get("sector", "").lower() == "insurance"
+                ),
+                "node_count": sum(
+                    1 for fi in financial_list
+                    if isinstance(fi, dict) and fi.get("sector", "").lower() == "insurance"
+                ),
+                "classification": insurance_dict.get("classification", "MODERATE"),
+            },
+            "fintech": {
+                "aggregate_stress": fintech_dict.get("aggregate_stress", 0.0),
+                "total_loss": sum(
+                    fi.get("loss_usd", 0)
+                    for fi in financial_list
+                    if isinstance(fi, dict) and fi.get("sector", "").lower() == "fintech"
+                ),
+                "node_count": sum(
+                    1 for fi in financial_list
+                    if isinstance(fi, dict) and fi.get("sector", "").lower() == "fintech"
+                ),
+                "classification": fintech_dict.get("classification", "MODERATE"),
+            },
+        },
+        "decision_inputs": {
+            "run_id": run_id,
+            "total_loss_usd": headline.get("total_loss_usd", 0),
+            "actions": [
+                {
+                    "id": a.get("action_id", f"ACT-{i+1}"),
+                    "action": a.get("action", a.get("action_en", "")),
+                    "action_ar": a.get("action_ar", ""),
+                    "priority": a.get("priority_score", 0),
+                    "owner": a.get("owner", ""),
+                    "sector": a.get("sector", ""),
+                }
+                for i, a in enumerate(actions[:5])
+                if isinstance(a, dict)
+            ],
+            "all_actions": [
+                {
+                    "id": a.get("action_id", f"ACT-{i+1}"),
+                    "action": a.get("action", a.get("action_en", "")),
+                    "action_ar": a.get("action_ar", ""),
+                    "priority": a.get("priority_score", 0),
+                    "owner": a.get("owner", ""),
+                    "sector": a.get("sector", ""),
+                }
+                for i, a in enumerate(actions)
+                if isinstance(a, dict)
+            ],
+        },
+        "confidence": result.get("confidence_score", 0.85),
+        "trust": {
+            "audit_hash": run_id,
+            "stages_completed": list(stage_timings.keys()),
+        },
     }
 
     logger.info(json.dumps({
         "event": "pipeline_complete",
         "run_id": run_id,
-        "stages_completed": 41,
+        "stages_completed": 60,
         "total_ms": total_ms,
         "risk_level": response["risk_level"],
         "total_loss_usd": headline.get("total_loss_usd", 0),
     }))
+
+    # ── Stage 85: Metrics Provenance Layer ─────────────────────────────────
+    t0 = time.monotonic()
+    try:
+        prov_result = run_provenance_pipeline(response)
+        response["provenance_layer"] = prov_result.to_dict()
+        response["pipeline_stages_completed"] = 85
+    except Exception as prov_err:
+        logger.warning("Provenance pipeline failed: %s", prov_err, exc_info=True)
+        response["provenance_layer"] = {}
+    stage_timings["provenance_layer"] = round((time.monotonic() - t0) * 1000, 1)
+    _log_stage("provenance_layer", run_id, stage_timings["provenance_layer"], 85)
+
+    # ── Validation Contract Layer — detect and flag suspect values BEFORE clamping ──
+    # Late validation catches issues introduced by downstream stages (19-41)
+    late_validation_flags = validate_metrics(response, scenario_window_hours=float(horizon_hours))
+    # Merge early + late flags (deduplicate by field+rule)
+    all_flags = list(early_validation_flags) + list(late_validation_flags)
+    seen_flag_keys: set[str] = set()
+    deduped_flags: list = []
+    for f in all_flags:
+        key = f"{f.field}:{f.rule}"
+        if key not in seen_flag_keys:
+            seen_flag_keys.add(key)
+            deduped_flags.append(f)
+    if deduped_flags:
+        response["validation_flags"] = [f.to_dict() for f in deduped_flags]
+        logger.warning(
+            "Validation flags for run %s: %d issues detected (%d early, %d late)",
+            run_id, len(deduped_flags), len(early_validation_flags), len(late_validation_flags),
+        )
+    else:
+        response["validation_flags"] = []
+
+    # ── Final Stage: Data Sanity Guard — prevent invalid values reaching UI ──
+    sanitize_run_result(response)
 
     return response
