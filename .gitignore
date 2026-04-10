@@ -57,3 +57,8 @@ backend/.venv_test/
 
 # Large patch files
 *.patch
+backend/.local-venv/
+backend/.venv-test/
+__pycache__/
+*.pyc
+.env
