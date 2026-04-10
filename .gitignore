@@ -62,3 +62,7 @@ backend/.venv-test/
 __pycache__/
 *.pyc
 .env
+
+backend/.venv/
+backend/.pytest_cache/
+backend/.ruff_cache/
