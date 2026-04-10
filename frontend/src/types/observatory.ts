@@ -870,3 +870,424 @@ export interface RecomputeValueRequest {
   notes?:             string | null;
   computed_by?:       string | null;
 }
+
+// ── Transmission Path Engine types ──────────────────────────────────────────
+
+/** A single directional causal link in a transmission chain */
+export interface TransmissionNode {
+  source: string;
+  target: string;
+  source_label: string;
+  target_label: string;
+  source_sector: string;
+  target_sector: string;
+  propagation_delay_hours: number;
+  severity_transfer_ratio: number;
+  severity_at_source: number;
+  severity_at_target: number;
+  breakable_point: boolean;
+  mechanism: string;
+  hop: number;
+}
+
+/** Full transmission chain for a scenario run */
+export interface TransmissionChain {
+  scenario_id: string;
+  nodes: TransmissionNode[];
+  total_delay: number;
+  max_severity: number;
+  breakable_points: TransmissionNode[];
+  summary: string;
+  summary_ar: string;
+  chain_length: number;
+}
+
+// ── Counterfactual Calibration Engine types ──────────────────────────────────
+
+/** A single counterfactual scenario outcome */
+export interface CounterfactualOutcome {
+  label: string;
+  label_ar: string;
+  projected_loss_usd: number;
+  projected_loss_formatted: string;
+  risk_level: string;
+  recovery_days: number;
+  operational_cost_usd: number;
+  severity: number;
+  loss_avoided_usd?: number;
+  loss_avoided_formatted?: string;
+  operational_cost_formatted?: string;
+  actions_count?: number;
+  confidence_adjusted?: number;
+}
+
+/** Delta between baseline and recommended outcomes */
+export interface CounterfactualDelta {
+  loss_reduction_usd: number;
+  loss_reduction_pct: number;
+  loss_reduction_formatted: string;
+  alt_reduction_usd: number;
+  alt_reduction_pct: number;
+  recommended_net_benefit_usd: number;
+  alternative_net_benefit_usd: number;
+  recovery_improvement_days: number;
+  best_option: "recommended" | "alternative" | "equivalent";
+  delta_explained: string;
+  delta_explained_ar: string;
+}
+
+/** Full calibrated counterfactual analysis */
+export interface CalibratedCounterfactual {
+  scenario_id: string;
+  baseline: CounterfactualOutcome;
+  recommended: CounterfactualOutcome;
+  alternative: CounterfactualOutcome;
+  delta: CounterfactualDelta;
+  narrative: string;
+  narrative_ar: string;
+  consistency_flag: "CONSISTENT" | "CORRECTED_COSTLY" | "CORRECTED_INCONSISTENCY";
+  confidence_score: number;
+}
+
+// ── Action Pathways Engine types ────────────────────────────────────────────
+
+/** Action type classification */
+export type ActionType = "IMMEDIATE" | "CONDITIONAL" | "STRATEGIC";
+
+/** Reversibility rating */
+export type Reversibility = "HIGH" | "MEDIUM" | "LOW";
+
+/** A single classified action with execution metadata */
+export interface ClassifiedAction {
+  id: string;
+  label: string;
+  label_ar: string;
+  type: ActionType;
+  owner: string;
+  sector: string;
+  deadline: string;
+  trigger_condition: string | null;
+  reversibility: Reversibility;
+  expected_impact: number;
+  priority_score: number;
+  urgency: number;
+  loss_avoided_usd: number;
+  cost_usd: number;
+  time_to_act_hours: number;
+  original_action: Record<string, unknown>;
+}
+
+// ── Decision Trust System types (Phase 2) ──────────────────────────────────
+
+/** Per-action confidence score */
+export interface ActionConfidence {
+  action_id: string;
+  confidence_score: number;
+  confidence_label: "HIGH" | "MEDIUM" | "LOW";
+}
+
+/** Model dependency metrics */
+export interface ModelDependency {
+  data_completeness: number;
+  signal_reliability: number;
+  assumption_sensitivity: "LOW" | "MEDIUM" | "HIGH";
+}
+
+/** Whether validation is required before acting */
+export interface ValidationRequirement {
+  required: boolean;
+  reason: string;
+  validation_type: "REGULATORY" | "OPERATIONAL" | "RISK" | "NONE";
+}
+
+/** Human-readable confidence drivers */
+export interface ConfidenceBreakdown {
+  drivers: string[];
+}
+
+/** Decision risk if wrong */
+export interface RiskEnvelope {
+  downside_if_wrong: "LOW" | "MEDIUM" | "HIGH";
+  reversibility: "HIGH" | "MEDIUM" | "LOW";
+  time_sensitivity: "LOW" | "MEDIUM" | "CRITICAL";
+}
+
+/** Full decision trust payload */
+export interface DecisionTrustPayload {
+  action_confidence: ActionConfidence[];
+  model_dependency: ModelDependency;
+  validation: ValidationRequirement;
+  confidence_breakdown: ConfidenceBreakdown;
+  risk_profile: RiskEnvelope;
+}
+
+/** Structured action pathways with typed categories */
+export interface ActionPathways {
+  immediate: ClassifiedAction[];
+  conditional: ClassifiedAction[];
+  strategic: ClassifiedAction[];
+  total_actions: number;
+  scenario_id: string;
+  severity: number;
+  risk_level: string;
+  summary: string;
+  summary_ar: string;
+}
+
+// ============================================================
+// Phase 3 — Decision Integration Layer
+// ============================================================
+
+/** Who owns this decision */
+export interface DecisionOwnership {
+  decision_id: string;
+  owner_role: "CRO" | "CFO" | "COO" | "TREASURY" | "RISK" | "REGULATOR";
+  organization_unit: string;
+  execution_channel: string;
+}
+
+/** Approval workflow for a decision */
+export interface DecisionWorkflow {
+  decision_id: string;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "ESCALATED";
+  approval_required: boolean;
+  approver_role: string;
+  escalation_path: string[];
+}
+
+/** Execution bridge for an action */
+export interface ExecutionTrigger {
+  action_id: string;
+  execution_mode: "MANUAL" | "AUTO" | "API";
+  system_target: string;
+  trigger_ready: boolean;
+}
+
+/** Lifecycle state of a decision */
+export interface DecisionLifecycle {
+  decision_id: string;
+  status: "ISSUED" | "APPROVED" | "EXECUTED" | "COMPLETED";
+  issued_at: string;
+  approved_at: string | null;
+  executed_at: string | null;
+  outcome: string | null;
+}
+
+/** Integration connector */
+export interface IntegrationConnector {
+  name: string;
+  type: "API" | "WEBHOOK";
+  endpoint: string;
+  active: boolean;
+}
+
+/** Integration status */
+export interface IntegrationStatus {
+  available: string[];
+  active: string[];
+  connectors: Record<string, IntegrationConnector>;
+}
+
+/** Full Phase 3 decision integration payload */
+export interface DecisionIntegrationPayload {
+  decision_ownership: DecisionOwnership[];
+  workflows: DecisionWorkflow[];
+  execution_triggers: ExecutionTrigger[];
+  decision_lifecycle: DecisionLifecycle[];
+  integration: IntegrationStatus;
+}
+
+// ============================================================
+// Phase 4 — Value Engine / ROI Layer
+// ============================================================
+
+/** Expected vs actual outcome for a decision */
+export interface ExpectedActual {
+  decision_id: string;
+  expected_outcome: number;
+  actual_outcome: number;
+  delta: number;
+  variance_ratio: number;
+}
+
+/** Value attribution for a decision */
+export interface ValueAttribution {
+  decision_id: string;
+  value_created: number;
+  attribution_confidence: number;
+  attribution_type: "DIRECT" | "PARTIAL" | "LOW_CONFIDENCE";
+}
+
+/** Effectiveness classification for a decision */
+export interface DecisionEffectiveness {
+  decision_id: string;
+  score: number;
+  classification: "SUCCESS" | "NEUTRAL" | "FAILURE";
+}
+
+/** Portfolio-level value aggregation */
+export interface PortfolioValue {
+  total_decisions: number;
+  total_value_created: number;
+  total_expected: number;
+  total_actual: number;
+  net_delta: number;
+  success_rate: number;
+  failure_count: number;
+  success_count: number;
+  neutral_count: number;
+  avg_effectiveness_score: number;
+  avg_attribution_confidence: number;
+  best_decision_id: string | null;
+  worst_decision_id: string | null;
+  roi_ratio: number;
+}
+
+/** Full Phase 4 value measurement payload */
+export interface DecisionValuePayload {
+  expected_actual: ExpectedActual[];
+  value_attribution: ValueAttribution[];
+  effectiveness: DecisionEffectiveness[];
+  portfolio_value: PortfolioValue;
+}
+
+// ============================================================
+// Phase 5 — Evidence & Governance Layer
+// ============================================================
+
+/** Evidence completeness flags */
+export interface EvidenceCompleteness {
+  has_signal: boolean;
+  has_transmission: boolean;
+  has_counterfactual: boolean;
+  has_trust: boolean;
+  has_execution: boolean;
+  has_outcome: boolean;
+  complete: boolean;
+}
+
+/** Full evidence pack for a single decision */
+export interface DecisionEvidence {
+  decision_id: string;
+  run_id: string;
+  assembled_at: string;
+  signal_snapshot: Record<string, unknown>;
+  transmission_evidence: Record<string, unknown>;
+  counterfactual_basis: Record<string, unknown>;
+  trust_basis: Record<string, unknown>;
+  execution_evidence: Record<string, unknown>;
+  outcome_evidence: Record<string, unknown>;
+  completeness: EvidenceCompleteness;
+}
+
+/** Governance policy evaluation for a decision */
+export interface DecisionPolicy {
+  decision_id: string;
+  allowed: boolean;
+  violations: string[];
+  required_approvals: string[];
+  rules_evaluated: number;
+  rules_passed: number;
+}
+
+/** Attribution defensibility for a decision */
+export interface AttributionDefense {
+  decision_id: string;
+  attribution_type: "DIRECT" | "ASSISTED" | "LOW_CONFIDENCE";
+  confidence_band: number;
+  external_factors: string[];
+  explanation: string;
+  original_attribution_type: string;
+  original_confidence: number;
+}
+
+/** Override tracking record for a decision */
+export interface DecisionOverride {
+  decision_id: string;
+  overridden: boolean;
+  overridden_by: string | null;
+  reason: string | null;
+  override_type: "POLICY_OVERRIDE" | "ESCALATION_RESOLUTION" | "NONE";
+  timestamp: string | null;
+  policy_violations_at_override: string[];
+}
+
+/** Full Phase 5 governance payload */
+export interface GovernancePayload {
+  decision_evidence: DecisionEvidence[];
+  policy: DecisionPolicy[];
+  attribution_defense: AttributionDefense[];
+  overrides: DecisionOverride[];
+}
+
+// ── Phase 6 — Pilot Readiness & Operating Proof ──────────────────────
+
+export interface PilotScope {
+  in_scope: boolean;
+  scenario_id: string;
+  scope_sector: string;
+  execution_mode: "SHADOW" | "ADVISORY" | "CONTROLLED";
+  decision_owners: string[];
+  approval_flow: string[];
+  reason: string;
+  validated_at: string;
+}
+
+export interface PilotKPI {
+  total_decisions: number;
+  decision_latency_hours: number;
+  latency_reduction_pct: number;
+  human_vs_system_delta: number;
+  avoided_loss_estimate: number;
+  false_positive_rate: number;
+  accuracy_rate: number;
+  total_escalations: number;
+  divergent_count: number;
+  matched_count: number;
+}
+
+export interface ShadowDecision {
+  decision_id: string;
+  system_decision: Record<string, unknown>;
+  human_decision: Record<string, unknown> | null;
+  divergence: boolean;
+  divergence_reason: string | null;
+  divergence_count: number;
+  comparison_status: "PENDING_HUMAN_INPUT" | "COMPARED";
+  compared_at: string;
+}
+
+export interface PilotReport {
+  period: string;
+  generated_at: string;
+  run_count: number;
+  total_decisions: number;
+  matched_decisions: number;
+  divergent_decisions: number;
+  divergence_rate: number;
+  accuracy_rate: number;
+  value_created: number;
+  avg_latency_reduction: number;
+  false_positive_rate: number;
+  key_findings: string[];
+  recommendation: string;
+}
+
+export interface FailureMode {
+  id: string;
+  condition: string;
+  description: string;
+  triggered: boolean;
+  fallback_action: string;
+  severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  detail: string;
+  evaluated_at: string;
+}
+
+export interface PilotPayload {
+  pilot_scope: PilotScope;
+  pilot_kpi: PilotKPI;
+  shadow_comparisons: ShadowDecision[];
+  pilot_report: PilotReport;
+  failure_modes: FailureMode[];
+}

@@ -305,6 +305,26 @@ export function useCommandCenter(runId?: string | null) {
     totalSteps: store.totalSteps,
     trust: store.trust,
 
+    // Phase 1 Execution Engine data
+    transmissionChain: store.transmissionChain,
+    counterfactual: store.counterfactual,
+    actionPathways: store.actionPathways,
+
+    // Phase 2 Decision Trust data
+    decisionTrust: store.decisionTrust,
+
+    // Phase 3 Decision Integration data
+    decisionIntegration: store.decisionIntegration,
+
+    // Phase 4 Decision Value data
+    decisionValue: store.decisionValue,
+
+    // Phase 5 Governance data
+    governance: store.governance,
+
+    // Phase 6 Pilot Readiness data
+    pilot: store.pilot,
+
     // UI State
     selectedNodeId: store.selectedNodeId,
     panelFocus: store.panelFocus,

@@ -60,6 +60,114 @@ export function useRunResult(runId: string | null) {
 }
 
 // ============================================================================
+// Phase 1 Execution Engine Hooks — Transmission, Counterfactual, Action Pathways
+// ============================================================================
+
+/**
+ * Fetch transmission chain for a completed run.
+ * GET /api/v1/runs/{id}/transmission
+ */
+export function useTransmissionChain(runId: string | null) {
+  return useQuery({
+    queryKey: ["observatory", "transmission", runId],
+    queryFn: () => api.observatory.transmission(runId!),
+    enabled: !!runId,
+    staleTime: Infinity,
+  });
+}
+
+/**
+ * Fetch calibrated counterfactual for a completed run.
+ * GET /api/v1/runs/{id}/counterfactual
+ */
+export function useCounterfactual(runId: string | null) {
+  return useQuery({
+    queryKey: ["observatory", "counterfactual", runId],
+    queryFn: () => api.observatory.counterfactual(runId!),
+    enabled: !!runId,
+    staleTime: Infinity,
+  });
+}
+
+/**
+ * Fetch classified action pathways for a completed run.
+ * GET /api/v1/runs/{id}/action-pathways
+ */
+export function useActionPathways(runId: string | null) {
+  return useQuery({
+    queryKey: ["observatory", "action-pathways", runId],
+    queryFn: () => api.observatory.actionPathways(runId!),
+    enabled: !!runId,
+    staleTime: Infinity,
+  });
+}
+
+/**
+ * Fetch decision trust payload for a completed run.
+ * GET /api/v1/runs/{id}/decision-trust
+ */
+export function useDecisionTrust(runId: string | null) {
+  return useQuery({
+    queryKey: ["observatory", "decision-trust", runId],
+    queryFn: () => api.observatory.decisionTrust(runId!),
+    enabled: !!runId,
+    staleTime: Infinity,
+  });
+}
+
+/**
+ * Fetch decision integration payload for a completed run.
+ * GET /api/v1/runs/{id}/decision-integration
+ */
+export function useDecisionIntegration(runId: string | null) {
+  return useQuery({
+    queryKey: ["observatory", "decision-integration", runId],
+    queryFn: () => api.observatory.decisionIntegration(runId!),
+    enabled: !!runId,
+    staleTime: Infinity,
+  });
+}
+
+/**
+ * Fetch decision value payload for a completed run (Phase 4).
+ * GET /api/v1/runs/{id}/decision-value
+ */
+export function useDecisionValuePayload(runId: string | null) {
+  return useQuery({
+    queryKey: ["observatory", "decision-value", runId],
+    queryFn: () => api.observatory.decisionValue(runId!),
+    enabled: !!runId,
+    staleTime: Infinity,
+  });
+}
+
+/**
+ * Fetch governance payload for a completed run (Phase 5).
+ * GET /api/v1/runs/{id}/governance
+ */
+export function useGovernance(runId: string | null) {
+  return useQuery({
+    queryKey: ["observatory", "governance", runId],
+    queryFn: () => api.observatory.governance(runId!),
+    enabled: !!runId,
+    staleTime: Infinity,
+  });
+}
+
+/**
+ * Fetch pilot payload for a completed run (Phase 6).
+ * GET /api/v1/runs/{id}/pilot
+ */
+export function usePilotPayload(runId: string | null) {
+  return useQuery({
+    queryKey: ["observatory", "pilot", runId],
+    queryFn: () => api.observatory.pilot(runId!),
+    enabled: !!runId,
+    staleTime: Infinity,
+  });
+}
+
+// ============================================================================
 // Live Signal Layer hooks
 // ============================================================================
 

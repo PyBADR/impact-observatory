@@ -601,6 +601,171 @@ async def get_run_graph_payload(run_id: str, request: Request):
     }
 
 
+@router.get("/{run_id}/transmission")
+async def get_run_transmission(run_id: str, request: Request):
+    """Get transmission chain — causal propagation path with breakable points."""
+    enforce_permission(get_role_from_request(request), "run:read")
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return result.get("transmission_chain", {})
+
+
+@router.get("/{run_id}/counterfactual")
+async def get_run_counterfactual(run_id: str, request: Request):
+    """Get calibrated counterfactual — baseline vs recommended vs alternative."""
+    enforce_permission(get_role_from_request(request), "run:read")
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return result.get("counterfactual", {})
+
+
+@router.get("/{run_id}/action-pathways")
+async def get_run_action_pathways(run_id: str, request: Request):
+    """Get structured action pathways — IMMEDIATE / CONDITIONAL / STRATEGIC."""
+    enforce_permission(get_role_from_request(request), "run:decision")
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return result.get("action_pathways", {})
+
+
+@router.get("/{run_id}/decision-trust")
+async def get_run_decision_trust(run_id: str, request: Request):
+    """Get decision trust payload — confidence, dependency, validation, risk envelope."""
+    enforce_permission(get_role_from_request(request), "run:read")
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return {
+        "action_confidence": result.get("action_confidence", []),
+        "model_dependency": result.get("model_dependency", {}),
+        "validation": result.get("validation", {}),
+        "confidence_breakdown": result.get("confidence_breakdown", {}),
+        "risk_profile": result.get("risk_profile", {}),
+    }
+
+
+@router.get("/{run_id}/decision-integration")
+async def get_run_decision_integration(run_id: str, request: Request):
+    """Get decision integration payload — ownership, workflows, execution, lifecycle, integrations."""
+    enforce_permission(get_role_from_request(request), "run:read")
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return {
+        "decision_ownership": result.get("decision_ownership", []),
+        "workflows": result.get("decision_workflows", []),
+        "execution_triggers": result.get("execution_triggers", []),
+        "decision_lifecycle": result.get("decision_lifecycle", []),
+        "integration": result.get("integration", {}),
+    }
+
+
+@router.get("/{run_id}/decision-value")
+async def get_run_decision_value(run_id: str, request: Request):
+    """Get decision value payload — expected vs actual, attribution, effectiveness, portfolio."""
+    enforce_permission(get_role_from_request(request), "run:read")
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return {
+        "expected_actual": result.get("expected_actual", []),
+        "value_attribution": result.get("value_attribution", []),
+        "effectiveness": result.get("effectiveness", []),
+        "portfolio_value": result.get("portfolio_value", {}),
+    }
+
+
+@router.get("/{run_id}/governance")
+async def get_run_governance(run_id: str, request: Request):
+    """Get governance payload — evidence, policy, attribution defense, overrides (Phase 5)."""
+    enforce_permission(get_role_from_request(request), "run:read")
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return {
+        "decision_evidence": result.get("decision_evidence", []),
+        "policy": result.get("policy", []),
+        "attribution_defense": result.get("attribution_defense", []),
+        "overrides": result.get("overrides", []),
+    }
+
+
+@router.get("/{run_id}/evidence/{decision_id}")
+async def get_decision_evidence(run_id: str, decision_id: str, request: Request):
+    """Get full evidence pack for a single decision."""
+    enforce_permission(get_role_from_request(request), "run:read")
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    evidence_list = result.get("decision_evidence", [])
+    for ev in evidence_list:
+        if isinstance(ev, dict) and ev.get("decision_id") == decision_id:
+            return ev
+    raise HTTPException(status_code=404, detail=f"Evidence for decision {decision_id} not found in run {run_id}")
+
+
+@router.get("/{run_id}/audit-trail")
+async def get_run_audit_trail(run_id: str, request: Request):
+    """Get full audit trail for a run — evidence + policy + overrides combined."""
+    enforce_permission(get_role_from_request(request), "audit:read")
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return {
+        "run_id": run_id,
+        "pipeline_stages_completed": result.get("pipeline_stages_completed", 0),
+        "decision_evidence": result.get("decision_evidence", []),
+        "policy": result.get("policy", []),
+        "attribution_defense": result.get("attribution_defense", []),
+        "overrides": result.get("overrides", []),
+        "stage_timings": result.get("stage_timings", {}),
+    }
+
+
+@router.get("/{run_id}/pilot")
+async def get_run_pilot(run_id: str, request: Request):
+    """Get full Phase 6 pilot payload — scope, KPIs, shadow, report, failures."""
+    enforce_permission(get_role_from_request(request), "run:read")
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return {
+        "run_id": run_id,
+        "pilot_scope": result.get("pilot_scope", {}),
+        "pilot_kpi": result.get("pilot_kpi", {}),
+        "shadow_comparisons": result.get("shadow_comparisons", []),
+        "pilot_report": result.get("pilot_report", {}),
+        "failure_modes": result.get("failure_modes", []),
+    }
+
+
+@router.get("/{run_id}/pilot/kpi")
+async def get_run_pilot_kpi(run_id: str, request: Request):
+    """Get pilot KPI measurements for a run."""
+    enforce_permission(get_role_from_request(request), "run:read")
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return result.get("pilot_kpi", {})
+
+
+@router.get("/{run_id}/pilot/shadow")
+async def get_run_shadow_comparisons(run_id: str, request: Request):
+    """Get shadow mode comparisons for a run."""
+    enforce_permission(get_role_from_request(request), "run:read")
+    result = await run_store.aget_for_org(run_id, org=_get_org_from_request(request))
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return {
+        "run_id": run_id,
+        "shadow_comparisons": result.get("shadow_comparisons", []),
+        "execution_mode": result.get("pilot_scope", {}).get("execution_mode", "SHADOW"),
+    }
+
+
 @router.get("/audit/log")
 async def get_audit_log(request: Request, run_id: str | None = Query(None), limit: int = Query(100, ge=1, le=1000)):
     """Get audit trail entries."""

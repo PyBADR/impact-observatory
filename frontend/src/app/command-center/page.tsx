@@ -55,6 +55,35 @@ import { StatusBar } from "@/features/command-center/components/StatusBar";
 import { DemoFlow } from "@/features/command-center/components/DemoFlow";
 import { BoardView } from "@/features/command-center/components/BoardView";
 
+// Phase 1.5 — Decision Experience Layer
+import { ExecutiveDecisionStrip } from "@/features/command-center/components/ExecutiveDecisionStrip";
+import { DecisionGateBlock } from "@/features/command-center/components/DecisionGateBlock";
+import { TransmissionBlock } from "@/features/command-center/components/TransmissionBlock";
+import { CounterfactualBlock } from "@/features/command-center/components/CounterfactualBlock";
+import { ActionReadinessBlock } from "@/features/command-center/components/ActionReadinessBlock";
+import {
+  buildExecutiveStrip,
+  buildDecisionGate,
+  buildTransmissionView,
+  buildCounterfactualView,
+} from "@/features/command-center/lib/decision-view-models";
+
+// Phase 2 — Decision Trust System
+import { DecisionTrustPanel } from "@/features/command-center/components/DecisionTrustPanel";
+
+// Phase 3 — Decision Integration Layer
+import { WorkflowPanel } from "@/features/command-center/components/WorkflowPanel";
+import { LifecyclePanel } from "@/features/command-center/components/LifecyclePanel";
+
+// Phase 4 — Value Engine / ROI Layer
+import { CFOValuePanel } from "@/features/command-center/components/CFOValuePanel";
+
+// Phase 5 — Evidence & Governance Layer
+import { EvidenceGovernancePanel } from "@/features/command-center/components/EvidenceGovernancePanel";
+
+// Phase 6 — Pilot Readiness & Operating Proof
+import { PilotPanel } from "@/features/command-center/components/PilotPanel";
+
 // ── Loading Skeleton ──────────────────────────────────────────────────
 
 function LoadingSkeleton() {
@@ -163,6 +192,26 @@ function CommandCenterInner() {
     executeAction,
     switchToMock,
     switchToLive,
+
+    // Phase 1 Execution Engine data
+    transmissionChain,
+    counterfactual,
+    actionPathways,
+
+    // Phase 2 Decision Trust data
+    decisionTrust,
+
+    // Phase 3 Decision Integration data
+    decisionIntegration,
+
+    // Phase 4 Decision Value data
+    decisionValue,
+
+    // Phase 5 Governance data
+    governance,
+
+    // Phase 6 Pilot Readiness data
+    pilot,
   } = useCommandCenter(runId);
 
   const isLive = dataSource === "live";
@@ -176,6 +225,24 @@ function CommandCenterInner() {
         .map((n) => n.label)
         .filter((v, i, a) => a.indexOf(v) === i),
     [graphNodes],
+  );
+
+  // ── Phase 1.5 View-Model derivations (memoized) ──
+  const executiveCards = useMemo(
+    () => buildExecutiveStrip(actionPathways),
+    [actionPathways],
+  );
+  const decisionGate = useMemo(
+    () => buildDecisionGate(actionPathways),
+    [actionPathways],
+  );
+  const transmissionView = useMemo(
+    () => buildTransmissionView(transmissionChain),
+    [transmissionChain],
+  );
+  const counterfactualView = useMemo(
+    () => buildCounterfactualView(counterfactual),
+    [counterfactual],
   );
 
   // ── Exposure → Graph bridge: clicking a country selects its highest-stress node ──
@@ -294,6 +361,56 @@ function CommandCenterInner() {
           />
         </div>
       )}
+
+      {/* ── PHASE 1.5: Executive Decision Experience ────── */}
+      {executiveCards.length > 0 && (
+        <ExecutiveDecisionStrip
+          cards={executiveCards}
+          actionConfidence={decisionTrust?.action_confidence}
+          riskProfile={decisionTrust?.risk_profile}
+          ownerships={decisionIntegration?.decision_ownership}
+          workflows={decisionIntegration?.workflows}
+        />
+      )}
+      {decisionGate.total_actions > 0 && (
+        <DecisionGateBlock gate={decisionGate} />
+      )}
+      {transmissionView.nodes.length > 0 && (
+        <TransmissionBlock view={transmissionView} />
+      )}
+      {counterfactualView.baseline.label !== "—" && (
+        <CounterfactualBlock view={counterfactualView} />
+      )}
+      {actionPathways && (
+        <ActionReadinessBlock
+          pathways={actionPathways}
+          actionConfidence={decisionTrust?.action_confidence}
+          executionTriggers={decisionIntegration?.execution_triggers}
+        />
+      )}
+
+      {/* ── PHASE 2: Decision Trust Panel ──────────────── */}
+      <DecisionTrustPanel trust={decisionTrust} />
+
+      {/* ── PHASE 3: Workflow + Lifecycle Panels ───────── */}
+      <WorkflowPanel
+        workflows={decisionIntegration?.workflows}
+        ownerships={decisionIntegration?.decision_ownership}
+      />
+      <LifecyclePanel
+        lifecycles={decisionIntegration?.decision_lifecycle}
+        triggers={decisionIntegration?.execution_triggers}
+        integration={decisionIntegration?.integration}
+      />
+
+      {/* ── PHASE 4: CFO Value Report ─────────────────── */}
+      <CFOValuePanel value={decisionValue} />
+
+      {/* ── PHASE 5: Evidence & Governance ────────────── */}
+      <EvidenceGovernancePanel governance={governance} />
+
+      {/* ── PHASE 6: Pilot Readiness & Operating Proof ── */}
+      <PilotPanel pilot={pilot} />
 
       {/* ── ZONE 1: GCC Macro Overview (hero) ───────────── */}
       <MacroOverviewHeader

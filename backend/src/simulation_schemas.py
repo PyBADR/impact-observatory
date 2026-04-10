@@ -463,6 +463,431 @@ class ScenarioListItem(BaseModel):
     cross_sector: bool = False
 
 
+# ---------------------------------------------------------------------------
+# Transmission Path Engine schemas
+# ---------------------------------------------------------------------------
+
+class TransmissionNode(BaseModel):
+    """A single directional causal link in a transmission chain."""
+    source: str = ""
+    target: str = ""
+    source_label: str = ""
+    target_label: str = ""
+    source_sector: str = ""
+    target_sector: str = ""
+    propagation_delay_hours: float = 0.0
+    severity_transfer_ratio: float = 0.0
+    severity_at_source: float = 0.0
+    severity_at_target: float = 0.0
+    breakable_point: bool = False
+    mechanism: str = ""
+    hop: int = 0
+
+
+class TransmissionChain(BaseModel):
+    """Full transmission chain for a scenario run."""
+    scenario_id: str = ""
+    nodes: List[Dict[str, Any]] = Field(default_factory=list)
+    total_delay: float = 0.0
+    max_severity: float = 0.0
+    breakable_points: List[Dict[str, Any]] = Field(default_factory=list)
+    summary: str = ""
+    summary_ar: str = ""
+    chain_length: int = 0
+
+
+# ---------------------------------------------------------------------------
+# Counterfactual Calibration Engine schemas
+# ---------------------------------------------------------------------------
+
+class CounterfactualOutcome(BaseModel):
+    """A single counterfactual scenario outcome."""
+    label: str = ""
+    label_ar: str = ""
+    projected_loss_usd: float = 0.0
+    projected_loss_formatted: str = "$0"
+    risk_level: str = "NOMINAL"
+    recovery_days: int = 14
+    operational_cost_usd: float = 0.0
+    severity: float = 0.0
+
+
+class CounterfactualDelta(BaseModel):
+    """Delta between baseline and recommended outcomes."""
+    loss_reduction_usd: float = 0.0
+    loss_reduction_pct: float = 0.0
+    loss_reduction_formatted: str = "$0"
+    alt_reduction_usd: float = 0.0
+    alt_reduction_pct: float = 0.0
+    recommended_net_benefit_usd: float = 0.0
+    alternative_net_benefit_usd: float = 0.0
+    recovery_improvement_days: int = 0
+    best_option: str = "recommended"
+    delta_explained: str = ""
+    delta_explained_ar: str = ""
+
+
+class CalibratedCounterfactual(BaseModel):
+    """Full calibrated counterfactual analysis."""
+    scenario_id: str = ""
+    baseline: Dict[str, Any] = Field(default_factory=dict)
+    recommended: Dict[str, Any] = Field(default_factory=dict)
+    alternative: Dict[str, Any] = Field(default_factory=dict)
+    delta: Dict[str, Any] = Field(default_factory=dict)
+    narrative: str = ""
+    narrative_ar: str = ""
+    consistency_flag: str = "CONSISTENT"
+    confidence_score: float = 0.0
+
+
+# ---------------------------------------------------------------------------
+# Action Pathways Engine schemas
+# ---------------------------------------------------------------------------
+
+class ClassifiedAction(BaseModel):
+    """A single classified action with execution metadata."""
+    id: str = ""
+    label: str = ""
+    label_ar: str = ""
+    type: str = "STRATEGIC"  # IMMEDIATE | CONDITIONAL | STRATEGIC
+    owner: str = ""
+    sector: str = "cross-sector"
+    deadline: str = ""
+    trigger_condition: Optional[str] = None
+    reversibility: str = "MEDIUM"  # HIGH | MEDIUM | LOW
+    expected_impact: float = 0.0
+    priority_score: float = 0.0
+    urgency: float = 0.0
+    loss_avoided_usd: float = 0.0
+    cost_usd: float = 0.0
+    time_to_act_hours: int = 24
+
+
+class ActionPathways(BaseModel):
+    """Structured action pathways with typed categories."""
+    immediate: List[Dict[str, Any]] = Field(default_factory=list)
+    conditional: List[Dict[str, Any]] = Field(default_factory=list)
+    strategic: List[Dict[str, Any]] = Field(default_factory=list)
+    total_actions: int = 0
+    scenario_id: str = ""
+    severity: float = 0.0
+    risk_level: str = "NOMINAL"
+    summary: str = ""
+    summary_ar: str = ""
+
+
+# ---------------------------------------------------------------------------
+# Decision Trust System schemas (Phase 2)
+# ---------------------------------------------------------------------------
+
+class ActionConfidence(BaseModel):
+    """Per-action confidence score."""
+    action_id: str = ""
+    confidence_score: float = 0.0
+    confidence_label: str = "MEDIUM"  # HIGH | MEDIUM | LOW
+
+
+class ModelDependency(BaseModel):
+    """Model dependency metrics."""
+    data_completeness: float = 0.0
+    signal_reliability: float = 0.0
+    assumption_sensitivity: str = "MEDIUM"  # LOW | MEDIUM | HIGH
+
+
+class ValidationRequirement(BaseModel):
+    """Whether validation is required before acting."""
+    required: bool = False
+    reason: str = ""
+    validation_type: str = "NONE"  # REGULATORY | OPERATIONAL | RISK | NONE
+
+
+class ConfidenceBreakdown(BaseModel):
+    """Human-readable confidence drivers."""
+    drivers: List[str] = Field(default_factory=list)
+
+
+class RiskEnvelope(BaseModel):
+    """Decision risk if wrong."""
+    downside_if_wrong: str = "MEDIUM"   # LOW | MEDIUM | HIGH
+    reversibility: str = "MEDIUM"       # HIGH | MEDIUM | LOW
+    time_sensitivity: str = "MEDIUM"    # LOW | MEDIUM | CRITICAL
+
+
+class DecisionTrust(BaseModel):
+    """Full decision trust payload (Phase 2)."""
+    action_confidence: List[Dict[str, Any]] = Field(default_factory=list)
+    model_dependency: Dict[str, Any] = Field(default_factory=dict)
+    validation: Dict[str, Any] = Field(default_factory=dict)
+    confidence_breakdown: Dict[str, Any] = Field(default_factory=dict)
+    risk_profile: Dict[str, Any] = Field(default_factory=dict)
+
+
+# ---------------------------------------------------------------------------
+# Decision Integration Layer schemas (Phase 3)
+# ---------------------------------------------------------------------------
+
+class DecisionOwnership(BaseModel):
+    """Who owns this decision."""
+    decision_id: str = ""
+    owner_role: str = "CRO"  # CRO | CFO | COO | TREASURY | RISK | REGULATOR
+    organization_unit: str = ""
+    execution_channel: str = ""
+
+
+class DecisionWorkflow(BaseModel):
+    """Approval workflow for a decision."""
+    decision_id: str = ""
+    status: str = "PENDING"  # PENDING | APPROVED | REJECTED | ESCALATED
+    approval_required: bool = False
+    approver_role: str = ""
+    escalation_path: List[str] = Field(default_factory=list)
+
+
+class ExecutionTrigger(BaseModel):
+    """Execution bridge for an action."""
+    action_id: str = ""
+    execution_mode: str = "MANUAL"  # MANUAL | AUTO | API
+    system_target: str = ""
+    trigger_ready: bool = False
+
+
+class DecisionLifecycle(BaseModel):
+    """Full lifecycle state of a decision."""
+    decision_id: str = ""
+    status: str = "ISSUED"  # ISSUED | APPROVED | EXECUTED | COMPLETED
+    issued_at: str = ""
+    approved_at: Optional[str] = None
+    executed_at: Optional[str] = None
+    outcome: Optional[str] = None
+
+
+class IntegrationConnector(BaseModel):
+    """A single external integration connector."""
+    name: str = ""
+    type: str = "API"  # API | WEBHOOK
+    endpoint: str = ""
+    active: bool = False
+
+
+class IntegrationStatus(BaseModel):
+    """Available integrations."""
+    available: List[str] = Field(default_factory=list)
+    active: List[str] = Field(default_factory=list)
+    connectors: Dict[str, Any] = Field(default_factory=dict)
+
+
+class DecisionIntegration(BaseModel):
+    """Full Phase 3 decision integration payload."""
+    decision_ownership: List[Dict[str, Any]] = Field(default_factory=list)
+    workflows: List[Dict[str, Any]] = Field(default_factory=list)
+    execution_triggers: List[Dict[str, Any]] = Field(default_factory=list)
+    decision_lifecycle: List[Dict[str, Any]] = Field(default_factory=list)
+    integration: Dict[str, Any] = Field(default_factory=dict)
+
+
+# ---------------------------------------------------------------------------
+# Value Engine schemas (Phase 4)
+# ---------------------------------------------------------------------------
+
+class ExpectedActual(BaseModel):
+    """Expected vs actual outcome for a decision."""
+    decision_id: str = ""
+    expected_outcome: float = 0.0
+    actual_outcome: float = 0.0
+    delta: float = 0.0
+    variance_ratio: float = 0.0
+
+
+class ValueAttribution(BaseModel):
+    """Value attribution for a decision."""
+    decision_id: str = ""
+    value_created: float = 0.0
+    attribution_confidence: float = 0.0
+    attribution_type: str = "LOW_CONFIDENCE"  # DIRECT | PARTIAL | LOW_CONFIDENCE
+
+
+class DecisionEffectiveness(BaseModel):
+    """Effectiveness classification for a decision."""
+    decision_id: str = ""
+    score: float = 0.0
+    classification: str = "NEUTRAL"  # SUCCESS | NEUTRAL | FAILURE
+
+
+class PortfolioValue(BaseModel):
+    """Portfolio-level value aggregation."""
+    total_decisions: int = 0
+    total_value_created: float = 0.0
+    total_expected: float = 0.0
+    total_actual: float = 0.0
+    net_delta: float = 0.0
+    success_rate: float = 0.0
+    failure_count: int = 0
+    success_count: int = 0
+    neutral_count: int = 0
+    avg_effectiveness_score: float = 0.0
+    avg_attribution_confidence: float = 0.0
+    best_decision_id: Optional[str] = None
+    worst_decision_id: Optional[str] = None
+    roi_ratio: float = 0.0
+
+
+class DecisionValuePayload(BaseModel):
+    """Full Phase 4 value measurement payload."""
+    expected_actual: List[Dict[str, Any]] = Field(default_factory=list)
+    value_attribution: List[Dict[str, Any]] = Field(default_factory=list)
+    effectiveness: List[Dict[str, Any]] = Field(default_factory=list)
+    portfolio_value: Dict[str, Any] = Field(default_factory=dict)
+
+
+# ---------------------------------------------------------------------------
+# Phase 5 — Evidence & Governance Layer
+# ---------------------------------------------------------------------------
+
+class EvidenceCompleteness(BaseModel):
+    """Completeness flags for evidence pack."""
+    has_signal: bool = True
+    has_transmission: bool = False
+    has_counterfactual: bool = False
+    has_trust: bool = False
+    has_execution: bool = False
+    has_outcome: bool = False
+    complete: bool = False
+
+
+class DecisionEvidence(BaseModel):
+    """Full evidence pack for a single decision."""
+    decision_id: str = ""
+    run_id: str = ""
+    assembled_at: str = ""
+    signal_snapshot: Dict[str, Any] = Field(default_factory=dict)
+    transmission_evidence: Dict[str, Any] = Field(default_factory=dict)
+    counterfactual_basis: Dict[str, Any] = Field(default_factory=dict)
+    trust_basis: Dict[str, Any] = Field(default_factory=dict)
+    execution_evidence: Dict[str, Any] = Field(default_factory=dict)
+    outcome_evidence: Dict[str, Any] = Field(default_factory=dict)
+    completeness: Dict[str, Any] = Field(default_factory=dict)
+
+
+class DecisionPolicy(BaseModel):
+    """Governance policy evaluation for a decision."""
+    decision_id: str = ""
+    allowed: bool = True
+    violations: List[str] = Field(default_factory=list)
+    required_approvals: List[str] = Field(default_factory=list)
+    rules_evaluated: int = 0
+    rules_passed: int = 0
+
+
+class AttributionDefense(BaseModel):
+    """Attribution defensibility model for a decision."""
+    decision_id: str = ""
+    attribution_type: str = "LOW_CONFIDENCE"
+    confidence_band: float = 0.0
+    external_factors: List[str] = Field(default_factory=list)
+    explanation: str = ""
+    original_attribution_type: str = ""
+    original_confidence: float = 0.0
+
+
+class DecisionOverride(BaseModel):
+    """Override tracking record for a decision."""
+    decision_id: str = ""
+    overridden: bool = False
+    overridden_by: Optional[str] = None
+    reason: Optional[str] = None
+    override_type: str = "NONE"
+    timestamp: Optional[str] = None
+    policy_violations_at_override: List[str] = Field(default_factory=list)
+
+
+class GovernancePayload(BaseModel):
+    """Full Phase 5 governance payload."""
+    decision_evidence: List[Dict[str, Any]] = Field(default_factory=list)
+    policy: List[Dict[str, Any]] = Field(default_factory=list)
+    attribution_defense: List[Dict[str, Any]] = Field(default_factory=list)
+    overrides: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# Phase 6 — Pilot Readiness & Operating Proof
+# ---------------------------------------------------------------------------
+
+class PilotScope(BaseModel):
+    """Pilot scope validation result."""
+    in_scope: bool = True
+    scenario_id: str = ""
+    scope_sector: str = ""
+    execution_mode: str = "SHADOW"  # SHADOW | ADVISORY | CONTROLLED
+    decision_owners: List[str] = Field(default_factory=list)
+    approval_flow: List[str] = Field(default_factory=list)
+    reason: str = ""
+    validated_at: str = ""
+
+
+class PilotKPI(BaseModel):
+    """Pilot KPI measurements."""
+    total_decisions: int = 0
+    decision_latency_hours: float = 0.0
+    latency_reduction_pct: float = 0.0
+    human_vs_system_delta: float = 0.0
+    avoided_loss_estimate: float = 0.0
+    false_positive_rate: float = 0.0
+    accuracy_rate: float = 0.0
+    total_escalations: int = 0
+    divergent_count: int = 0
+    matched_count: int = 0
+
+
+class ShadowDecision(BaseModel):
+    """Shadow mode comparison of system vs human decision."""
+    decision_id: str = ""
+    system_decision: Dict[str, Any] = Field(default_factory=dict)
+    human_decision: Optional[Dict[str, Any]] = None
+    divergence: bool = False
+    divergence_reason: Optional[str] = None
+    divergence_count: int = 0
+    comparison_status: str = "PENDING_HUMAN_INPUT"  # PENDING_HUMAN_INPUT | COMPARED
+    compared_at: str = ""
+
+
+class PilotReport(BaseModel):
+    """Pilot progress report."""
+    period: str = "weekly"
+    generated_at: str = ""
+    run_count: int = 0
+    total_decisions: int = 0
+    matched_decisions: int = 0
+    divergent_decisions: int = 0
+    divergence_rate: float = 0.0
+    accuracy_rate: float = 0.0
+    value_created: float = 0.0
+    avg_latency_reduction: float = 0.0
+    false_positive_rate: float = 0.0
+    key_findings: List[str] = Field(default_factory=list)
+    recommendation: str = ""
+
+
+class FailureMode(BaseModel):
+    """A triggered failure mode with fallback action."""
+    id: str = ""
+    condition: str = ""
+    description: str = ""
+    triggered: bool = False
+    fallback_action: str = ""
+    severity: str = "MEDIUM"  # LOW | MEDIUM | HIGH | CRITICAL
+    detail: str = ""
+    evaluated_at: str = ""
+
+
+class PilotPayload(BaseModel):
+    """Full Phase 6 pilot readiness payload."""
+    pilot_scope: Dict[str, Any] = Field(default_factory=dict)
+    pilot_kpi: Dict[str, Any] = Field(default_factory=dict)
+    shadow_comparisons: List[Dict[str, Any]] = Field(default_factory=list)
+    pilot_report: Dict[str, Any] = Field(default_factory=dict)
+    failure_modes: List[Dict[str, Any]] = Field(default_factory=list)
+
+
 class ErrorResponse(BaseModel):
     """Standard error envelope."""
     error: str = ""

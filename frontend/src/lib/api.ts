@@ -257,6 +257,54 @@ export const api = {
     status: (runId: string) =>
       fetchJSON<{ data: Record<string, unknown> }>(`/api/v1/runs/${runId}/status`),
 
+    /** GET /api/v1/runs/{id}/transmission — Transmission chain (Phase 1 engine) */
+    transmission: (runId: string) =>
+      fetchJSON<import("@/types/observatory").TransmissionChain>(`/api/v1/runs/${runId}/transmission`),
+
+    /** GET /api/v1/runs/{id}/counterfactual — Calibrated counterfactual (Phase 1 engine) */
+    counterfactual: (runId: string) =>
+      fetchJSON<import("@/types/observatory").CalibratedCounterfactual>(`/api/v1/runs/${runId}/counterfactual`),
+
+    /** GET /api/v1/runs/{id}/action-pathways — Classified action pathways (Phase 1 engine) */
+    actionPathways: (runId: string) =>
+      fetchJSON<import("@/types/observatory").ActionPathways>(`/api/v1/runs/${runId}/action-pathways`),
+
+    /** GET /api/v1/runs/{id}/decision-trust — Decision trust payload (Phase 2) */
+    decisionTrust: (runId: string) =>
+      fetchJSON<import("@/types/observatory").DecisionTrustPayload>(`/api/v1/runs/${runId}/decision-trust`),
+
+    /** GET /api/v1/runs/{id}/decision-integration — Decision integration payload (Phase 3) */
+    decisionIntegration: (runId: string) =>
+      fetchJSON<import("@/types/observatory").DecisionIntegrationPayload>(`/api/v1/runs/${runId}/decision-integration`),
+
+    /** GET /api/v1/runs/{id}/decision-value — Decision value payload (Phase 4) */
+    decisionValue: (runId: string) =>
+      fetchJSON<import("@/types/observatory").DecisionValuePayload>(`/api/v1/runs/${runId}/decision-value`),
+
+    /** GET /api/v1/runs/{id}/governance — Governance payload (Phase 5) */
+    governance: (runId: string) =>
+      fetchJSON<import("@/types/observatory").GovernancePayload>(`/api/v1/runs/${runId}/governance`),
+
+    /** GET /api/v1/runs/{id}/evidence/{decisionId} — Single decision evidence */
+    decisionEvidence: (runId: string, decisionId: string) =>
+      fetchJSON<import("@/types/observatory").DecisionEvidence>(`/api/v1/runs/${runId}/evidence/${decisionId}`),
+
+    /** GET /api/v1/runs/{id}/audit-trail — Full audit trail */
+    auditTrail: (runId: string) =>
+      fetchJSON<Record<string, unknown>>(`/api/v1/runs/${runId}/audit-trail`),
+
+    /** GET /api/v1/runs/{id}/pilot — Full Phase 6 pilot payload */
+    pilot: (runId: string) =>
+      fetchJSON<import("@/types/observatory").PilotPayload>(`/api/v1/runs/${runId}/pilot`),
+
+    /** GET /api/v1/runs/{id}/pilot/kpi — Pilot KPI measurements */
+    pilotKpi: (runId: string) =>
+      fetchJSON<import("@/types/observatory").PilotKPI>(`/api/v1/runs/${runId}/pilot/kpi`),
+
+    /** GET /api/v1/runs/{id}/pilot/shadow — Shadow mode comparisons */
+    pilotShadow: (runId: string) =>
+      fetchJSON<{ run_id: string; shadow_comparisons: import("@/types/observatory").ShadowDecision[]; execution_mode: string }>(`/api/v1/runs/${runId}/pilot/shadow`),
+
     /** GET /api/v1/scenarios — Scenario catalog */
     scenarios: () =>
       fetchJSON<{ data: Record<string, unknown> }>("/api/v1/scenarios"),

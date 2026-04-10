@@ -19,6 +19,14 @@ import type {
   SectorImpact,
   DecisionActionV2,
   SectorRollup,
+  TransmissionChain,
+  CalibratedCounterfactual,
+  ActionPathways,
+  DecisionTrustPayload,
+  DecisionIntegrationPayload,
+  DecisionValuePayload,
+  GovernancePayload,
+  PilotPayload,
 } from "@/types/observatory";
 import type { SafeImpact } from "@/lib/v2/api-types";
 import { mapImpacts } from "@/lib/v2/api-types";
@@ -112,6 +120,26 @@ interface CommandCenterState {
   // ---- Trust ----
   trust: CommandCenterTrust | null;
 
+  // ---- Phase 1 Execution Engines ----
+  transmissionChain: TransmissionChain | null;
+  counterfactual: CalibratedCounterfactual | null;
+  actionPathways: ActionPathways | null;
+
+  // ---- Phase 2 Decision Trust ----
+  decisionTrust: DecisionTrustPayload | null;
+
+  // ---- Phase 3 Decision Integration ----
+  decisionIntegration: DecisionIntegrationPayload | null;
+
+  // ---- Phase 4 Decision Value ----
+  decisionValue: DecisionValuePayload | null;
+
+  // ---- Phase 5 Governance ----
+  governance: GovernancePayload | null;
+
+  // ---- Phase 6 Pilot Readiness ----
+  pilot: PilotPayload | null;
+
   // ---- UI State ----
   selectedNodeId: string | null;
   panelFocus: PanelFocus;
@@ -185,6 +213,14 @@ const INITIAL_STATE = {
   confidence: 0,
   totalSteps: 0,
   trust: null as CommandCenterTrust | null,
+  transmissionChain: null as TransmissionChain | null,
+  counterfactual: null as CalibratedCounterfactual | null,
+  actionPathways: null as ActionPathways | null,
+  decisionTrust: null as DecisionTrustPayload | null,
+  decisionIntegration: null as DecisionIntegrationPayload | null,
+  decisionValue: null as DecisionValuePayload | null,
+  governance: null as GovernancePayload | null,
+  pilot: null as PilotPayload | null,
   selectedNodeId: null as string | null,
   panelFocus: null as PanelFocus,
   executingActionIds: new Set<string>(),
@@ -415,6 +451,70 @@ export const useCommandCenterStore = create<CommandCenterState>((set) => ({
     const sectorRollups = result.sector_rollups ?? {};
     const impacts = mapImpacts(result as unknown as Record<string, unknown>);
 
+    // Phase 1 Execution Engine outputs (stages 19-21, present in unified response)
+    const rawAny = result as unknown as Record<string, unknown>;
+    const transmissionChain = (rawAny.transmission_chain as TransmissionChain) ?? null;
+    const counterfactual = (rawAny.counterfactual as CalibratedCounterfactual) ?? null;
+    const actionPathways = (rawAny.action_pathways as ActionPathways) ?? null;
+
+    // Phase 2 Decision Trust payload
+    const trustPayload: DecisionTrustPayload | null = rawAny.action_confidence
+      ? {
+          action_confidence: (rawAny.action_confidence as DecisionTrustPayload["action_confidence"]) ?? [],
+          model_dependency: (rawAny.model_dependency as DecisionTrustPayload["model_dependency"]) ?? { data_completeness: 0, signal_reliability: 0, assumption_sensitivity: "MEDIUM" as const },
+          validation: (rawAny.validation as DecisionTrustPayload["validation"]) ?? { required: false, reason: "", validation_type: "NONE" as const },
+          confidence_breakdown: (rawAny.confidence_breakdown as DecisionTrustPayload["confidence_breakdown"]) ?? { drivers: [] },
+          risk_profile: (rawAny.risk_profile as DecisionTrustPayload["risk_profile"]) ?? { downside_if_wrong: "MEDIUM" as const, reversibility: "MEDIUM" as const, time_sensitivity: "MEDIUM" as const },
+        }
+      : null;
+
+    // Phase 3 Decision Integration payload
+    const integrationPayload: DecisionIntegrationPayload | null = rawAny.decision_ownership
+      ? {
+          decision_ownership: (rawAny.decision_ownership as DecisionIntegrationPayload["decision_ownership"]) ?? [],
+          workflows: (rawAny.decision_workflows as DecisionIntegrationPayload["workflows"]) ?? [],
+          execution_triggers: (rawAny.execution_triggers as DecisionIntegrationPayload["execution_triggers"]) ?? [],
+          decision_lifecycle: (rawAny.decision_lifecycle as DecisionIntegrationPayload["decision_lifecycle"]) ?? [],
+          integration: (rawAny.integration as DecisionIntegrationPayload["integration"]) ?? { available: [], active: [], connectors: {} },
+        }
+      : null;
+
+    // Phase 4 Decision Value payload
+    const valuePayload: DecisionValuePayload | null = rawAny.expected_actual
+      ? {
+          expected_actual: (rawAny.expected_actual as DecisionValuePayload["expected_actual"]) ?? [],
+          value_attribution: (rawAny.value_attribution as DecisionValuePayload["value_attribution"]) ?? [],
+          effectiveness: (rawAny.effectiveness as DecisionValuePayload["effectiveness"]) ?? [],
+          portfolio_value: (rawAny.portfolio_value as DecisionValuePayload["portfolio_value"]) ?? {
+            total_decisions: 0, total_value_created: 0, total_expected: 0, total_actual: 0,
+            net_delta: 0, success_rate: 0, failure_count: 0, success_count: 0, neutral_count: 0,
+            avg_effectiveness_score: 0, avg_attribution_confidence: 0, best_decision_id: null,
+            worst_decision_id: null, roi_ratio: 0,
+          },
+        }
+      : null;
+
+    // Phase 5 Governance payload
+    const governancePayload: GovernancePayload | null = rawAny.decision_evidence
+      ? {
+          decision_evidence: (rawAny.decision_evidence as GovernancePayload["decision_evidence"]) ?? [],
+          policy: (rawAny.policy as GovernancePayload["policy"]) ?? [],
+          attribution_defense: (rawAny.attribution_defense as GovernancePayload["attribution_defense"]) ?? [],
+          overrides: (rawAny.overrides as GovernancePayload["overrides"]) ?? [],
+        }
+      : null;
+
+    // Phase 6 Pilot payload
+    const pilotPayload: PilotPayload | null = rawAny.pilot_scope
+      ? {
+          pilot_scope: (rawAny.pilot_scope as PilotPayload["pilot_scope"]) ?? { in_scope: false, scenario_id: "", scope_sector: "", execution_mode: "SHADOW" as const, decision_owners: [], approval_flow: [], reason: "", validated_at: "" },
+          pilot_kpi: (rawAny.pilot_kpi as PilotPayload["pilot_kpi"]) ?? { total_decisions: 0, decision_latency_hours: 0, latency_reduction_pct: 0, human_vs_system_delta: 0, avoided_loss_estimate: 0, false_positive_rate: 0, accuracy_rate: 0, total_escalations: 0, divergent_count: 0, matched_count: 0 },
+          shadow_comparisons: (rawAny.shadow_comparisons as PilotPayload["shadow_comparisons"]) ?? [],
+          pilot_report: (rawAny.pilot_report as PilotPayload["pilot_report"]) ?? { period: "", generated_at: "", run_count: 0, total_decisions: 0, matched_decisions: 0, divergent_decisions: 0, divergence_rate: 0, accuracy_rate: 0, value_created: 0, avg_latency_reduction: 0, false_positive_rate: 0, key_findings: [], recommendation: "" },
+          failure_modes: (rawAny.failure_modes as PilotPayload["failure_modes"]) ?? [],
+        }
+      : null;
+
     set({
       dataSource: "live",
       runId,
@@ -470,6 +570,14 @@ export const useCommandCenterStore = create<CommandCenterState>((set) => ({
             confidence: result.trust.confidence_score,
           }
         : null,
+      transmissionChain,
+      counterfactual,
+      actionPathways,
+      decisionTrust: trustPayload,
+      decisionIntegration: integrationPayload,
+      decisionValue: valuePayload,
+      governance: governancePayload,
+      pilot: pilotPayload,
     });
   },
 
