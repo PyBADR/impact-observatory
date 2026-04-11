@@ -552,6 +552,13 @@ def execute_run(params: ScenarioCreate) -> dict:
     stage_timings["confidence_adjustment"] = round((time.monotonic() - t0) * 1000, 1)
     _log_stage("confidence_adjustment", run_id, stage_timings["confidence_adjustment"], "41g")
 
+    # ── Stage 41h: Macro Context (Explainability Layer) ────────────────────
+    t0 = time.monotonic()
+    from src.engines.macro_engine import derive_macro_context
+    macro_context = derive_macro_context(result)
+    stage_timings["macro_engine"] = round((time.monotonic() - t0) * 1000, 1)
+    _log_stage("macro_engine", run_id, stage_timings["macro_engine"], "41h")
+
     # ── Stage 42: Impact Intelligence Layer ────────────────────────────────
     t0 = time.monotonic()
     try:
@@ -933,6 +940,9 @@ def execute_run(params: ScenarioCreate) -> dict:
             "trust_memories": trust_memories,
             "confidence_adjustments": confidence_adjustments,
         },
+
+        # ── Macro Context (Stage 41h) ────────────────────────────────
+        "macro_context": macro_context,
 
         # ── Impact Map payloads (graph + geo) ─────────────────────────
         "map_payload": map_payload,

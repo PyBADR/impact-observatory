@@ -332,6 +332,9 @@ export function useCommandCenter(runId?: string | null) {
     // Decision Reliability Layer (Sprint 2)
     reliabilityPayload: store.reliabilityPayload,
 
+    // Macro Context (Sprint 3)
+    macroContext: store.macroContext,
+
     // UI State
     selectedNodeId: store.selectedNodeId,
     panelFocus: store.panelFocus,

@@ -245,6 +245,10 @@ function CommandCenterInner() {
     // Decision Reliability Layer (Sprint 2)
     reliabilityPayload,
 
+    // Sprint 3 — Explainability Layer
+    narrativeAr,
+    macroContext,
+
     // Actions
     executeAction,
     switchToMock,
@@ -362,6 +366,10 @@ function CommandCenterInner() {
           metricExplanations={metricExplanations}
           decisionTransparency={decisionTransparencyResult ?? undefined}
           reliability={reliabilityPayload ?? undefined}
+          confidenceScore={confidence}
+          narrativeEn={narrativeEn}
+          narrativeAr={narrativeAr ?? ""}
+          macroContext={macroContext ?? undefined}
           onSubmitForReview={handleSubmitForReview}
         />
       </div>

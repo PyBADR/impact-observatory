@@ -30,6 +30,7 @@ import type {
   MetricExplanation,
   DecisionTransparencyResult,
   ReliabilityPayload,
+  MacroContext,
 } from "@/types/observatory";
 import type { SafeImpact } from "@/lib/v2/api-types";
 import { mapImpacts } from "@/lib/v2/api-types";
@@ -147,6 +148,7 @@ interface CommandCenterState {
   metricExplanations: MetricExplanation[];
   decisionTransparencyResult: DecisionTransparencyResult | null;
   reliabilityPayload: ReliabilityPayload | null;
+  macroContext: MacroContext | null;
 
   // ---- UI State ----
   selectedNodeId: string | null;
@@ -232,6 +234,7 @@ const INITIAL_STATE = {
   metricExplanations: [] as MetricExplanation[],
   decisionTransparencyResult: null as DecisionTransparencyResult | null,
   reliabilityPayload: null as ReliabilityPayload | null,
+  macroContext: null as MacroContext | null,
   selectedNodeId: null as string | null,
   panelFocus: null as PanelFocus,
   executingActionIds: new Set<string>(),
@@ -594,6 +597,7 @@ export const useCommandCenterStore = create<CommandCenterState>((set) => ({
       metricExplanations: (rawAny.metric_explanations as MetricExplanation[]) ?? [],
       decisionTransparencyResult: (rawAny.decision_transparency as DecisionTransparencyResult) ?? null,
       reliabilityPayload: (rawAny.reliability as ReliabilityPayload) ?? null,
+      macroContext: (rawAny.macro_context as MacroContext) ?? null,
     });
   },
 

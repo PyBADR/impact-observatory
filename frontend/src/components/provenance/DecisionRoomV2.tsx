@@ -1,24 +1,27 @@
 "use client";
 
 /**
- * DecisionRoomV2 — Full page assembly with decision-first ordering.
+ * DecisionRoomV2 — Sprint 3: Explainability-integrated decision surface.
  *
- * Reorders the current command center zone hierarchy to put decisions
- * and understanding FIRST, operational detail LAST.
+ * Every metric and decision shown in this component is now defensible.
+ * The ExplainabilityPanel surfaces at Level 1 (compact) so the user
+ * can immediately see confidence, range, and top drivers without
+ * expanding anything.
  *
- * Layout order:
- *   1. ExecutiveBriefV2 — 5-second comprehension snapshot
- *   2. DepthToggle — progressive disclosure selector
- *   3. DecisionReasonCards — narrative decision cards (Level 2+)
- *   4. SectorStressV2 — sector tabs with provenance (Level 2+)
- *   5. PropagationFallback — propagation chain (Level 3)
+ * Layout:
+ *   Level 1 (always visible):
+ *     1. Loss-Inducing Warning (if applicable)
+ *     2. Executive Brief (headline KPIs)
+ *     3. ExplainabilityPanel (compact) — confidence + range + drivers
+ *   Level 2 (expandable):
+ *     4. Decision Cards with transparency overlays
+ *     5. Sector Stress
+ *   Level 3 (deep dive):
+ *     6. Propagation Chain
+ *     7. ExplainabilityPanel (expanded) — per-metric detail
  *
- * This component is meant to be dropped into the command center page
- * as a replacement for the top section (above the existing zones).
- *
- * Data flow:
- *   All data comes from props (passed by parent that calls useCommandCenter).
- *   Provenance hooks are called internally by child components using runId.
+ * Backend engines: explanation_engine, trust_engine, range_engine,
+ * attribution_defense_engine — all already wired. Zero new engines.
  */
 
 import { useState, useMemo } from "react";
@@ -35,44 +38,43 @@ import type {
   MetricExplanation,
   DecisionTransparencyResult,
   ReliabilityPayload,
+  MacroContext,
 } from "@/types/observatory";
 import { LossInducingBanner } from "@/components/trust/LossInducingBanner";
 import { ActionTransparencyOverlay } from "@/components/trust/ActionTransparencyOverlay";
+import { ExplainabilityPanel } from "@/components/trust/ExplainabilityPanel";
+import { MacroPanel } from "@/components/macro/MacroPanel";
 
 type DepthLevel = 1 | 2 | 3;
 type SectorId = "banking" | "insurance" | "fintech";
 
 interface DecisionRoomV2Props {
-  /** Run ID for provenance queries */
   runId: string | undefined;
-
-  // ── Scenario (from useCommandCenter) ──
   scenarioLabel: string;
   scenarioLabelAr: string;
   severity: string;
-
-  // ── Headline (from useCommandCenter) ──
   totalLossUsd: number;
   averageStress: number;
   propagationDepth: number;
   peakDay: number;
-
-  // ── Chain & actions (from useCommandCenter) ──
   causalChain: CausalStep[];
   decisionActions: DecisionActionV2[];
   sectorRollups: Record<string, SectorRollup>;
-
-  // ── UI ──
   locale: "en" | "ar";
 
-  // ── Decision Trust Layer (optional — renders when present) ──
+  // Sprint 1 — Decision Trust Layer
   metricExplanations?: MetricExplanation[];
   decisionTransparency?: DecisionTransparencyResult;
 
-  // ── Decision Reliability Layer (Sprint 2 — optional) ──
+  // Sprint 2 — Decision Reliability Layer
   reliability?: ReliabilityPayload;
 
-  /** Callback when user submits a decision for review */
+  // Sprint 3 — Explainability Layer
+  confidenceScore?: number;
+  narrativeEn?: string;
+  narrativeAr?: string;
+  macroContext?: MacroContext;
+
   onSubmitForReview?: (actionId: string) => void;
 }
 
@@ -92,16 +94,18 @@ export function DecisionRoomV2({
   metricExplanations,
   decisionTransparency,
   reliability,
+  confidenceScore,
+  narrativeEn,
+  narrativeAr,
+  macroContext,
   onSubmitForReview,
 }: DecisionRoomV2Props) {
   const [depth, setDepth] = useState<DepthLevel>(1);
   const [activeSector, setActiveSector] = useState<SectorId>("banking");
   const isAr = locale === "ar";
 
-  // ── Decision reasoning (for cards) ──
   const { data: reasoningData } = useDecisionReasoning(runId);
 
-  // ── Top 3 decisions sorted by priority ──
   const topDecisions = useMemo(
     () =>
       [...decisionActions]
@@ -110,9 +114,39 @@ export function DecisionRoomV2({
     [decisionActions],
   );
 
+  // ── Derive top drivers across all metrics for the inline trust bar ──
+  const topDriverLabel = useMemo(() => {
+    if (!metricExplanations?.length) return null;
+    const allDrivers: { label: string; pct: number }[] = [];
+    for (const exp of metricExplanations) {
+      for (const d of exp.drivers ?? []) {
+        allDrivers.push({ label: d.label, pct: d.contribution_pct });
+      }
+    }
+    // Deduplicate by label, keep highest pct
+    const seen = new Map<string, number>();
+    for (const d of allDrivers) {
+      const existing = seen.get(d.label);
+      if (!existing || d.pct > existing) seen.set(d.label, d.pct);
+    }
+    const sorted = [...seen.entries()].sort((a, b) => b[1] - a[1]);
+    return sorted[0]?.[0] ?? null;
+  }, [metricExplanations]);
+
+  // ── Derive loss range from reliability ──
+  const lossRange = useMemo(() => {
+    if (!reliability?.ranges) return null;
+    return reliability.ranges.find((r) => r.metric_id === "projected_loss" || r.metric_id === "total_loss");
+  }, [reliability]);
+
+  // Confidence display
+  const confPct = Math.round((confidenceScore ?? 0) * 100);
+  const confColor = confPct >= 75 ? "text-emerald-600" : confPct >= 50 ? "text-amber-600" : "text-red-500";
+  const confBg = confPct >= 75 ? "bg-emerald-50" : confPct >= 50 ? "bg-amber-50" : "bg-red-50";
+
   return (
     <div className="space-y-4" dir={isAr ? "rtl" : "ltr"}>
-      {/* ── Row 0: Depth Toggle ── */}
+      {/* ── Row 0: Title + Depth Toggle ── */}
       <div className="flex items-center justify-between">
         <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
           {isAr ? "غرفة القرار" : "Decision Room"}
@@ -120,7 +154,7 @@ export function DecisionRoomV2({
         <DepthToggle level={depth} onChange={setDepth} locale={locale} />
       </div>
 
-      {/* ── Loss-Inducing Warning Banner (Phase 3) ── */}
+      {/* ── Loss-Inducing Warning Banner ── */}
       {decisionTransparency && (
         <LossInducingBanner
           hasLossInducing={decisionTransparency.has_loss_inducing}
@@ -146,10 +180,84 @@ export function DecisionRoomV2({
         locale={locale}
       />
 
+      {/* ══════════════════════════════════════════════════════════════
+           SPRINT 3: Inline Trust Bar — Always visible at Level 1.
+           Answers "Why should I trust this?" in under 5 seconds.
+           ══════════════════════════════════════════════════════════════ */}
+      {(confidenceScore != null || lossRange || topDriverLabel) && (
+        <div className="flex items-center gap-3 px-3 py-2 bg-white border border-slate-200 rounded-lg flex-wrap">
+          {/* Confidence badge */}
+          {confidenceScore != null && (
+            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded ${confBg}`}>
+              <span className="text-[10px] text-slate-500 font-medium">
+                {isAr ? "الثقة" : "Confidence"}
+              </span>
+              <span className={`text-xs font-bold tabular-nums ${confColor}`}>
+                {confPct}%
+              </span>
+            </div>
+          )}
+
+          {/* Range badge */}
+          {lossRange && (
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-50">
+              <span className="text-[10px] text-slate-500 font-medium">
+                {isAr ? "النطاق" : "Range"}
+              </span>
+              <span className="text-[10px] font-bold tabular-nums text-slate-700">
+                {formatUsdCompact(lossRange.low)} – {formatUsdCompact(lossRange.high)}
+              </span>
+            </div>
+          )}
+
+          {/* Top driver badge */}
+          {topDriverLabel && (
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-50">
+              <span className="text-[10px] text-slate-500 font-medium">
+                {isAr ? "المحرك الأول" : "Top Driver"}
+              </span>
+              <span className="text-[10px] font-bold text-blue-700">
+                {topDriverLabel}
+              </span>
+            </div>
+          )}
+
+          {/* Macro SRI badge (if available) */}
+          {macroContext && macroContext.system_risk_index > 0 && (
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-amber-50">
+              <span className="text-[10px] text-slate-500 font-medium">
+                {isAr ? "المخاطر" : "System Risk"}
+              </span>
+              <span className="text-[10px] font-bold tabular-nums text-amber-700">
+                {(macroContext.system_risk_index * 100).toFixed(0)}%
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════
+           SPRINT 3: ExplainabilityPanel — Full trust panel at Level 1.
+           Compact by default, expandable for per-metric detail.
+           ══════════════════════════════════════════════════════════════ */}
+      <ExplainabilityPanel
+        metricExplanations={metricExplanations}
+        reliability={reliability}
+        confidenceScore={confidenceScore}
+        narrativeEn={narrativeEn}
+        narrativeAr={narrativeAr}
+        locale={locale}
+        defaultExpanded={false}
+      />
+
+      {/* ── Macro Context (compact, below explainability) ── */}
+      {macroContext && (
+        <MacroPanel macroContext={macroContext} locale={locale} />
+      )}
+
       {/* ── Level 2: Decision Cards + Sector Stress ── */}
       {depth >= 2 && (
         <>
-          {/* Decision Reason Cards */}
           {topDecisions.length > 0 && (
             <div>
               <h3 className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-3">
@@ -161,9 +269,8 @@ export function DecisionRoomV2({
                     (r) => r.action_id === action.id,
                   );
                   const actionTransparency = decisionTransparency?.action_transparencies?.find(
-                    (t) => t.action_id === action.id,
+                    (at) => at.action_id === action.id,
                   );
-
                   const outcomeRecord = reliability?.outcome_records?.find(
                     (o) => o.action_id === action.id,
                   );
@@ -188,7 +295,6 @@ export function DecisionRoomV2({
                         locale={locale}
                         onSubmitForReview={onSubmitForReview}
                       />
-                      {/* Decision Transparency Overlay (Phase 2) */}
                       {actionTransparency && (
                         <div className="mx-5 mb-3 -mt-1 pt-3 border-t border-dashed border-slate-200">
                           <ActionTransparencyOverlay
@@ -207,7 +313,6 @@ export function DecisionRoomV2({
             </div>
           )}
 
-          {/* Sector Stress V2 */}
           <SectorStressV2
             runId={runId}
             sectorRollups={sectorRollups}
@@ -234,7 +339,7 @@ export function DecisionRoomV2({
   );
 }
 
-// ── Fallback reasoning when provenance API hasn't loaded ──
+// ── Helpers ───────────────────────────────────────────────────────────
 
 function buildFallbackReasoning(action: DecisionActionV2) {
   return {
@@ -253,12 +358,12 @@ function buildFallbackReasoning(action: DecisionActionV2) {
     regime_link_ar: "",
     trust_link_en: "",
     trust_link_ar: "",
-    tradeoff_summary_en: `If not executed, potential loss of ${formatUsdSimple(action.loss_avoided_usd ?? 0)} in the ${action.sector} sector.`,
-    tradeoff_summary_ar: `في حال عدم التنفيذ، خسائر محتملة بقيمة ${formatUsdSimple(action.loss_avoided_usd ?? 0)} في قطاع ${action.sector}.`,
+    tradeoff_summary_en: `If not executed, potential loss of ${formatUsdCompact(action.loss_avoided_usd ?? 0)} in the ${action.sector} sector.`,
+    tradeoff_summary_ar: `في حال عدم التنفيذ، خسائر محتملة بقيمة ${formatUsdCompact(action.loss_avoided_usd ?? 0)} في قطاع ${action.sector}.`,
   };
 }
 
-function formatUsdSimple(v: number): string {
+function formatUsdCompact(v: number): string {
   if (v >= 1e9) return `$${(v / 1e9).toFixed(1)}B`;
   if (v >= 1e6) return `$${(v / 1e6).toFixed(0)}M`;
   if (v >= 1e3) return `$${(v / 1e3).toFixed(0)}K`;
