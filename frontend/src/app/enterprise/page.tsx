@@ -1,9 +1,8 @@
 /**
- * Enterprise dashboard — redirects to Decision Room V2.
- * Enterprise intelligence is now unified inside /command-center.
+ * Enterprise dashboard — redirects to sectors tab.
  */
 import { redirect } from "next/navigation";
 
 export default function EnterprisePage() {
-  redirect("/command-center");
+  redirect("/command-center?tab=sectors");
 }

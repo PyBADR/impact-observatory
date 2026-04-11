@@ -115,11 +115,48 @@ const dict: Record<string, { en: string; ar: string }> = {
   "prop.entity":            { en: "Entity",                 ar: "الكيان" },
   "prop.impact":            { en: "Impact",                 ar: "الأثر" },
 
+  // ── Navigation / Tabs ──
+  "nav.dashboard":          { en: "Dashboard",              ar: "لوحة المعلومات" },
+  "nav.propagation":        { en: "Propagation",            ar: "الانتشار" },
+  "nav.impact_map":         { en: "Impact Map",             ar: "خريطة الأثر" },
+  "nav.sector_intel":       { en: "Sector Intel",           ar: "القطاعات" },
+  "nav.decision_room":      { en: "Decision Room",          ar: "غرفة القرار" },
+  "nav.regulatory":         { en: "Regulatory",             ar: "الرقابة والتدقيق" },
+
+  // ── Scenario Library ──
+  "scenario.library":       { en: "Scenario Library",       ar: "مكتبة السيناريوهات" },
+  "scenario.run":           { en: "Run Scenario",           ar: "تشغيل السيناريو" },
+  "scenario.active":        { en: "Active Scenario",        ar: "السيناريو النشط" },
+  "scenario.select":        { en: "Select a scenario",      ar: "اختر سيناريو" },
+
+  // ── Intelligence Brief ──
+  "brief.title":            { en: "Intelligence Brief",     ar: "موجز الاستخبارات" },
+  "brief.system_risk":      { en: "System Risk",            ar: "مخاطر النظام" },
+  "brief.confidence":       { en: "Confidence",             ar: "الثقة" },
+
+  // ── Flow Stages ──
+  "flow.macro_shock":       { en: "Macro Shock",            ar: "صدمة كلية" },
+  "flow.transmission":      { en: "Transmission",           ar: "الانتقال" },
+  "flow.sector_impact":     { en: "Sector Impact",          ar: "أثر القطاع" },
+  "flow.entity_exposure":   { en: "Entity Exposure",        ar: "تعرض الكيان" },
+  "flow.decision":          { en: "Decision",               ar: "القرار" },
+  "flow.audit":             { en: "Audit",                  ar: "التدقيق" },
+
+  // ── Regulatory / Audit ──
+  "audit.title":            { en: "Regulatory & Audit",     ar: "الرقابة والتدقيق" },
+  "audit.run_provenance":   { en: "Run Provenance",         ar: "مصدر التشغيل" },
+  "audit.decision_lifecycle": { en: "Decision Lifecycle",   ar: "دورة حياة القرار" },
+  "audit.outcome_trail":    { en: "Outcome Audit Trail",    ar: "سجل تدقيق النتائج" },
+  "audit.value_audit":      { en: "Decision Value Audit",   ar: "تدقيق قيمة القرار" },
+  "audit.pipeline_record":  { en: "Pipeline Execution",     ar: "سجل المحرك" },
+  "audit.breaches":         { en: "Regulatory Breaches",    ar: "الانتهاكات التنظيمية" },
+
   // ── General ──
   "general.expand":         { en: "Expand",                 ar: "توسيع" },
-  "general.collapse":       { en: "طي",                     ar: "طي" },
+  "general.collapse":       { en: "Collapse",               ar: "طي" },
   "general.close":          { en: "Close",                  ar: "إغلاق" },
   "general.lang_toggle":    { en: "عربي",                   ar: "EN" },
+  "general.no_data":        { en: "No data available",      ar: "لا توجد بيانات" },
 };
 
 // ── Translation function ─────────────────────────────────────────────

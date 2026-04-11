@@ -1,53 +1,55 @@
 "use client";
 
 /**
- * Decision Command Center — مركز القرار
+ * Impact Observatory | مرصد الأثر — Command Center (Restored)
  *
- * Product Surface: Single-screen decision intelligence terminal.
- *
- * Architecture:
+ * RESTORED ARCHITECTURE:
  * ┌─────────────────────────────────────────────────────────────┐
- * │  DECISION ROOM V2 (primary operating surface)               │
- * │  ├─ Level 1: Executive Snapshot (always visible)            │
- * │  ├─ Level 2: Decision Cards + Sector Stress (expandable)    │
- * │  └─ Level 3: Propagation Chain (full detail)                │
+ * │  OBSERVATORY SHELL (identity, language, scenario bar, tabs) │
  * ├─────────────────────────────────────────────────────────────┤
- * │  OPERATIONAL INTELLIGENCE (scroll-to-reveal)                │
- * │  ├─ Decision Trust    ├─ Workflows   ├─ CFO Value           │
- * │  ├─ Evidence & Gov    ├─ Pilot       └─ Banking Intel       │
- * ├─────────────────────────────────────────────────────────────┤
- * │  STATUS BAR                                                 │
+ * │  TAB: Dashboard     → Scenario Library + Intelligence Brief │
+ * │  TAB: Propagation   → Causal chain flow diagram             │
+ * │  TAB: Impact Map    → GCC 6-country impact map              │
+ * │  TAB: Decision Room → DecisionRoomV2 (full decision engine) │
+ * │  TAB: Regulatory    → Audit trail + regulatory breaches     │
+ * │  TAB: Sectors       → Banking / Insurance / Fintech stress  │
  * └─────────────────────────────────────────────────────────────┘
  *
- * Data flow:
- *   ?run=<id>  →  useCommandCenter(runId)  →  live UnifiedRunResult
- *   no param   →  useCommandCenter(null)   →  deterministic mock data
- *
- * DecisionRoomV2 is THE interface. No duplicate entry points.
+ * Scenario context is preserved across all tabs via URL params.
+ * Data flow: useCommandCenter(runId) feeds all views.
  */
 
-import React, { Suspense, useState, useCallback } from "react";
+import React, { Suspense, useState, useCallback, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useAppStore } from "@/store/app-store";
 import { useCommandCenter } from "@/features/command-center/lib/use-command-center";
 
-// ── Primary Surface ──
-import { DecisionRoomV2 } from "@/components/provenance/DecisionRoomV2";
+// ── Shell & Navigation ──
+import { ObservatoryShell } from "@/components/shell/ObservatoryShell";
+
+// ── Tab: Dashboard (Scenario Library + Brief) ──
+import { ScenarioLibrary } from "@/components/scenario/ScenarioLibrary";
 import { ScenarioSelector } from "@/components/scenario/ScenarioSelector";
 
-// ── Operational Intelligence (deep-dive, non-duplicate) ──
-import { DecisionTrustPanel } from "@/features/command-center/components/DecisionTrustPanel";
-import { WorkflowPanel } from "@/features/command-center/components/WorkflowPanel";
-import { LifecyclePanel } from "@/features/command-center/components/LifecyclePanel";
-import { CFOValuePanel } from "@/features/command-center/components/CFOValuePanel";
-import { EvidenceGovernancePanel } from "@/features/command-center/components/EvidenceGovernancePanel";
-import { PilotPanel } from "@/features/command-center/components/PilotPanel";
-import { BankingDecisionView } from "@/features/banking/BankingDecisionView";
+// ── Tab: Decision Room ──
+import { DecisionRoomV2 } from "@/components/provenance/DecisionRoomV2";
 
-// ── Chrome ──
+// ── Tab: Impact Map ──
+import { GCCImpactMap } from "@/components/map/GCCImpactMap";
+
+// ── Tab: Propagation ──
+import { PropagationView } from "@/components/panels/PropagationView";
+
+// ── Tab: Sector Intelligence ──
+import { SectorIntelligenceView } from "@/components/panels/SectorIntelligenceView";
+
+// ── Tab: Regulatory / Audit ──
+import { RegulatoryAuditView } from "@/components/panels/RegulatoryAuditView";
+
+// ── Operational Deep-Dive (existing) ──
 import { StatusBar } from "@/features/command-center/components/StatusBar";
-import { DemoFlow } from "@/features/command-center/components/DemoFlow";
 
-// ── Loading Skeleton ──────────────────────────────────────────────────
+// ── Loading Skeleton ──
 
 function LoadingSkeleton() {
   return (
@@ -60,7 +62,7 @@ function LoadingSkeleton() {
   );
 }
 
-// ── Error State ───────────────────────────────────────────────────────
+// ── Error State ──
 
 function ErrorState({
   error,
@@ -77,24 +79,16 @@ function ErrorState({
         <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4">
           <span className="text-red-500 text-lg">!</span>
         </div>
-        <h2 className="text-sm font-semibold text-white mb-2">
-          Pipeline Error
-        </h2>
+        <h2 className="text-sm font-semibold text-white mb-2">Pipeline Error</h2>
         <p className="text-xs text-slate-400 mb-4">{error}</p>
         <div className="flex items-center justify-center gap-3">
           {onRetry && (
-            <button
-              onClick={onRetry}
-              className="px-4 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition-colors"
-            >
+            <button onClick={onRetry} className="px-4 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition-colors">
               Retry
             </button>
           )}
           {onFallbackMock && (
-            <button
-              onClick={onFallbackMock}
-              className="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors"
-            >
+            <button onClick={onFallbackMock} className="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors">
               Load Demo Data
             </button>
           )}
@@ -104,118 +98,133 @@ function ErrorState({
   );
 }
 
-// ── Empty State ──────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// DASHBOARD TAB — Scenario Library + Intelligence Brief
+// ══════════════════════════════════════════════════════════════
 
-function EmptyState() {
+function DashboardView({
+  scenario,
+  headline,
+  narrativeEn,
+  narrativeAr,
+  macroContext,
+  confidence,
+  causalChain,
+  sectorRollups,
+  decisionActions,
+  locale,
+  onSelectScenario,
+  isRunningScenario,
+}: {
+  scenario: ReturnType<typeof useCommandCenter>["scenario"];
+  headline: ReturnType<typeof useCommandCenter>["headline"];
+  narrativeEn?: string;
+  narrativeAr?: string;
+  macroContext?: ReturnType<typeof useCommandCenter>["macroContext"];
+  confidence?: number;
+  causalChain: ReturnType<typeof useCommandCenter>["causalChain"];
+  sectorRollups: ReturnType<typeof useCommandCenter>["sectorRollups"];
+  decisionActions: ReturnType<typeof useCommandCenter>["decisionActions"];
+  locale: "en" | "ar";
+  onSelectScenario: (id: string) => void;
+  isRunningScenario: boolean;
+}) {
+  const isAr = locale === "ar";
+
   return (
-    <div className="min-h-screen bg-[#060910] flex items-center justify-center">
-      <div className="max-w-md text-center px-6">
-        <div className="w-12 h-12 rounded-xl bg-slate-500/10 border border-slate-500/20 flex items-center justify-center mx-auto mb-4">
-          <span className="text-slate-500 text-lg">?</span>
+    <div className="space-y-6 p-6 max-w-7xl mx-auto" dir={isAr ? "rtl" : "ltr"}>
+      {/* ── Intelligence Brief ── */}
+      {scenario && headline && (
+        <div className="bg-slate-800/30 border border-slate-700/40 rounded-xl p-6">
+          <h2 className="text-base font-bold text-white mb-4">
+            {isAr ? "موجز الاستخبارات" : "Intelligence Brief"}
+          </h2>
+
+          {/* Headline Metrics */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <MetricCard
+              label={isAr ? "الخسارة الرئيسية" : "Headline Loss"}
+              value={`$${(headline.totalLossUsd / 1e9).toFixed(1)}B`}
+              color="text-red-400"
+            />
+            <MetricCard
+              label={isAr ? "متوسط الضغط" : "Avg Stress"}
+              value={`${(headline.averageStress * 100).toFixed(0)}%`}
+              color="text-amber-400"
+            />
+            <MetricCard
+              label={isAr ? "عمق الانتشار" : "Propagation Depth"}
+              value={`${headline.propagationDepth}`}
+              color="text-blue-400"
+            />
+            <MetricCard
+              label={isAr ? "يوم الذروة" : "Peak Day"}
+              value={`Day ${headline.peakDay}`}
+              color="text-purple-400"
+            />
+          </div>
+
+          {/* Narrative */}
+          {(narrativeEn || narrativeAr) && (
+            <div className="bg-slate-900/40 rounded-lg p-4 mb-4">
+              <p className="text-sm text-slate-300 leading-relaxed">
+                {isAr ? (narrativeAr || narrativeEn) : (narrativeEn || narrativeAr)}
+              </p>
+            </div>
+          )}
+
+          {/* System Risk + Confidence */}
+          <div className="flex items-center gap-4 text-xs">
+            {macroContext?.system_risk_index != null && (
+              <span className="px-2 py-1 rounded bg-red-500/10 text-red-400 font-semibold">
+                {isAr ? "مخاطر النظام" : "System Risk"}: {(macroContext.system_risk_index * 100).toFixed(0)}%
+              </span>
+            )}
+            {confidence != null && (
+              <span className="px-2 py-1 rounded bg-blue-500/10 text-blue-400 font-semibold">
+                {isAr ? "الثقة" : "Confidence"}: {(confidence * 100).toFixed(0)}%
+              </span>
+            )}
+          </div>
         </div>
-        <h2 className="text-sm font-semibold text-white mb-2">
-          No Simulation Data
+      )}
+
+      {/* ── Scenario Library ── */}
+      <div>
+        <h2 className="text-base font-bold text-white mb-4">
+          {isAr ? "مكتبة السيناريوهات" : "Scenario Library"}
         </h2>
-        <p className="text-xs text-slate-400">
-          Run a scenario from the Observatory to populate this view, or remove the
-          &ldquo;run&rdquo; parameter to load demo data.
-        </p>
+        <ScenarioLibrary
+          onSelectScenario={onSelectScenario}
+          isLoading={isRunningScenario}
+          locale={locale}
+        />
       </div>
     </div>
   );
 }
 
-// ── Operational Intelligence Section ─────────────────────────────────
-
-function OperationalIntelligence({
-  runId,
-  scenarioId,
-  decisionTrust,
-  decisionIntegration,
-  decisionValue,
-  governance,
-  pilot,
-}: {
-  runId: string | null;
-  scenarioId: string | undefined;
-  decisionTrust: ReturnType<typeof useCommandCenter>["decisionTrust"];
-  decisionIntegration: ReturnType<typeof useCommandCenter>["decisionIntegration"];
-  decisionValue: ReturnType<typeof useCommandCenter>["decisionValue"];
-  governance: ReturnType<typeof useCommandCenter>["governance"];
-  pilot: ReturnType<typeof useCommandCenter>["pilot"];
-}) {
-  const [expanded, setExpanded] = useState(false);
-
-  const hasData =
-    decisionTrust || decisionIntegration || decisionValue || governance || pilot;
-
-  if (!hasData) return null;
-
+function MetricCard({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div className="border-t border-slate-800/60">
-      {/* Toggle header */}
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-6 py-3 hover:bg-slate-800/20 transition-colors"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-1.5 h-1.5 rounded-full bg-slate-600" />
-          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-            Operational Intelligence
-          </span>
-          <span className="text-[10px] text-slate-600">
-            Trust · Workflows · Value · Governance · Pilot
-          </span>
-        </div>
-        <svg
-          className={`w-4 h-4 text-slate-500 transition-transform ${expanded ? "rotate-180" : ""}`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {/* Panels */}
-      {expanded && (
-        <div className="space-y-0">
-          <DecisionTrustPanel trust={decisionTrust} />
-
-          <WorkflowPanel
-            workflows={decisionIntegration?.workflows}
-            ownerships={decisionIntegration?.decision_ownership}
-          />
-          <LifecyclePanel
-            lifecycles={decisionIntegration?.decision_lifecycle}
-            triggers={decisionIntegration?.execution_triggers}
-            integration={decisionIntegration?.integration}
-          />
-
-          <CFOValuePanel value={decisionValue} />
-
-          <EvidenceGovernancePanel governance={governance} />
-
-          <PilotPanel pilot={pilot} />
-
-          <BankingDecisionView
-            runId={runId}
-            scenarioId={scenarioId}
-            lang="en"
-          />
-        </div>
-      )}
+    <div className="bg-slate-900/40 rounded-lg p-3">
+      <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">{label}</p>
+      <p className={`text-lg font-bold ${color}`}>{value}</p>
     </div>
   );
 }
 
-// ── Inner Page (reads searchParams) ───────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// INNER PAGE — reads searchParams, orchestrates tabs
+// ══════════════════════════════════════════════════════════════
 
 function CommandCenterInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const language = useAppStore((s) => s.language);
+  const locale = language as "en" | "ar";
+
   const runId = searchParams.get("run");
+  const activeTab = searchParams.get("tab") || "dashboard";
   const [isRunningScenario, setIsRunningScenario] = useState(false);
 
   const {
@@ -234,21 +243,21 @@ function CommandCenterInner() {
     confidence,
     trust,
 
-    // Phase 2-6 deep-dive data
+    // Deep-dive data
     decisionTrust,
     decisionIntegration,
     decisionValue,
     governance,
     pilot,
 
-    // Decision Trust Layer (Sprint 1)
+    // Decision Trust Layer
     metricExplanations,
     decisionTransparencyResult,
 
-    // Decision Reliability Layer (Sprint 2)
+    // Decision Reliability Layer
     reliabilityPayload,
 
-    // Sprint 3 — Explainability Layer
+    // Explainability Layer
     narrativeAr,
     macroContext,
 
@@ -258,16 +267,7 @@ function CommandCenterInner() {
     switchToLive,
   } = useCommandCenter(runId);
 
-  const [presentationMode, setPresentationMode] = useState(false);
-
-  const handleSubmitForReview = useCallback(
-    (actionId: string) => {
-      executeAction(actionId);
-    },
-    [executeAction],
-  );
-
-  // ── Scenario switching: POST /api/v1/runs → navigate to new run ──
+  // ── Scenario selection: POST /api/v1/runs → navigate to new run ──
   const handleScenarioSelect = useCallback(
     async (templateId: string) => {
       setIsRunningScenario(true);
@@ -281,11 +281,9 @@ function CommandCenterInner() {
         const json = await res.json();
         const newRunId = json?.data?.run_id ?? json?.run_id;
         if (newRunId) {
-          // Navigate to new run — no page reload, just URL update
           router.push(`/command-center?run=${newRunId}`);
         }
       } catch {
-        // Fallback: load mock data if API fails
         switchToMock();
       } finally {
         setIsRunningScenario(false);
@@ -294,7 +292,12 @@ function CommandCenterInner() {
     [router, switchToMock],
   );
 
-  // ---- State gates ----
+  const handleSubmitForReview = useCallback(
+    (actionId: string) => { executeAction(actionId); },
+    [executeAction],
+  );
+
+  // ── State gates ──
   if (status === "loading") return <LoadingSkeleton />;
   if (status === "error" && !scenario) {
     return (
@@ -305,38 +308,156 @@ function CommandCenterInner() {
       />
     );
   }
-  if (!scenario || !headline) return <EmptyState />;
+
+  // ── Derive country exposures from impacts for the map ──
+  const countryExposures = useMemo(() => {
+    if (!impacts?.length) return undefined;
+    const exposures: Record<string, { stressLevel: number; lossUsd: number; dominantSector: string; entities: string[] }> = {};
+
+    // Map sector-level impacts to countries
+    const sectorToCountry: Record<string, string[]> = {
+      banking: ["SA", "AE", "BH"],
+      insurance: ["SA", "AE", "QA"],
+      fintech: ["AE", "SA", "BH"],
+      energy: ["SA", "QA", "KW"],
+      logistics: ["OM", "AE", "QA"],
+    };
+
+    for (const impact of impacts) {
+      const countries = sectorToCountry[impact.sector] || ["SA"];
+      for (const cc of countries) {
+        if (!exposures[cc]) {
+          exposures[cc] = { stressLevel: 0, lossUsd: 0, dominantSector: impact.sector, entities: [] };
+        }
+        exposures[cc].stressLevel = Math.max(exposures[cc].stressLevel, impact.stressLevel);
+        exposures[cc].lossUsd += (impact.lossUsd || 0) / countries.length;
+      }
+    }
+    return Object.keys(exposures).length > 0 ? exposures : undefined;
+  }, [impacts]);
+
+  // ── Render active tab content ──
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "propagation":
+        return (
+          <PropagationView
+            locale={locale}
+            scenarioLabel={scenario?.label}
+            scenarioLabelAr={scenario?.labelAr ?? undefined}
+            severity={scenario?.severity}
+            totalLossUsd={headline?.totalLossUsd}
+            causalChain={causalChain}
+          />
+        );
+
+      case "map":
+        return (
+          <div className="p-6 max-w-7xl mx-auto">
+            <GCCImpactMap
+              countryExposures={countryExposures}
+              sectorRollups={sectorRollups as unknown as Record<string, { stress: number; loss_usd: number }> | undefined}
+              scenarioLabel={scenario?.label}
+              locale={locale}
+            />
+          </div>
+        );
+
+      case "decisions":
+        if (!scenario || !headline) {
+          return (
+            <div className="flex items-center justify-center h-96 text-slate-500 text-sm">
+              {locale === "ar" ? "لا توجد بيانات سيناريو — اختر سيناريو من لوحة المعلومات" : "No scenario data — select a scenario from the Dashboard"}
+            </div>
+          );
+        }
+        return (
+          <div className="p-6">
+            <DecisionRoomV2
+              runId={runId ?? undefined}
+              scenarioLabel={scenario.label}
+              scenarioLabelAr={scenario.labelAr ?? ""}
+              severity={String(scenario.severity)}
+              totalLossUsd={headline.totalLossUsd}
+              averageStress={headline.averageStress}
+              propagationDepth={headline.propagationDepth}
+              peakDay={headline.peakDay}
+              causalChain={causalChain}
+              decisionActions={decisionActions}
+              sectorRollups={sectorRollups}
+              locale={locale}
+              metricExplanations={metricExplanations}
+              decisionTransparency={decisionTransparencyResult ?? undefined}
+              reliability={reliabilityPayload ?? undefined}
+              confidenceScore={confidence}
+              narrativeEn={narrativeEn}
+              narrativeAr={narrativeAr ?? ""}
+              macroContext={macroContext ?? undefined}
+              trustInfo={trust ?? undefined}
+              onSubmitForReview={handleSubmitForReview}
+            />
+          </div>
+        );
+
+      case "sectors":
+        return (
+          <SectorIntelligenceView
+            locale={locale}
+            scenarioLabel={scenario?.label}
+            scenarioLabelAr={scenario?.labelAr ?? undefined}
+            severity={scenario?.severity}
+            narrativeEn={narrativeEn}
+            narrativeAr={narrativeAr ?? undefined}
+            systemRiskIndex={macroContext?.system_risk_index}
+            macroSignals={macroContext?.macro_signals}
+            causalChain={causalChain}
+            decisionActions={decisionActions as any}
+          />
+        );
+
+      case "regulatory":
+        return (
+          <RegulatoryAuditView
+            locale={locale}
+            runId={runId ?? undefined}
+            scenarioLabel={scenario?.label}
+            scenarioLabelAr={scenario?.labelAr ?? undefined}
+            severity={scenario?.severity}
+            horizonHours={scenario?.horizonHours}
+            trustInfo={trust ?? undefined}
+            decisionActions={decisionActions}
+          />
+        );
+
+      // Dashboard (default)
+      default:
+        return (
+          <DashboardView
+            scenario={scenario}
+            headline={headline}
+            narrativeEn={narrativeEn}
+            narrativeAr={narrativeAr ?? undefined}
+            macroContext={macroContext}
+            confidence={confidence}
+            causalChain={causalChain}
+            sectorRollups={sectorRollups}
+            decisionActions={decisionActions}
+            locale={locale}
+            onSelectScenario={handleScenarioSelect}
+            isRunningScenario={isRunningScenario}
+          />
+        );
+    }
+  };
 
   return (
-    <div className="h-screen bg-[#060910] text-slate-200 flex flex-col overflow-y-auto overflow-x-hidden">
-      {/* ── Presentation Mode Overlay ── */}
-      {presentationMode && (
-        <DemoFlow
-          scenarioLabel={scenario.label}
-          scenarioLabelAr={scenario.labelAr ?? undefined}
-          domain={scenario.domain}
-          severity={scenario.severity}
-          horizonHours={scenario.horizonHours}
-          systemRiskIndex={headline.averageStress}
-          totalLossUsd={headline.totalLossUsd}
-          nodesImpacted={headline.nodesImpacted}
-          criticalCount={headline.criticalCount}
-          elevatedCount={headline.elevatedCount}
-          confidence={confidence}
-          causalChain={causalChain}
-          sectorImpacts={sectorImpacts}
-          graphNodes={graphNodes}
-          decisionActions={decisionActions}
-          impacts={impacts}
-          narrativeEn={narrativeEn}
-          auditHash={trust?.auditHash}
-          modelVersion={trust?.modelVersion}
-          stagesCompleted={trust?.stagesCompleted}
-          onExit={() => setPresentationMode(false)}
-        />
-      )}
-
-      {/* ── Fallback banner (API failed, showing mock) ── */}
+    <ObservatoryShell
+      scenarioLabel={scenario?.label}
+      scenarioLabelAr={scenario?.labelAr ?? undefined}
+      dataSource={dataSource}
+      activeTab={activeTab}
+    >
+      {/* Fallback banner (API failed, showing mock) */}
       {error && scenario && (
         <div className="flex items-center justify-between px-4 py-1.5 bg-amber-500/10 border-b border-amber-500/20 flex-shrink-0">
           <p className="text-[11px] text-amber-400 truncate">{error}</p>
@@ -351,114 +472,32 @@ function CommandCenterInner() {
         </div>
       )}
 
-      {/* ═══════════════════════════════════════════════════════════════
-           SYSTEM IDENTITY — Macro Financial Intelligence for GCC
-           Visible immediately. CEO knows what system this is in 2 seconds.
-           ═══════════════════════════════════════════════════════════════ */}
-      <div className="flex-shrink-0 px-6 pt-4 pb-2">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2.5 mb-1">
-              <div className="w-6 h-6 rounded-lg bg-blue-600/15 border border-blue-500/20 flex items-center justify-center">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-blue-400">
-                  <circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
-                </svg>
-              </div>
-              <h1 className="text-sm font-bold text-white tracking-tight">
-                Macro Financial Intelligence
-                <span className="text-blue-400 ml-1.5">GCC</span>
-              </h1>
-            </div>
-            <p className="text-[10px] text-slate-500 leading-relaxed max-w-lg">
-              Decision system for GCC financial markets — from macro shock to executive action.
-              Explainable. Auditable. Decision intelligence.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="flex items-center gap-1.5">
-              <div className={`w-1.5 h-1.5 rounded-full ${dataSource === "live" ? "bg-emerald-500" : "bg-amber-500"}`} />
-              <span className="text-[9px] font-medium text-slate-600 uppercase tracking-wider">
-                {dataSource === "live" ? "Live" : "Demo"}
-              </span>
-            </div>
-            <button
-              onClick={() => setPresentationMode(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1 text-[9px] font-semibold rounded-md bg-slate-800/50 border border-slate-700/50 text-slate-500 hover:text-slate-400 transition-all"
-            >
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="3" width="20" height="14" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" />
-              </svg>
-              Present
-            </button>
-          </div>
+      {/* Scenario quick-switcher (compact pill bar) */}
+      {scenario && activeTab !== "dashboard" && (
+        <div className="px-6 pt-3">
+          <ScenarioSelector
+            activeScenarioId={scenario.templateId}
+            onSelect={handleScenarioSelect}
+            isLoading={isRunningScenario}
+            locale={locale}
+          />
         </div>
-      </div>
+      )}
 
-      {/* ── STEP 6: Scenario Selector — switch scenarios without page reload ── */}
-      <div className="flex-shrink-0 px-6 pt-1">
-        <ScenarioSelector
-          activeScenarioId={scenario.templateId}
-          onSelect={handleScenarioSelect}
-          isLoading={isRunningScenario}
-          locale="en"
-        />
-      </div>
+      {/* Active tab content */}
+      {renderTabContent()}
 
-      {/* ═══════════════════════════════════════════════════════════════
-           PRIMARY OPERATING SURFACE: Decision Room V2
-           ═══════════════════════════════════════════════════════════════ */}
-      <div className="flex-1 px-6 py-4">
-        <DecisionRoomV2
-          runId={runId ?? undefined}
-          scenarioLabel={scenario.label}
-          scenarioLabelAr={scenario.labelAr ?? ""}
-          severity={String(scenario.severity)}
-          totalLossUsd={headline.totalLossUsd}
-          averageStress={headline.averageStress}
-          propagationDepth={headline.propagationDepth}
-          peakDay={headline.peakDay}
-          causalChain={causalChain}
-          decisionActions={decisionActions}
-          sectorRollups={sectorRollups}
-          locale="en"
-          metricExplanations={metricExplanations}
-          decisionTransparency={decisionTransparencyResult ?? undefined}
-          reliability={reliabilityPayload ?? undefined}
-          confidenceScore={confidence}
-          narrativeEn={narrativeEn}
-          narrativeAr={narrativeAr ?? ""}
-          macroContext={macroContext ?? undefined}
-          trustInfo={trust ?? undefined}
-          onSubmitForReview={handleSubmitForReview}
-        />
-      </div>
-
-      {/* ═══════════════════════════════════════════════════════════════
-           OPERATIONAL INTELLIGENCE (collapsed, scroll-to-reveal)
-           Non-duplicate deep-dive panels: Trust, Workflows, Value,
-           Evidence, Governance, Pilot, Banking Intelligence.
-           ═══════════════════════════════════════════════════════════════ */}
-      <OperationalIntelligence
-        runId={runId}
-        scenarioId={scenario.templateId}
-        decisionTrust={decisionTrust}
-        decisionIntegration={decisionIntegration}
-        decisionValue={decisionValue}
-        governance={governance}
-        pilot={pilot}
-      />
-
-      {/* ── Status Bar ── */}
+      {/* Status Bar */}
       <StatusBar
         dataSource={dataSource}
         trust={trust}
         confidence={confidence}
       />
-    </div>
+    </ObservatoryShell>
   );
 }
 
-// ── Page Export (Suspense-wrapped for useSearchParams) ─────────────────
+// ── Page Export ──
 
 export default function CommandCenterPage() {
   return (
