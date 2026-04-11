@@ -1454,15 +1454,21 @@ export interface PilotPayload {
 }
 
 export interface MacroSignal {
-  name: string;
+  id: string;
+  name_en: string;
+  name_ar: string;
   value: string;
+  raw_value: number;
+  unit: string;
   impact: "low" | "medium" | "high";
-  status: string;
+  status: "simulated" | "live";
+  sectors: string[];
 }
 
 export interface MacroContext {
   macro_signals: MacroSignal[];
   system_risk_index: number;
-  narrative_en?: string;
-  narrative_ar?: string;
+  trigger_summary_en: string;
+  trigger_summary_ar: string;
+  status: "simulated" | "live";
 }
