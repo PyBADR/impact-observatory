@@ -109,7 +109,7 @@ export function MacroPanel({ macroContext, locale }: MacroPanelProps) {
             const style = IMPACT_STYLES[sig.impact] ?? IMPACT_STYLES.low;
             return (
               <div
-                key={sig.id}
+                key={sig.name}
                 className={`flex items-center gap-1.5 px-2 py-1 rounded ${style.bg} shrink-0`}
               >
                 <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
