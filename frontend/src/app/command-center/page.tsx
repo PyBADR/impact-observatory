@@ -27,11 +27,12 @@
  */
 
 import React, { Suspense, useState, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useCommandCenter } from "@/features/command-center/lib/use-command-center";
 
 // ── Primary Surface ──
 import { DecisionRoomV2 } from "@/components/provenance/DecisionRoomV2";
+import { ScenarioSelector } from "@/components/scenario/ScenarioSelector";
 
 // ── Operational Intelligence (deep-dive, non-duplicate) ──
 import { DecisionTrustPanel } from "@/features/command-center/components/DecisionTrustPanel";
@@ -213,7 +214,9 @@ function OperationalIntelligence({
 
 function CommandCenterInner() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const runId = searchParams.get("run");
+  const [isRunningScenario, setIsRunningScenario] = useState(false);
 
   const {
     status,
@@ -262,6 +265,33 @@ function CommandCenterInner() {
       executeAction(actionId);
     },
     [executeAction],
+  );
+
+  // ── Scenario switching: POST /api/v1/runs → navigate to new run ──
+  const handleScenarioSelect = useCallback(
+    async (templateId: string) => {
+      setIsRunningScenario(true);
+      try {
+        const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+        const res = await fetch(`${API_BASE}/api/v1/runs`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ template_id: templateId }),
+        });
+        const json = await res.json();
+        const newRunId = json?.data?.run_id ?? json?.run_id;
+        if (newRunId) {
+          // Navigate to new run — no page reload, just URL update
+          router.push(`/command-center?run=${newRunId}`);
+        }
+      } catch {
+        // Fallback: load mock data if API fails
+        switchToMock();
+      } finally {
+        setIsRunningScenario(false);
+      }
+    },
+    [router, switchToMock],
   );
 
   // ---- State gates ----
@@ -344,6 +374,16 @@ function CommandCenterInner() {
           </svg>
           Present
         </button>
+      </div>
+
+      {/* ── STEP 6: Scenario Selector — switch scenarios without page reload ── */}
+      <div className="flex-shrink-0 px-6 pt-1">
+        <ScenarioSelector
+          activeScenarioId={scenario.templateId}
+          onSelect={handleScenarioSelect}
+          isLoading={isRunningScenario}
+          locale="en"
+        />
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════
