@@ -34,7 +34,7 @@ const URGENCY_BADGE: Record<string, { bg: string; text: string; icon: React.Elem
 const formatTime = (hours: number): string => {
   if (hours >= 24) {
     const days = Math.floor(hours / 24);
-    const remainingHours = hours % 24;
+    const remainingHours = Math.round((hours % 24) * 10) / 10;
     return `${days}d ${remainingHours}h`;
   }
   return `${Math.round(hours)}h`;

@@ -337,7 +337,7 @@ const hormuzScenario: Scenario = {
     headline: "Insurance exposure rising as disruption translates into claims and pricing pressure",
     metrics: [
       { label: "Marine Hull Claims", value: "+280%", severity: "CRITICAL", detail: "War-risk triggers activated across GCC maritime fleet" },
-      { label: "Cargo Claims Pipeline", value: "$890M", severity: "ELEVATED", detail: "In-transit cargo claims from rerouting and delays" },
+      { label: "Cargo Claims Backlog", value: "$890M", severity: "ELEVATED", detail: "In-transit cargo claims from rerouting and delays" },
       { label: "Reinsurance Utilization", value: "78%", severity: "ELEVATED", detail: "Treaty capacity approaching exhaustion threshold" },
       { label: "Coverage Gap", value: "12% uninsured", severity: "MODERATE", detail: "Force majeure exclusions creating protection gaps" },
     ],
