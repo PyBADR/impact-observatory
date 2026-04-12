@@ -1,0 +1,65 @@
+[
+  {
+    "signal_id": "BRENT-SPOT-20250115",
+    "signal_type": "CRUDE_PRICE_SPOT",
+    "benchmark": "BRENT",
+    "value": 78.50,
+    "unit": "usd_per_barrel",
+    "observation_date": "2025-01-15",
+    "previous_value": 76.80,
+    "change_pct": 2.21,
+    "source_id": "opec-momr",
+    "confidence_score": 0.95
+  },
+  {
+    "signal_id": "SA-PROD-202501",
+    "signal_type": "PRODUCTION_VOLUME",
+    "country": "SA",
+    "entity_id": "SA-ARAMCO",
+    "value": 9.0,
+    "unit": "mbpd",
+    "observation_date": "2025-01-15",
+    "previous_value": 9.0,
+    "change_pct": 0.0,
+    "fiscal_breakeven_price": 81.0,
+    "source_id": "opec-momr",
+    "confidence_score": 0.88
+  },
+  {
+    "signal_id": "KW-PROD-202501",
+    "signal_type": "PRODUCTION_VOLUME",
+    "country": "KW",
+    "value": 2.55,
+    "unit": "mbpd",
+    "observation_date": "2025-01-15",
+    "previous_value": 2.55,
+    "change_pct": 0.0,
+    "fiscal_breakeven_price": 86.0,
+    "source_id": "opec-momr",
+    "confidence_score": 0.87
+  },
+  {
+    "signal_id": "QA-LNG-SPOT-20250115",
+    "signal_type": "LNG_SPOT_PRICE",
+    "benchmark": "JKM_LNG",
+    "country": "QA",
+    "entity_id": "QA-QATARENERGY",
+    "value": 12.80,
+    "unit": "usd_per_mmbtu",
+    "observation_date": "2025-01-15",
+    "previous_value": 13.20,
+    "change_pct": -3.03,
+    "source_id": "opec-momr",
+    "confidence_score": 0.85
+  },
+  {
+    "signal_id": "SA-OPEC-QUOTA-202501",
+    "signal_type": "OPEC_QUOTA",
+    "country": "SA",
+    "value": 10.478,
+    "unit": "mbpd",
+    "observation_date": "2025-01-01",
+    "source_id": "opec-momr",
+    "confidence_score": 0.98
+  }
+]

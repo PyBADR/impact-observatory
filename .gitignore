@@ -38,6 +38,14 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Session/audit artifacts (not source code)
+CODEBASE_STRUCTURAL_AUDIT.docx
+DEPLOYMENT_INFRASTRUCTURE_AUDIT.docx
+SYSTEM_INTEGRITY_AUDIT.docx
+SYSTEM_AUDIT_REPORT.html
+smart_fix_publish.sh
+frontend/build.log
+
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts

@@ -94,10 +94,14 @@ async def lifespan(app: FastAPI):
         import src.models.action_tracking  # noqa: F401
         import src.models.enterprise  # noqa: F401
         import src.models.orm  # noqa: F401
+        import src.data_foundation.models.tables  # noqa: F401  — P2 data foundation
+        import src.data_foundation.evaluation.orm_models  # noqa: F401  — evaluation layer
+        import src.data_foundation.governance.orm_models  # noqa: F401  — governance layer
+        import src.data_foundation.enforcement.orm_models  # noqa: F401  — enforcement layer
 
         async with pg_engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        print("✅ PostgreSQL tables verified/created (action_tracking, enterprise, orm)")
+        print("✅ PostgreSQL tables verified/created (action_tracking, enterprise, orm, data_foundation, evaluation, governance, enforcement)")
     except Exception as e:
         print(f"⚠️  PostgreSQL table creation skipped: {e}")
 
@@ -291,6 +295,31 @@ api_v1.include_router(v1_institutional_router)
 
 # ── Metrics Provenance Layer (Stage 85 — explainability + factor decomposition) ──
 api_v1.include_router(v1_provenance_router)
+
+# ── P2 Data Foundation Layer ─────────────────────────────────────────────
+from src.data_foundation.api.entities import router as df_entities_router
+from src.data_foundation.api.events import router as df_events_router
+from src.data_foundation.api.macro import router as df_macro_router
+from src.data_foundation.api.rules import router as df_rules_router
+from src.data_foundation.api.decision_logs import router as df_dlogs_router
+from src.data_foundation.api.decision_engine import router as df_engine_router
+from src.data_foundation.connectors.oil_energy import connector_router as df_oil_connector_router
+from src.data_foundation.api.governance import router as df_governance_router
+from src.data_foundation.api.evaluation import router as df_evaluation_router
+from src.data_foundation.api.enforcement import router as df_enforcement_router
+
+api_v1.include_router(df_entities_router)
+api_v1.include_router(df_events_router)
+api_v1.include_router(df_macro_router)
+api_v1.include_router(df_rules_router)
+api_v1.include_router(df_dlogs_router)
+api_v1.include_router(df_engine_router)
+api_v1.include_router(df_oil_connector_router)
+
+# ── Governance + Evaluation Layers ──────────────────────────────────────
+api_v1.include_router(df_governance_router)
+api_v1.include_router(df_evaluation_router)
+api_v1.include_router(df_enforcement_router)
 
 # ── Auth endpoints — no API key required ─────────────────────────────────
 app.include_router(v1_auth_router, prefix="/api/v1")

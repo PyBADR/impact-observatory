@@ -1,0 +1,159 @@
+[
+  {
+    "rule_id": "RULE-OIL-PRICE-DROP-30",
+    "rule_name": "Oil Price Drop >30% Trigger",
+    "rule_name_ar": "انخفاض سعر النفط بأكثر من 30%",
+    "description": "Triggers when Brent crude drops more than 30% from its 90-day moving average. Activates fiscal stress contingency for oil-dependent GCC states.",
+    "version": 1,
+    "is_active": true,
+    "conditions": [
+      {
+        "field": "oil_energy_signals.change_pct",
+        "operator": "lt",
+        "threshold": -30.0,
+        "unit": "percent"
+      }
+    ],
+    "action": "ACTIVATE_CONTINGENCY",
+    "action_params": {
+      "contingency_plan": "fiscal_stress_response",
+      "alert_recipients": ["macro-team", "risk-committee"],
+      "escalation_target": "CRO"
+    },
+    "escalation_level": "SEVERE",
+    "applicable_countries": ["SA", "KW", "OM", "BH"],
+    "applicable_sectors": ["energy", "banking", "government"],
+    "applicable_scenarios": ["saudi_oil_shock", "energy_market_volatility_shock"],
+    "requires_human_approval": true,
+    "cooldown_minutes": 1440,
+    "source_dataset_ids": ["p1_oil_energy_signals"],
+    "tags": ["oil-price", "fiscal-risk", "critical"],
+    "created_by": "macro-intelligence-team",
+    "approved_by": "chief-risk-officer"
+  },
+  {
+    "rule_id": "RULE-NPL-BREACH-5PCT",
+    "rule_name": "NPL Ratio Breach 5% Threshold",
+    "rule_name_ar": "تجاوز نسبة القروض المتعثرة 5%",
+    "description": "Triggers when any D-SIB bank's NPL ratio exceeds 5%, indicating potential asset quality deterioration requiring supervisory attention.",
+    "version": 1,
+    "is_active": true,
+    "conditions": [
+      {
+        "field": "banking_sector_profiles.npl_ratio_pct",
+        "operator": "gt",
+        "threshold": 5.0,
+        "unit": "percent"
+      },
+      {
+        "field": "banking_sector_profiles.is_dsib",
+        "operator": "eq",
+        "threshold": true
+      }
+    ],
+    "action": "ESCALATE",
+    "action_params": {
+      "alert_recipients": ["banking-supervision", "risk-committee"],
+      "escalation_target": "banking-supervision-head"
+    },
+    "escalation_level": "HIGH",
+    "applicable_countries": [],
+    "applicable_sectors": ["banking"],
+    "requires_human_approval": true,
+    "cooldown_minutes": 720,
+    "source_dataset_ids": ["p1_banking_sector_profiles"],
+    "tags": ["npl", "asset-quality", "banking-supervision"],
+    "created_by": "banking-risk-team"
+  },
+  {
+    "rule_id": "RULE-HORMUZ-SEVERITY-HIGH",
+    "rule_name": "Strait of Hormuz High Severity Event",
+    "rule_name_ar": "حدث عالي الخطورة في مضيق هرمز",
+    "description": "Triggers when event signals related to the Strait of Hormuz reach HIGH or SEVERE severity, activating maritime contingency plans.",
+    "version": 1,
+    "is_active": true,
+    "conditions": [
+      {
+        "field": "event_signals.severity_score",
+        "operator": "gte",
+        "threshold": 0.65
+      },
+      {
+        "field": "event_signals.scenario_ids",
+        "operator": "in",
+        "threshold": ["hormuz_chokepoint_disruption", "hormuz_full_closure"]
+      }
+    ],
+    "action": "ACTIVATE_CONTINGENCY",
+    "action_params": {
+      "contingency_plan": "hormuz_disruption_response",
+      "alert_recipients": ["maritime-team", "logistics-team", "executive-committee"],
+      "notify_entities": ["KW-SHUWAIKH", "AE-JEBEL-ALI", "SA-JUBAIL"]
+    },
+    "escalation_level": "SEVERE",
+    "applicable_countries": ["SA", "AE", "KW", "QA", "BH", "OM"],
+    "applicable_sectors": ["maritime", "energy", "logistics"],
+    "applicable_scenarios": ["hormuz_chokepoint_disruption", "hormuz_full_closure"],
+    "requires_human_approval": true,
+    "cooldown_minutes": 60,
+    "source_dataset_ids": ["p1_event_signals"],
+    "tags": ["hormuz", "chokepoint", "maritime-risk", "critical"],
+    "created_by": "geopolitical-risk-team"
+  },
+  {
+    "rule_id": "RULE-FX-PEG-DEVIATION",
+    "rule_name": "FX Peg Deviation Alert",
+    "rule_name_ar": "تنبيه انحراف سعر الصرف عن الربط",
+    "description": "Triggers when any GCC currency deviates more than 50bps from its official USD peg, signaling potential monetary stress.",
+    "version": 1,
+    "is_active": true,
+    "conditions": [
+      {
+        "field": "fx_signals.deviation_from_peg_bps",
+        "operator": "gt",
+        "threshold": 50,
+        "unit": "basis_points"
+      }
+    ],
+    "action": "ALERT",
+    "action_params": {
+      "alert_recipients": ["fx-desk", "macro-team"]
+    },
+    "escalation_level": "ELEVATED",
+    "applicable_countries": ["SA", "AE", "QA", "BH", "OM"],
+    "applicable_sectors": ["banking"],
+    "requires_human_approval": false,
+    "cooldown_minutes": 240,
+    "source_dataset_ids": ["p1_fx_signals"],
+    "tags": ["fx", "peg", "monetary-stability"],
+    "created_by": "fx-intelligence-team"
+  },
+  {
+    "rule_id": "RULE-INSURANCE-COMBINED-RATIO-120",
+    "rule_name": "Insurance Combined Ratio >120% Alert",
+    "rule_name_ar": "تنبيه نسبة التأمين المجمعة تتجاوز 120%",
+    "description": "Flags insurers with combined ratio exceeding 120%, indicating persistent underwriting losses.",
+    "version": 1,
+    "is_active": true,
+    "conditions": [
+      {
+        "field": "insurance_sector_profiles.combined_ratio_pct",
+        "operator": "gt",
+        "threshold": 120.0,
+        "unit": "percent"
+      }
+    ],
+    "action": "MONITOR",
+    "action_params": {
+      "monitoring_frequency_days": 30,
+      "alert_recipients": ["insurance-team"]
+    },
+    "escalation_level": "GUARDED",
+    "applicable_sectors": ["insurance"],
+    "requires_human_approval": false,
+    "cooldown_minutes": 10080,
+    "source_dataset_ids": ["p1_insurance_sector_profiles"],
+    "tags": ["insurance", "underwriting-loss", "solvency"],
+    "created_by": "insurance-risk-team"
+  }
+]

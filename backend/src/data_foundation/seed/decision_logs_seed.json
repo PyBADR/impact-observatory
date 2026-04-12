@@ -1,0 +1,81 @@
+[
+  {
+    "log_id": "DLOG-20250110-001",
+    "rule_id": "RULE-HORMUZ-SEVERITY-HIGH",
+    "rule_version": 1,
+    "triggered_at": "2025-01-10T07:20:00Z",
+    "action": "ACTIVATE_CONTINGENCY",
+    "status": "APPROVED",
+    "trigger_context": {
+      "signal_ids": ["EVT-HORMUZ-20250110-001"],
+      "indicator_values": {
+        "event_signals.severity_score": 0.55,
+        "event_signals.category": "GEOPOLITICAL"
+      },
+      "scenario_id": "hormuz_chokepoint_disruption",
+      "urs_score": 0.58,
+      "risk_level": "ELEVATED"
+    },
+    "country": "KW",
+    "entity_ids": ["AE-JEBEL-ALI", "KW-SHUWAIKH", "SA-JUBAIL"],
+    "requires_approval": true,
+    "reviewed_by": "chief-risk-officer",
+    "reviewed_at": "2025-01-10T08:45:00Z",
+    "review_notes": "Approved contingency activation. IRGC exercise is limited scope but precautionary measures warranted for Hormuz-dependent ports.",
+    "executed_at": "2025-01-10T09:00:00Z",
+    "execution_result": {
+      "contingency_plan": "hormuz_disruption_response",
+      "actions_taken": ["port_alert_elevated", "shipping_reroute_assessment", "insurance_reserve_review"],
+      "entities_notified": ["KW-SHUWAIKH", "AE-JEBEL-ALI", "SA-JUBAIL"]
+    }
+  },
+  {
+    "log_id": "DLOG-20250108-001",
+    "rule_id": "RULE-INSURANCE-COMBINED-RATIO-120",
+    "rule_version": 1,
+    "triggered_at": "2025-01-08T15:30:00Z",
+    "action": "MONITOR",
+    "status": "EXECUTED",
+    "trigger_context": {
+      "signal_ids": ["EVT-REDSEA-20250108-001"],
+      "indicator_values": {
+        "event_signals.severity_score": 0.72,
+        "event_signals.category": "CONFLICT"
+      },
+      "scenario_id": "red_sea_trade_corridor_instability",
+      "urs_score": 0.68,
+      "risk_level": "HIGH"
+    },
+    "country": "SA",
+    "entity_ids": ["SA-TAWUNIYA"],
+    "requires_approval": false,
+    "executed_at": "2025-01-08T15:35:00Z",
+    "execution_result": {
+      "monitoring_frequency_days": 30,
+      "next_review": "2025-02-08",
+      "marine_hull_claims_watch": true
+    }
+  },
+  {
+    "log_id": "DLOG-20250115-001",
+    "rule_id": "RULE-FX-PEG-DEVIATION",
+    "rule_version": 1,
+    "triggered_at": "2025-01-15T10:00:00Z",
+    "action": "ALERT",
+    "status": "REJECTED",
+    "trigger_context": {
+      "signal_ids": ["USDKWD-20250115"],
+      "indicator_values": {
+        "fx_signals.deviation_from_peg_bps": 12
+      },
+      "risk_level": "NOMINAL"
+    },
+    "country": "KW",
+    "entity_ids": ["KW-CBK"],
+    "requires_approval": false,
+    "reviewed_by": "fx-desk-analyst",
+    "reviewed_at": "2025-01-15T10:15:00Z",
+    "review_notes": "False trigger — KWD uses a basket peg, not a fixed USD peg. Deviation within normal band. Rule condition needs refinement for basket-peg currencies.",
+    "superseded_by": null
+  }
+]
