@@ -63,17 +63,17 @@ export function ObservatoryShell({
 
   return (
     <div
-      className={`min-h-screen bg-[#0a0a0c] text-[#e8e6e3] flex flex-col ${isArabic ? "rtl" : "ltr"}`}
+      className={`min-h-screen bg-[#f5f5f7] text-[#1d1d1f] flex flex-col ${isArabic ? "rtl" : "ltr"}`}
       dir={isArabic ? "rtl" : "ltr"}
     >
       {/* ── Identity Header ── */}
-      <header className="border-b border-[#1a1a1e] px-6 py-4">
+      <header className="border-b border-[#e5e5e7] px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className={`flex items-baseline gap-3 ${isArabic ? "flex-row-reverse" : ""}`}>
-            <h1 className="text-[0.9375rem] font-bold tracking-tight text-[#e8e6e3]">
+            <h1 className="text-[0.9375rem] font-bold tracking-tight text-[#1d1d1f]">
               Impact Observatory
             </h1>
-            <span className="text-[0.6875rem] text-[#706f6c] font-medium tracking-wide">
+            <span className="text-[0.6875rem] text-[#6e6e73] font-medium tracking-wide">
               مرصد الأثر
             </span>
           </div>
@@ -82,22 +82,22 @@ export function ObservatoryShell({
             {/* Active scenario indicator */}
             {scenarioDisplayLabel && (
               <div className={`flex items-center gap-2 ${isArabic ? "flex-row-reverse" : ""}`}>
-                <div className="w-1.5 h-1.5 rounded-full bg-[#c4a35a] animate-pulse" />
-                <span className="text-[0.75rem] text-[#a09f9c] font-medium truncate max-w-[200px]">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#0071e3] animate-pulse" />
+                <span className="text-[0.75rem] text-[#515154] font-medium truncate max-w-[200px]">
                   {scenarioDisplayLabel}
                 </span>
               </div>
             )}
 
             {/* Data source */}
-            <span className="text-[0.625rem] text-[#3a3937] uppercase tracking-widest font-medium">
+            <span className="text-[0.625rem] text-[#8e8e93] uppercase tracking-widest font-medium">
               {dataSource === "live" ? "Live" : "Sim"}
             </span>
 
             {/* Language toggle */}
             <button
               onClick={handleLanguageToggle}
-              className="px-2.5 py-1 text-[0.6875rem] font-medium rounded border border-[#1a1a1e] text-[#706f6c] hover:text-[#a09f9c] hover:border-[#2a2a2e] transition-colors"
+              className="px-2.5 py-1 text-[0.6875rem] font-medium rounded border border-[#e5e5e7] text-[#6e6e73] hover:text-[#515154] hover:border-[#d6d6db] transition-colors"
               aria-label={isArabic ? "Switch to English" : "Switch to Arabic"}
             >
               {isArabic ? "EN" : "عربي"}
@@ -107,7 +107,7 @@ export function ObservatoryShell({
       </header>
 
       {/* ── Executive Tab Navigation ── */}
-      <nav className="border-b border-[#1a1a1e] px-6">
+      <nav className="border-b border-[#e5e5e7] px-6">
         <div className="max-w-6xl mx-auto flex gap-0">
           {TABS.map((tab) => {
             const isActive = currentTabId === tab.id;
@@ -119,8 +119,8 @@ export function ObservatoryShell({
                 onClick={() => handleTabClick(tab.id)}
                 className={`py-3 px-5 text-[0.8125rem] font-medium border-b-2 transition-colors whitespace-nowrap ${
                   isActive
-                    ? "text-[#e8e6e3] border-[#c4a35a]"
-                    : "text-[#706f6c] border-transparent hover:text-[#a09f9c]"
+                    ? "text-[#1d1d1f] border-[#0071e3]"
+                    : "text-[#6e6e73] border-transparent hover:text-[#515154]"
                 }`}
                 aria-current={isActive ? "page" : undefined}
               >

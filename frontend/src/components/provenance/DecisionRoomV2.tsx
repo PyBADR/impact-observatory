@@ -88,12 +88,12 @@ export function DecisionRoomV2({
     >
       {/* ── Context header ── */}
       <div className="mb-12">
-        <h2 className="text-[1.375rem] sm:text-[1.625rem] font-bold text-[#e8e6e3] leading-tight tracking-tight mb-3">
+        <h2 className="text-[1.375rem] sm:text-[1.625rem] font-bold text-[#1d1d1f] leading-tight tracking-tight mb-3">
           {isAr ? "القرار التنفيذي" : "Executive Decision"}
         </h2>
-        <p className="text-[0.875rem] text-[#706f6c] leading-relaxed">
+        <p className="text-[0.875rem] text-[#6e6e73] leading-relaxed">
           {displayLabel}
-          <span className="text-[#c4a35a] ml-2">· {severityPct}% severity</span>
+          <span className="text-[#0071e3] ml-2">· {severityPct}% severity</span>
           {totalLossUsd > 0 && (
             <span className="ml-2">· {formatUsd(totalLossUsd)} projected loss</span>
           )}
@@ -102,7 +102,7 @@ export function DecisionRoomV2({
 
       {/* ── No directives state ── */}
       {!primary && (
-        <p className="text-[0.9375rem] text-[#706f6c]">
+        <p className="text-[0.9375rem] text-[#6e6e73]">
           {isAr
             ? "لا توجد توجيهات نشطة — النظام في وضع المراقبة."
             : "No active directives — system in monitoring posture."}
@@ -115,11 +115,11 @@ export function DecisionRoomV2({
           {/* Why now — the narrative justification */}
           {narrative && (
             <div className="mb-12">
-              <p className="text-[0.6875rem] text-[#3a3937] uppercase tracking-[0.2em] font-semibold mb-2">
+              <p className="text-[0.6875rem] text-[#8e8e93] uppercase tracking-[0.2em] font-semibold mb-2">
                 {isAr ? "لماذا الآن" : "Why Now"}
               </p>
-              <div className="h-px bg-[#1a1a1e] mb-6" />
-              <p className="text-[0.9375rem] text-[#a09f9c] leading-[1.75]">
+              <div className="h-px bg-[#e5e5e7] mb-6" />
+              <p className="text-[0.9375rem] text-[#515154] leading-[1.75]">
                 {narrative}
               </p>
             </div>
@@ -127,40 +127,40 @@ export function DecisionRoomV2({
 
           {/* The directive — dominant visual element */}
           <div className="mb-12">
-            <p className="text-[0.6875rem] text-[#3a3937] uppercase tracking-[0.2em] font-semibold mb-2">
+            <p className="text-[0.6875rem] text-[#8e8e93] uppercase tracking-[0.2em] font-semibold mb-2">
               {isAr ? "التوجيه الرئيسي" : "Primary Directive"}
             </p>
-            <div className="h-px bg-[#1a1a1e] mb-6" />
+            <div className="h-px bg-[#e5e5e7] mb-6" />
 
-            <p className="text-[1.125rem] font-bold text-[#e8e6e3] leading-snug mb-4">
+            <p className="text-[1.125rem] font-bold text-[#1d1d1f] leading-snug mb-4">
               {primary.action}
             </p>
 
             {/* Owner, sector, urgency — inline prose, not grid */}
-            <p className="text-[0.8125rem] text-[#706f6c] leading-[1.75] mb-5">
-              {isAr ? "المسؤول" : "Owner"}: <span className="text-[#e8e6e3] font-semibold">{primary.owner || (isAr ? "غير محدد" : "Unassigned")}</span>
-              <span className="mx-2 text-[#3a3937]">·</span>
-              {isAr ? "القطاع" : "Sector"}: <span className="text-[#e8e6e3] font-semibold">{primary.sector || "Cross-sector"}</span>
-              <span className="mx-2 text-[#3a3937]">·</span>
-              {isAr ? "الإلحاح" : "Urgency"}: <span className="text-[#c4a35a] font-semibold">{
+            <p className="text-[0.8125rem] text-[#6e6e73] leading-[1.75] mb-5">
+              {isAr ? "المسؤول" : "Owner"}: <span className="text-[#1d1d1f] font-semibold">{primary.owner || (isAr ? "غير محدد" : "Unassigned")}</span>
+              <span className="mx-2 text-[#8e8e93]">·</span>
+              {isAr ? "القطاع" : "Sector"}: <span className="text-[#1d1d1f] font-semibold">{primary.sector || "Cross-sector"}</span>
+              <span className="mx-2 text-[#8e8e93]">·</span>
+              {isAr ? "الإلحاح" : "Urgency"}: <span className="text-[#0071e3] font-semibold">{
                 primary.urgency != null && primary.urgency > 0
                   ? `${Math.round(primary.urgency)}%`
                   : isAr ? "فوري" : "Immediate"
               }</span>
               {confidenceScore != null && (
                 <>
-                  <span className="mx-2 text-[#3a3937]">·</span>
-                  {isAr ? "الثقة" : "Confidence"}: <span className="text-[#a09f9c] font-semibold">{Math.round(confidenceScore * 100)}%</span>
+                  <span className="mx-2 text-[#8e8e93]">·</span>
+                  {isAr ? "الثقة" : "Confidence"}: <span className="text-[#515154] font-semibold">{Math.round(confidenceScore * 100)}%</span>
                 </>
               )}
             </p>
 
             {/* Consequence of delay — amber, urgent */}
-            <div className="border-l-2 border-[#c4a35a]/40 pl-5">
-              <p className="text-[0.6875rem] text-[#706f6c] uppercase tracking-widest font-medium mb-1.5">
+            <div className="border-l-2 border-[#0071e3]/40 pl-5">
+              <p className="text-[0.6875rem] text-[#6e6e73] uppercase tracking-widest font-medium mb-1.5">
                 {isAr ? "عواقب التأخير" : "Consequence of Delay"}
               </p>
-              <p className="text-[0.875rem] text-[#c4a35a] leading-[1.75]">
+              <p className="text-[0.875rem] text-[#0071e3] leading-[1.75]">
                 {totalLossUsd > 0
                   ? isAr
                     ? `التأخير في التنفيذ يعرض النظام لخسائر إضافية تتجاوز ${formatUsd(totalLossUsd)}. يتسارع الضغط عبر القطاعات المترابطة.`
@@ -175,25 +175,25 @@ export function DecisionRoomV2({
           {/* ── Supporting directives — max 2, deliberately smaller ── */}
           {supporting.length > 0 && (
             <div className="mb-12">
-              <p className="text-[0.6875rem] text-[#3a3937] uppercase tracking-[0.2em] font-semibold mb-2">
+              <p className="text-[0.6875rem] text-[#8e8e93] uppercase tracking-[0.2em] font-semibold mb-2">
                 {isAr ? "توجيهات داعمة" : "Supporting Directives"}
               </p>
-              <div className="h-px bg-[#1a1a1e] mb-6" />
+              <div className="h-px bg-[#e5e5e7] mb-6" />
 
-              <div className="space-y-6 border-l-2 border-[#1a1a1e] pl-5">
+              <div className="space-y-6 border-l-2 border-[#e5e5e7] pl-5">
                 {supporting.map((action, i) => (
                   <div key={i}>
-                    <p className="text-[0.9375rem] text-[#a09f9c] leading-snug mb-2">
+                    <p className="text-[0.9375rem] text-[#515154] leading-snug mb-2">
                       {action.action}
                     </p>
-                    <p className="text-[0.75rem] text-[#706f6c]">
+                    <p className="text-[0.75rem] text-[#6e6e73]">
                       {action.owner || (isAr ? "غير محدد" : "Unassigned")}
-                      <span className="mx-2 text-[#3a3937]">·</span>
+                      <span className="mx-2 text-[#8e8e93]">·</span>
                       {action.sector || "Cross-sector"}
                       {action.urgency != null && action.urgency > 0 && (
                         <>
-                          <span className="mx-2 text-[#3a3937]">·</span>
-                          <span className="text-[#c4a35a]">
+                          <span className="mx-2 text-[#8e8e93]">·</span>
+                          <span className="text-[#0071e3]">
                             {Math.round(action.urgency)}% urgency
                           </span>
                         </>
@@ -207,7 +207,7 @@ export function DecisionRoomV2({
 
           {/* ── Remaining count if more than 3 ── */}
           {decisionActions.length > 3 && (
-            <p className="text-[0.8125rem] text-[#706f6c]">
+            <p className="text-[0.8125rem] text-[#6e6e73]">
               {decisionActions.length - 3} {isAr ? "توجيهات إضافية في النظام" : "additional directives in the system"}.
             </p>
           )}
@@ -215,8 +215,8 @@ export function DecisionRoomV2({
       )}
 
       {/* Timestamp */}
-      <div className="mt-14 pt-5 border-t border-[#1a1a1e]">
-        <p className="text-[0.625rem] text-[#3a3937] tracking-wider">
+      <div className="mt-14 pt-5 border-t border-[#e5e5e7]">
+        <p className="text-[0.625rem] text-[#8e8e93] tracking-wider">
           {isAr ? "صفحة القرار التنفيذي" : "Executive mandate"} · {displayLabel}
         </p>
       </div>

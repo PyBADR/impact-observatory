@@ -37,10 +37,10 @@ import { RegulatoryAuditView } from "@/components/panels/RegulatoryAuditView";
 
 function LoadingSkeleton() {
   return (
-    <div className="min-h-screen bg-[#0a0a0c] flex items-center justify-center">
+    <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-8 h-8 border-2 border-[#c4a35a]/30 border-t-[#c4a35a] rounded-full animate-spin" />
-        <p className="text-sm text-[#706f6c]">Loading intelligence pipeline...</p>
+        <div className="w-8 h-8 border-2 border-[#0071e3]/30 border-t-[#0071e3] rounded-full animate-spin" />
+        <p className="text-sm text-[#6e6e73]">Loading intelligence pipeline...</p>
       </div>
     </div>
   );
@@ -60,18 +60,18 @@ function ErrorState(
   }
 ) {
   return (
-    <div className="min-h-screen bg-[#0a0a0c] flex items-center justify-center">
+    <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center">
       <div className="max-w-md text-center px-6">
-        <div className="w-12 h-12 rounded-xl bg-[#1a1a1e] border border-[#2a2a2e] flex items-center justify-center mx-auto mb-4">
-          <span className="text-[#c4a35a] text-lg">!</span>
+        <div className="w-12 h-12 rounded-xl bg-[#e5e5e7] border border-[#d6d6db] flex items-center justify-center mx-auto mb-4">
+          <span className="text-[#0071e3] text-lg">!</span>
         </div>
-        <h2 className="text-sm font-semibold text-[#e8e6e3] mb-2">Pipeline Error</h2>
-        <p className="text-xs text-[#706f6c] mb-4">{error}</p>
+        <h2 className="text-sm font-semibold text-[#1d1d1f] mb-2">Pipeline Error</h2>
+        <p className="text-xs text-[#6e6e73] mb-4">{error}</p>
         <div className="flex items-center justify-center gap-3">
           {onRetry && (
             <button
               onClick={onRetry}
-              className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#1a1a1e] text-[#e8e6e3] border border-[#2a2a2e] hover:border-[#3a3a3e] transition-colors"
+              className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#e5e5e7] text-[#1d1d1f] border border-[#d6d6db] hover:border-[#3a3a3e] transition-colors"
             >
               Retry
             </button>
@@ -79,7 +79,7 @@ function ErrorState(
           {onFallbackMock && (
             <button
               onClick={onFallbackMock}
-              className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#1a1a1e] text-[#a09f9c] border border-[#2a2a2e] hover:border-[#3a3a3e] transition-colors"
+              className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#e5e5e7] text-[#515154] border border-[#d6d6db] hover:border-[#3a3a3e] transition-colors"
             >
               Load Simulation
             </button>
@@ -175,7 +175,7 @@ function CommandCenterInner() {
       case "decision":
         if (!scenario || !headline) {
           return (
-            <div className="flex items-center justify-center h-96 text-[#706f6c] text-sm">
+            <div className="flex items-center justify-center h-96 text-[#6e6e73] text-sm">
               {locale === "ar"
                 ? "لا توجد بيانات سيناريو — اختر سيناريو من الإحاطة"
                 : "No scenario data — select a scenario from the Briefing"}
@@ -233,13 +233,13 @@ function CommandCenterInner() {
         return (
           <div className="min-h-[60vh] flex items-center justify-center px-6">
             <div className="max-w-xl text-center">
-              <div className="w-12 h-12 rounded-xl bg-[#1a1a1e] border border-[#2a2a2e] flex items-center justify-center mx-auto mb-5">
-                <span className="text-[#c4a35a] text-lg">·</span>
+              <div className="w-12 h-12 rounded-xl bg-[#e5e5e7] border border-[#d6d6db] flex items-center justify-center mx-auto mb-5">
+                <span className="text-[#0071e3] text-lg">·</span>
               </div>
-              <h2 className="text-[1.125rem] font-semibold text-[#e8e6e3] mb-3">
+              <h2 className="text-[1.125rem] font-semibold text-[#1d1d1f] mb-3">
                 {locale === "ar" ? "لا توجد إحاطة جاهزة بعد" : "No briefing available yet"}
               </h2>
-              <p className="text-[0.9375rem] leading-relaxed text-[#706f6c] mb-6">
+              <p className="text-[0.9375rem] leading-relaxed text-[#6e6e73] mb-6">
                 {locale === "ar"
                   ? "لم يتم تكوين سطح الإحاطة بعد. أعد المحاولة أو حمّل المحاكاة داخل نفس البيئة التنفيذية."
                   : "The executive briefing surface has not been assembled yet. Retry the run or load the simulation inside the same command environment."}
@@ -248,14 +248,14 @@ function CommandCenterInner() {
                 {runId && (
                   <button
                     onClick={() => switchToLive(runId)}
-                    className="px-4 py-2 text-[0.8125rem] font-semibold rounded-md bg-[#e8e6e3] text-[#0a0a0c] hover:bg-white transition-colors"
+                    className="px-4 py-2 text-[0.8125rem] font-semibold rounded-md bg-[#1d1d1f] text-[#f5f5f7] hover:bg-white transition-colors"
                   >
                     {locale === "ar" ? "إعادة المحاولة" : "Retry Live"}
                   </button>
                 )}
                 <button
                   onClick={switchToMock}
-                  className="px-4 py-2 text-[0.8125rem] font-semibold rounded-md border border-[#2a2a2e] text-[#a09f9c] hover:text-[#e8e6e3] hover:border-[#3a3a3e] transition-colors"
+                  className="px-4 py-2 text-[0.8125rem] font-semibold rounded-md border border-[#d6d6db] text-[#515154] hover:text-[#1d1d1f] hover:border-[#3a3a3e] transition-colors"
                 >
                   {locale === "ar" ? "تحميل المحاكاة" : "Load Simulation"}
                 </button>
@@ -275,12 +275,12 @@ function CommandCenterInner() {
     >
       {/* Fallback banner (API failed, showing mock) */}
       {error && scenario && (
-        <div className="flex items-center justify-between px-4 py-1.5 bg-[#1a1a1e] border-b border-[#2a2a2e] flex-shrink-0">
-          <p className="text-[11px] text-[#c4a35a] truncate">{error}</p>
+        <div className="flex items-center justify-between px-4 py-1.5 bg-[#e5e5e7] border-b border-[#d6d6db] flex-shrink-0">
+          <p className="text-[11px] text-[#0071e3] truncate">{error}</p>
           {runId && (
             <button
               onClick={() => switchToLive(runId)}
-              className="ml-3 flex-shrink-0 px-3 py-1 text-[10px] font-semibold rounded bg-[#2a2a2e] text-[#a09f9c] hover:text-[#e8e6e3] transition-colors"
+              className="ml-3 flex-shrink-0 px-3 py-1 text-[10px] font-semibold rounded bg-[#d6d6db] text-[#515154] hover:text-[#1d1d1f] transition-colors"
             >
               Retry Live
             </button>

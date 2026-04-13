@@ -110,14 +110,14 @@ export const RegulatoryAuditView: React.FC<RegulatoryAuditViewProps> = ({
     >
       {/* ── Header ── */}
       <div className="mb-12">
-        <h2 className="text-[1.375rem] sm:text-[1.625rem] font-bold text-[#e8e6e3] leading-tight tracking-tight mb-3">
+        <h2 className="text-[1.375rem] sm:text-[1.625rem] font-bold text-[#1d1d1f] leading-tight tracking-tight mb-3">
           {isAr ? "المراقبة والحوكمة" : "Monitoring and Governance"}
         </h2>
         {displayLabel && (
-          <p className="text-[0.875rem] text-[#706f6c] leading-relaxed">
+          <p className="text-[0.875rem] text-[#6e6e73] leading-relaxed">
             {displayLabel}
             {severity != null && (
-              <span className="text-[#c4a35a] ml-2">· {Math.round(severity * 100)}% severity</span>
+              <span className="text-[#0071e3] ml-2">· {Math.round(severity * 100)}% severity</span>
             )}
             {horizonHours != null && (
               <span className="ml-2">· {horizonHours}h horizon</span>
@@ -128,7 +128,7 @@ export const RegulatoryAuditView: React.FC<RegulatoryAuditViewProps> = ({
 
       {/* ── No data state ── */}
       {decisionActions.length === 0 && (
-        <p className="text-[0.9375rem] text-[#706f6c] leading-[1.8]">
+        <p className="text-[0.9375rem] text-[#6e6e73] leading-[1.8]">
           {isAr
             ? "لا توجد توجيهات نشطة — لا شيء للمراقبة."
             : "No active directives — nothing to monitor."}
@@ -141,31 +141,31 @@ export const RegulatoryAuditView: React.FC<RegulatoryAuditViewProps> = ({
               1. EXECUTION OWNERSHIP — who owns each directive
               ═══════════════════════════════════════════════════════ */}
           <section className="mb-12">
-            <p className="text-[0.6875rem] text-[#3a3937] uppercase tracking-[0.2em] font-semibold mb-2">
+            <p className="text-[0.6875rem] text-[#8e8e93] uppercase tracking-[0.2em] font-semibold mb-2">
               {isAr ? "مسؤولية التنفيذ" : "Execution Ownership"}
             </p>
-            <div className="h-px bg-[#1a1a1e] mb-6" />
+            <div className="h-px bg-[#e5e5e7] mb-6" />
 
             <div className="space-y-5">
               {decisionActions.map((action) => (
                 <div key={action.id}>
                   <div className="flex gap-4 items-baseline">
-                    <p className="text-[0.9375rem] text-[#a09f9c] leading-snug flex-1">
+                    <p className="text-[0.9375rem] text-[#515154] leading-snug flex-1">
                       {isAr && action.action_ar ? action.action_ar : action.action}
                     </p>
-                    <p className="text-[0.8125rem] font-semibold text-[#e8e6e3] whitespace-nowrap flex-shrink-0">
+                    <p className="text-[0.8125rem] font-semibold text-[#1d1d1f] whitespace-nowrap flex-shrink-0">
                       {action.owner}
                     </p>
                   </div>
-                  <p className="text-[0.75rem] text-[#706f6c] mt-1">
+                  <p className="text-[0.75rem] text-[#6e6e73] mt-1">
                     {action.sector}
                     {action.status && (
                       <span className={`ml-2 ${
                         action.status === "Approved" || action.status === "Executed"
                           ? "text-[#4a7c59]"
                           : action.status === "Under Review"
-                            ? "text-[#706f6c]"
-                            : "text-[#c4a35a]"
+                            ? "text-[#6e6e73]"
+                            : "text-[#0071e3]"
                       }`}>
                         · {action.status === "Proposed" || !action.status
                           ? (isAr ? "في انتظار التنفيذ" : "Awaiting execution")
@@ -184,33 +184,33 @@ export const RegulatoryAuditView: React.FC<RegulatoryAuditViewProps> = ({
               2. OVERDUE — what has not been executed
               ═══════════════════════════════════════════════════════ */}
           <section className="mb-12">
-            <p className="text-[0.6875rem] text-[#3a3937] uppercase tracking-[0.2em] font-semibold mb-2">
+            <p className="text-[0.6875rem] text-[#8e8e93] uppercase tracking-[0.2em] font-semibold mb-2">
               {isAr ? "المتأخر" : "Overdue"}
             </p>
-            <div className="h-px bg-[#1a1a1e] mb-6" />
+            <div className="h-px bg-[#e5e5e7] mb-6" />
 
             {overdueActions.length === 0 ? (
-              <p className="text-[0.9375rem] text-[#a09f9c] leading-[1.8]">
+              <p className="text-[0.9375rem] text-[#515154] leading-[1.8]">
                 {isAr
                   ? "لا توجد توجيهات متأخرة. جميع الإجراءات قيد التنفيذ أو مكتملة."
                   : "No overdue directives. All actions are in progress or complete."}
               </p>
             ) : (
               <>
-                <p className="text-[0.9375rem] text-[#a09f9c] leading-[1.8] mb-5">
+                <p className="text-[0.9375rem] text-[#515154] leading-[1.8] mb-5">
                   {isAr
                     ? `${overdueActions.length} ${overdueActions.length === 1 ? "توجيه" : "توجيهات"} في انتظار التنفيذ. لم يبدأ أي مسؤول تنفيذ بعد.`
                     : `${overdueActions.length} ${overdueActions.length === 1 ? "directive" : "directives"} awaiting execution. No responsible owner has initiated action.`}
                 </p>
                 <div className="space-y-4">
                   {overdueActions.map((action) => (
-                    <div key={action.id} className="border-l-2 border-[#e05252]/40 pl-5">
-                      <p className="text-[0.9375rem] text-[#e8e6e3] leading-snug mb-1">
+                    <div key={action.id} className="border-l-2 border-[#d92f2f]/40 pl-5">
+                      <p className="text-[0.9375rem] text-[#1d1d1f] leading-snug mb-1">
                         {isAr && action.action_ar ? action.action_ar : action.action}
                       </p>
-                      <p className="text-[0.75rem] text-[#706f6c]">
+                      <p className="text-[0.75rem] text-[#6e6e73]">
                         {action.owner}
-                        <span className="mx-2 text-[#3a3937]">·</span>
+                        <span className="mx-2 text-[#8e8e93]">·</span>
                         {action.sector}
                       </p>
                     </div>
@@ -224,26 +224,26 @@ export const RegulatoryAuditView: React.FC<RegulatoryAuditViewProps> = ({
               3. ESCALATION — what escalates next and to whom
               ═══════════════════════════════════════════════════════ */}
           <section className="mb-12">
-            <p className="text-[0.6875rem] text-[#3a3937] uppercase tracking-[0.2em] font-semibold mb-2">
+            <p className="text-[0.6875rem] text-[#8e8e93] uppercase tracking-[0.2em] font-semibold mb-2">
               {isAr ? "التصعيد القادم" : "Next Escalation"}
             </p>
-            <div className="h-px bg-[#1a1a1e] mb-6" />
+            <div className="h-px bg-[#e5e5e7] mb-6" />
 
             {nextEscalation ? (
               <div>
-                <p className="text-[0.9375rem] text-[#a09f9c] leading-[1.8] mb-4">
+                <p className="text-[0.9375rem] text-[#515154] leading-[1.8] mb-4">
                   {isAr
                     ? `التوجيه الأعلى أولوية غير المنفذ هو "${nextEscalation.action_ar || nextEscalation.action}"، المملوك لـ ${nextEscalation.owner}. إذا لم يتم تنفيذه خلال دورة المراجعة القادمة، يتم تصعيده إلى ${SECTOR_ESCALATION[nextEscalation.sector]?.ar ?? "قيادة القطاع"}.`
                     : `The highest-priority unexecuted directive is "${nextEscalation.action}", owned by ${nextEscalation.owner}. If not executed within the next review cycle, it escalates to ${SECTOR_ESCALATION[nextEscalation.sector]?.en ?? "sector leadership"}.`}
                 </p>
-                <p className="text-[0.8125rem] text-[#706f6c] leading-relaxed">
-                  {isAr ? "الأولوية" : "Priority"}: <span className="text-[#e8e6e3] font-semibold">P{nextEscalation.priority}</span>
-                  <span className="mx-2 text-[#3a3937]">·</span>
-                  {isAr ? "سلطة التصعيد" : "Escalation authority"}: <span className="text-[#e8e6e3]">{isAr ? (SECTOR_ESCALATION[nextEscalation.sector]?.ar ?? "قيادة القطاع") : (SECTOR_ESCALATION[nextEscalation.sector]?.en ?? "Sector leadership")}</span>
+                <p className="text-[0.8125rem] text-[#6e6e73] leading-relaxed">
+                  {isAr ? "الأولوية" : "Priority"}: <span className="text-[#1d1d1f] font-semibold">P{nextEscalation.priority}</span>
+                  <span className="mx-2 text-[#8e8e93]">·</span>
+                  {isAr ? "سلطة التصعيد" : "Escalation authority"}: <span className="text-[#1d1d1f]">{isAr ? (SECTOR_ESCALATION[nextEscalation.sector]?.ar ?? "قيادة القطاع") : (SECTOR_ESCALATION[nextEscalation.sector]?.en ?? "Sector leadership")}</span>
                 </p>
               </div>
             ) : (
-              <p className="text-[0.9375rem] text-[#a09f9c] leading-[1.8]">
+              <p className="text-[0.9375rem] text-[#515154] leading-[1.8]">
                 {isAr
                   ? "لا يوجد تصعيد معلق. جميع التوجيهات منفذة."
                   : "No pending escalation. All directives have been executed."}
@@ -255,12 +255,12 @@ export const RegulatoryAuditView: React.FC<RegulatoryAuditViewProps> = ({
               4. REVIEW SCHEDULE — when reassessment happens
               ═══════════════════════════════════════════════════════ */}
           <section className="mb-12">
-            <p className="text-[0.6875rem] text-[#3a3937] uppercase tracking-[0.2em] font-semibold mb-2">
+            <p className="text-[0.6875rem] text-[#8e8e93] uppercase tracking-[0.2em] font-semibold mb-2">
               {isAr ? "جدول المراجعة" : "Review Schedule"}
             </p>
-            <div className="h-px bg-[#1a1a1e] mb-6" />
+            <div className="h-px bg-[#e5e5e7] mb-6" />
 
-            <p className="text-[0.9375rem] text-[#a09f9c] leading-[1.8] mb-5">
+            <p className="text-[0.9375rem] text-[#515154] leading-[1.8] mb-5">
               {isAr
                 ? `دورة المراجعة الحالية كل ${shortestCycleHours} ساعات، محددة بأقصر إيقاع قطاعي نشط. تتم مراجعة جميع التوجيهات المعلقة في كل دورة.`
                 : `The current review cadence is every ${shortestCycleHours} hours, set by the shortest active sector cycle. All pending directives are reassessed at each interval.`}
@@ -271,10 +271,10 @@ export const RegulatoryAuditView: React.FC<RegulatoryAuditViewProps> = ({
                 {activeSectors.map((sector) => {
                   const hours = SECTOR_REVIEW_HOURS[sector] ?? 12;
                   return (
-                    <p key={sector} className="text-[0.8125rem] text-[#706f6c]">
+                    <p key={sector} className="text-[0.8125rem] text-[#6e6e73]">
                       {sector}
-                      <span className="mx-2 text-[#3a3937]">—</span>
-                      <span className="text-[#a09f9c]">
+                      <span className="mx-2 text-[#8e8e93]">—</span>
+                      <span className="text-[#515154]">
                         {isAr ? `كل ${hours} ساعات` : `every ${hours}h`}
                       </span>
                     </p>
@@ -288,19 +288,19 @@ export const RegulatoryAuditView: React.FC<RegulatoryAuditViewProps> = ({
               5. CONTROL CONFIRMATION — what confirms control
               ═══════════════════════════════════════════════════════ */}
           <section className="mb-10">
-            <p className="text-[0.6875rem] text-[#3a3937] uppercase tracking-[0.2em] font-semibold mb-2">
+            <p className="text-[0.6875rem] text-[#8e8e93] uppercase tracking-[0.2em] font-semibold mb-2">
               {isAr ? "تأكيد السيطرة" : "Control Confirmation"}
             </p>
-            <div className="h-px bg-[#1a1a1e] mb-6" />
+            <div className="h-px bg-[#e5e5e7] mb-6" />
 
             {/* Warnings — governance-relevant only */}
             {hasWarnings && (
-              <div className="border-l-2 border-[#c4a35a]/40 pl-5 mb-6">
-                <p className="text-[0.6875rem] text-[#706f6c] uppercase tracking-widest font-medium mb-2">
+              <div className="border-l-2 border-[#0071e3]/40 pl-5 mb-6">
+                <p className="text-[0.6875rem] text-[#6e6e73] uppercase tracking-widest font-medium mb-2">
                   {isAr ? "تنبيهات" : "Warnings"}
                 </p>
                 {trustInfo!.warnings!.map((warning, idx) => (
-                  <p key={idx} className="text-[0.8125rem] text-[#c4a35a] leading-relaxed mb-1">
+                  <p key={idx} className="text-[0.8125rem] text-[#0071e3] leading-relaxed mb-1">
                     {warning}
                   </p>
                 ))}
@@ -308,7 +308,7 @@ export const RegulatoryAuditView: React.FC<RegulatoryAuditViewProps> = ({
             )}
 
             {/* Control statement — the governance verdict */}
-            <p className="text-[0.9375rem] text-[#a09f9c] leading-[1.8] mb-4">
+            <p className="text-[0.9375rem] text-[#515154] leading-[1.8] mb-4">
               {controlConfirmed
                 ? isAr
                   ? `جميع التوجيهات الـ ${decisionActions.length} منفذة. لا توجد تنبيهات نشطة. السيطرة مؤكدة.`
@@ -323,7 +323,7 @@ export const RegulatoryAuditView: React.FC<RegulatoryAuditViewProps> = ({
             </p>
 
             {/* Explicit criteria */}
-            <p className="text-[0.8125rem] text-[#706f6c] leading-[1.75]">
+            <p className="text-[0.8125rem] text-[#6e6e73] leading-[1.75]">
               {isAr
                 ? "معايير التأكيد: تنفيذ جميع التوجيهات، عدم وجود تنبيهات نشطة، اكتمال دورة مراجعة واحدة على الأقل بعد آخر تنفيذ."
                 : "Confirmation criteria: all directives executed, no active warnings, at least one review cycle completed after last execution."}
@@ -333,8 +333,8 @@ export const RegulatoryAuditView: React.FC<RegulatoryAuditViewProps> = ({
       )}
 
       {/* ── Footer ── */}
-      <div className="mt-14 pt-5 border-t border-[#1a1a1e]">
-        <p className="text-[0.625rem] text-[#3a3937] tracking-wider">
+      <div className="mt-14 pt-5 border-t border-[#e5e5e7]">
+        <p className="text-[0.625rem] text-[#8e8e93] tracking-wider">
           {isAr ? "صفحة الحوكمة والمراقبة" : "Governance and monitoring"}{displayLabel ? ` · ${displayLabel}` : ""}
         </p>
       </div>

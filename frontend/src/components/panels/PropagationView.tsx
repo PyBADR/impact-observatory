@@ -60,14 +60,14 @@ export const PropagationView: React.FC<PropagationViewProps> = ({
     >
       {/* ── Opening context ── */}
       <div className="mb-12">
-        <h2 className="text-[1.375rem] sm:text-[1.625rem] font-bold text-[#e8e6e3] leading-tight tracking-tight mb-3">
+        <h2 className="text-[1.375rem] sm:text-[1.625rem] font-bold text-[#1d1d1f] leading-tight tracking-tight mb-3">
           {isAr ? "كيف ينتقل الضغط" : "How Pressure Spreads"}
         </h2>
         {displayLabel && (
-          <p className="text-[0.875rem] text-[#706f6c] leading-relaxed">
+          <p className="text-[0.875rem] text-[#6e6e73] leading-relaxed">
             {displayLabel}
             {severity != null && (
-              <span className="text-[#c4a35a] ml-2">
+              <span className="text-[#0071e3] ml-2">
                 · {Math.round(severity * 100)}% severity
               </span>
             )}
@@ -82,7 +82,7 @@ export const PropagationView: React.FC<PropagationViewProps> = ({
 
       {/* ── Empty state ── */}
       {!hasData && (
-        <p className="text-[0.9375rem] text-[#706f6c]">
+        <p className="text-[0.9375rem] text-[#6e6e73]">
           {isAr
             ? "لا توجد سلسلة انتشار نشطة — اختر سيناريو من الإحاطة."
             : "No active propagation chain — select a scenario from the Briefing."}
@@ -105,29 +105,29 @@ export const PropagationView: React.FC<PropagationViewProps> = ({
             return (
               <div key={step.step}>
                 {/* Step number — gold, anchors the eye */}
-                <p className="text-[0.75rem] text-[#c4a35a] font-bold tracking-widest uppercase mb-3">
+                <p className="text-[0.75rem] text-[#0071e3] font-bold tracking-widest uppercase mb-3">
                   {isAr ? `الخطوة ${step.step}` : `Step ${step.step}`}
                 </p>
 
                 {/* Trigger — what entity is affected */}
-                <p className="text-[1.0625rem] font-semibold text-[#e8e6e3] leading-snug mb-2">
+                <p className="text-[1.0625rem] font-semibold text-[#1d1d1f] leading-snug mb-2">
                   {entity}
                 </p>
 
                 {/* Event — the consequence at this node */}
-                <p className="text-[0.9375rem] text-[#a09f9c] leading-[1.75] mb-3">
+                <p className="text-[0.9375rem] text-[#515154] leading-[1.75] mb-3">
                   {event}
                 </p>
 
                 {/* Transmission channel + stress delta + impact — inline, not boxed */}
-                <p className="text-[0.8125rem] text-[#706f6c] leading-relaxed">
-                  {isAr ? "القناة" : "Channel"}: <span className="text-[#a09f9c]">{step.mechanism}</span>
-                  <span className="mx-2 text-[#3a3937]">·</span>
-                  {isAr ? "تأثير الضغط" : "Stress impact"}: <span className="text-[#a09f9c]">+{stressPct}%</span>
+                <p className="text-[0.8125rem] text-[#6e6e73] leading-relaxed">
+                  {isAr ? "القناة" : "Channel"}: <span className="text-[#515154]">{step.mechanism}</span>
+                  <span className="mx-2 text-[#8e8e93]">·</span>
+                  {isAr ? "تأثير الضغط" : "Stress impact"}: <span className="text-[#515154]">+{stressPct}%</span>
                   {step.impact_usd > 0 && (
                     <>
-                      <span className="mx-2 text-[#3a3937]">·</span>
-                      {isAr ? "الخسارة" : "Loss"}: <span className="text-[#a09f9c]">{formatUsd(step.impact_usd)}</span>
+                      <span className="mx-2 text-[#8e8e93]">·</span>
+                      {isAr ? "الخسارة" : "Loss"}: <span className="text-[#515154]">{formatUsd(step.impact_usd)}</span>
                     </>
                   )}
                 </p>
@@ -135,7 +135,7 @@ export const PropagationView: React.FC<PropagationViewProps> = ({
                 {/* Connecting line between steps */}
                 {!isLast && (
                   <div className="mt-6">
-                    <div className="h-px bg-[#1a1a1e]" />
+                    <div className="h-px bg-[#e5e5e7]" />
                   </div>
                 )}
               </div>
@@ -146,11 +146,11 @@ export const PropagationView: React.FC<PropagationViewProps> = ({
 
       {/* ── Closing — total if more steps exist beyond 4 ── */}
       {hasData && causalChain.length > 4 && (
-        <div className="mt-10 pt-5 border-t border-[#1a1a1e]">
-          <p className="text-[0.8125rem] text-[#706f6c]">
+        <div className="mt-10 pt-5 border-t border-[#e5e5e7]">
+          <p className="text-[0.8125rem] text-[#6e6e73]">
             {causalChain.length - 4} {isAr ? "خطوات إضافية في سلسلة الانتشار" : "additional steps in the propagation chain"}.
             {totalLossUsd != null && totalLossUsd > 0 && (
-              <span className="text-[#a09f9c] ml-1">
+              <span className="text-[#515154] ml-1">
                 {isAr ? "إجمالي الخسارة المتوقعة" : "Total projected loss"}: {formatUsd(totalLossUsd)}.
               </span>
             )}
@@ -159,8 +159,8 @@ export const PropagationView: React.FC<PropagationViewProps> = ({
       )}
 
       {/* Timestamp */}
-      <div className="mt-14 pt-5 border-t border-[#1a1a1e]">
-        <p className="text-[0.625rem] text-[#3a3937] tracking-wider">
+      <div className="mt-14 pt-5 border-t border-[#e5e5e7]">
+        <p className="text-[0.625rem] text-[#8e8e93] tracking-wider">
           {isAr ? "سلسلة الانتشار" : "Propagation chain"} · {steps.length} {isAr ? "خطوات مرئية" : "steps visible"}
         </p>
       </div>
