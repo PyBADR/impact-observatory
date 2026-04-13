@@ -1,6 +1,7 @@
 /**
  * Impact Observatory | مرصد الأثر — Global Stylesheet
- * Design tokens and base layer for the IO boardroom aesthetic.
+ * Calm, premium, institutional design language.
+ * Apple-inspired quiet aesthetic for macro intelligence.
  */
 
 @tailwind base;
@@ -9,50 +10,81 @@
 
 @layer base {
   :root {
-    /* IO canonical palette */
-    --io-bg: #F8FAFC;
+    /* ── Surface palette ── */
+    --io-bg: #F5F5F2;
     --io-surface: #FFFFFF;
-    --io-primary: #0F172A;
-    --io-secondary: #475569;
-    --io-accent: #1D4ED8;
-    --io-success: #15803D;
-    --io-warning: #B45309;
-    --io-danger: #B91C1C;
-    --io-border: #E2E8F0;
+    --io-muted: #ECECE8;
+
+    /* ── Text hierarchy ── */
+    --io-text-primary: #111111;
+    --io-text-secondary: #5F5F58;
+    --io-text-tertiary: #8A8A83;
+
+    /* ── Borders ── */
+    --io-border-soft: #D9D9D2;
+    --io-border-muted: #E6E6E0;
+
+    /* ── Emphasis ── */
+    --io-charcoal: #1B1B19;
+    --io-graphite: #252522;
+
+    /* ── Status accents (muted, institutional) ── */
+    --io-status-amber: #A06A34;
+    --io-status-red: #8E4338;
+    --io-status-olive: #5E6759;
   }
 
   html {
     font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
-  /* RTL support for Arabic */
   html[dir="rtl"] {
     font-family: 'IBM Plex Sans Arabic', 'Noto Sans Arabic', sans-serif;
   }
 
   body {
-    @apply bg-io-bg text-io-primary;
+    background-color: var(--io-bg);
+    color: var(--io-text-primary);
+  }
+
+  /* ── Selection ── */
+  ::selection {
+    background-color: rgba(27, 27, 25, 0.08);
   }
 }
 
 @layer components {
-  /* IO card — premium boardroom aesthetic */
+  /* ── Quiet card ── */
   .io-card {
-    @apply bg-io-surface rounded-ds border border-io-border shadow-ds;
+    background-color: var(--io-surface);
+    border: 1px solid var(--io-border-muted);
+    border-radius: 12px;
   }
 
-  .io-card-hover {
-    @apply io-card transition-shadow duration-200 hover:shadow-ds-card-hover;
+  .io-card-interactive {
+    background-color: var(--io-surface);
+    border: 1px solid var(--io-border-muted);
+    border-radius: 12px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
 
-  /* KPI metric display */
-  .io-metric {
-    @apply font-mono text-h2 font-semibold tracking-tight;
+  .io-card-interactive:hover {
+    border-color: var(--io-border-soft);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  }
+}
+
+@layer utilities {
+  /* ── Fade in for page transitions ── */
+  .io-fade-in {
+    animation: ioFadeIn 0.4s ease-out forwards;
   }
 
-  .io-metric-label {
-    @apply text-caption text-io-secondary font-medium uppercase tracking-wider;
+  @keyframes ioFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 }

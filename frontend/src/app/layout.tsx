@@ -23,7 +23,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="bg-io-bg text-io-primary antialiased font-sans">
+      <body className="bg-[#F5F5F2] text-[#111111] antialiased font-sans">
         <Script
           id="microsoft-clarity"
           strategy="afterInteractive"

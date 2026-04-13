@@ -45,6 +45,15 @@ from src.api.v1.provenance import router as v1_provenance_router
 from src.core.config import settings
 from src.services.state import init_state
 
+# Phase 1 — GCC Macro Financial Intelligence Simulation
+from app.api.routes.simulation import router as phase1_simulation_router
+# Phase 2 — Multi-scenario + Counterfactual Engine
+from app.api.routes.scenarios import router as phase2_scenarios_router
+from app.api.routes.counterfactuals import router as phase2_counterfactuals_router
+# Phase 3 — Entity Graph + Decision Authority
+from app.api.routes.phase3_graph import router as phase3_graph_router
+from app.api.routes.phase3_decisions import router as phase3_decisions_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -320,6 +329,17 @@ api_v1.include_router(df_oil_connector_router)
 api_v1.include_router(df_governance_router)
 api_v1.include_router(df_evaluation_router)
 api_v1.include_router(df_enforcement_router)
+
+# ── Phase 1 — GCC Macro Financial Intelligence Simulation ──────────────
+api_v1.include_router(phase1_simulation_router)
+
+# ── Phase 2 — Multi-scenario + Counterfactual Engine ───────────────────
+api_v1.include_router(phase2_scenarios_router)
+api_v1.include_router(phase2_counterfactuals_router)
+
+# ── Phase 3 — Entity Graph + Decision Authority ─────────────────────
+api_v1.include_router(phase3_graph_router)
+api_v1.include_router(phase3_decisions_router)
 
 # ── Auth endpoints — no API key required ─────────────────────────────────
 app.include_router(v1_auth_router, prefix="/api/v1")

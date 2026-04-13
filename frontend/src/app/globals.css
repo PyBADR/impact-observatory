@@ -1,5 +1,110 @@
 /**
- * Impact Observatory | مرصد الأثر
- * Entry CSS — imports the canonical theme.
+ * Impact Observatory | مرصد الأثر — Global Stylesheet
+ * Calm, premium, institutional design language.
+ * Apple-inspired quiet aesthetic for macro intelligence.
+ *
+ * Palette:
+ *   bg main: #F5F5F2   bg surface: #FFFFFF   bg muted: #ECECE8
+ *   text primary: #111111   secondary: #5F5F58   tertiary: #8A8A83
+ *   border soft: #D9D9D2   border muted: #E6E6E0
+ *   charcoal: #1B1B19   graphite: #252522
+ *   status amber: #A06A34   red: #8E4338   olive: #5E6759
  */
-@import "../../theme/globals.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ────────────────────────────────────────────────────────
+   Base layer — variables, resets, defaults
+   ──────────────────────────────────────────────────────── */
+@layer base {
+  :root {
+    --io-bg:             #F5F5F2;
+    --io-surface:        #FFFFFF;
+    --io-muted:          #ECECE8;
+
+    --io-text-primary:   #111111;
+    --io-text-secondary: #5F5F58;
+    --io-text-tertiary:  #8A8A83;
+
+    --io-border-soft:    #D9D9D2;
+    --io-border-muted:   #E6E6E0;
+
+    --io-charcoal:       #1B1B19;
+    --io-graphite:       #252522;
+
+    --io-status-amber:   #A06A34;
+    --io-status-red:     #8E4338;
+    --io-status-olive:   #5E6759;
+  }
+
+  html {
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  html[dir="rtl"] {
+    font-family: 'IBM Plex Sans Arabic', 'Noto Sans Arabic', sans-serif;
+  }
+
+  body {
+    background-color: var(--io-bg);
+    color: var(--io-text-primary);
+  }
+
+  ::selection {
+    background-color: rgba(27, 27, 25, 0.08);
+  }
+}
+
+/* ────────────────────────────────────────────────────────
+   Component layer — reusable patterns
+   ──────────────────────────────────────────────────────── */
+@layer components {
+  .io-card {
+    background-color: var(--io-surface);
+    border: 1px solid var(--io-border-muted);
+    border-radius: 12px;
+  }
+
+  .io-card-interactive {
+    background-color: var(--io-surface);
+    border: 1px solid var(--io-border-muted);
+    border-radius: 12px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .io-card-interactive:hover {
+    border-color: var(--io-border-soft);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  }
+
+  .io-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--io-text-tertiary);
+  }
+}
+
+/* ────────────────────────────────────────────────────────
+   Utility layer — animation helpers
+   ──────────────────────────────────────────────────────── */
+@layer utilities {
+  .io-fade-in {
+    animation: ioFadeIn 0.4s ease-out forwards;
+  }
+  @keyframes ioFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .io-divider {
+    height: 1px;
+    background-color: var(--io-border-muted);
+    border: none;
+  }
+}

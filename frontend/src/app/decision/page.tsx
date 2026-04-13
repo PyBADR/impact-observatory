@@ -1,84 +1,77 @@
 /**
- * Impact Observatory | مرصد الأثر — Landing
+ * Impact Observatory | مرصد الأثر — Decision Register
  *
- * Institutional entry point to the macro intelligence environment.
- * The user sees the state of the world: active scenarios,
- * severity, domain, sector exposure. One register. No marketing.
- *
- * Data: shared manifest at src/lib/scenarios.ts
+ * An institutional index of sovereign-grade decision directives.
+ * Same calm register pattern as the landing and evaluation pages.
+ * Reads as a directive ledger, not a task manager.
  */
 
 import Link from 'next/link';
 import { PageShell, Container } from '@/components/layout';
-import { getScenariosBySeverity } from '@/lib/scenarios';
+import { getDecisionsByClassification } from '@/lib/decisions';
 
-const severityColor: Record<string, string> = {
+const classificationColor: Record<string, string> = {
   Severe:   'text-[var(--io-status-red)]',
   High:     'text-[var(--io-status-red)]',
   Elevated: 'text-[var(--io-status-amber)]',
   Guarded:  'text-[var(--io-text-tertiary)]',
 };
 
-export default function LandingPage() {
-  const scenarios = getScenariosBySeverity();
+function cColor(level: string): string {
+  return classificationColor[level] ?? 'text-[var(--io-text-tertiary)]';
+}
+
+export default function DecisionRegisterPage() {
+  const decisions = getDecisionsByClassification();
 
   return (
     <PageShell>
       <Container>
 
-        {/* ── Identification ── */}
         <header className="pt-16 sm:pt-20 pb-14 sm:pb-16 border-b border-[var(--io-border-muted)]">
-          <p className="io-label mb-3">Active Intelligence</p>
+          <p className="io-label mb-3">Directives</p>
           <h1 className="text-[1.75rem] sm:text-[2.25rem] font-bold tracking-tight leading-[1.12] text-[var(--io-charcoal)] mb-5">
-            Macro Signal Intelligence
+            Decision Briefings
           </h1>
           <p className="text-[1rem] leading-[1.8] text-[var(--io-text-secondary)] max-w-3xl">
-            Active scenarios across GCC economies. Each entry represents a macro shock with measurable transmission paths, institutional exposure, and required response.
+            Sovereign-grade directives issued for each active scenario. Primary actions, owners, deadlines, and expected effects — ordered by classification severity.
           </p>
         </header>
 
-        {/* ── Scenario Register ── */}
         <ol className="divide-y divide-[var(--io-border-muted)]">
-          {scenarios.map((s) => (
-            <li key={s.id}>
+          {decisions.map((d) => (
+            <li key={d.id}>
               <Link
-                href={`/scenario/${s.id}`}
+                href={`/decision/${d.id}`}
                 className="group block py-6 sm:py-7 transition-colors duration-150 hover:bg-[var(--io-muted)]/40 -mx-6 sm:-mx-8 lg:-mx-12 px-6 sm:px-8 lg:px-12"
               >
-                <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 mb-2">
-                  <span className={`text-[0.8125rem] font-semibold ${severityColor[s.severity] || 'text-[var(--io-text-tertiary)]'}`}>
-                    {s.severity}
+                <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4 mb-2">
+                  <span className={`text-[0.8125rem] font-semibold ${cColor(d.classification)}`}>
+                    {d.classification}
                   </span>
                   <span className="text-[0.8125rem] text-[var(--io-text-tertiary)]">
-                    {s.domain}
-                  </span>
-                  <span className="text-[0.8125rem] text-[var(--io-text-tertiary)]">
-                    {s.horizonHours}h horizon
-                  </span>
-                  <span className="text-[0.8125rem] text-[var(--io-text-tertiary)]">
-                    {s.sectors.slice(0, 3).join(' · ')}
+                    {d.primaryDirective.owner} · {d.primaryDirective.deadline}
                   </span>
                 </div>
 
                 <p className="text-[1rem] font-medium text-[var(--io-charcoal)] group-hover:text-[var(--io-graphite)] transition-colors duration-150 mb-1.5">
-                  {s.title}
+                  {d.directiveTitle}
                 </p>
 
                 <p className="text-[0.875rem] leading-[1.65] text-[var(--io-text-secondary)] max-w-3xl">
-                  {s.significance}
+                  {d.summary}
                 </p>
               </Link>
             </li>
           ))}
         </ol>
 
-        {/* ── Quiet bottom ── */}
         <div className="py-8 border-t border-[var(--io-border-muted)] flex items-baseline justify-between">
           <span className="text-xs text-[var(--io-text-tertiary)]">
             Impact Observatory · مرصد الأثر
           </span>
           <span className="text-xs text-[var(--io-text-tertiary)]">
-            {scenarios.length} scenarios · GCC
+            {decisions.length} directives
           </span>
         </div>
 
