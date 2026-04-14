@@ -1170,8 +1170,10 @@ function CommandCenterInner() {
   const runId = searchParams.get("run");
   const activeTab = searchParams.get("tab") || "dashboard";
   const isDemoParam = searchParams.get("demo") === "true";
+  const scenarioParam = searchParams.get("scenario");
   const [isRunningScenario, setIsRunningScenario] = useState(false);
   const [scenarioUnavailableId, setScenarioUnavailableId] = useState<string | null>(null);
+  const [simulationLoadedLabel, setSimulationLoadedLabel] = useState<string | null>(null);
 
   // ── Demo contract from store ──
   const demoContract = useCommandCenterStore((s) => s.demoContract);
@@ -1288,8 +1290,26 @@ function CommandCenterInner() {
     }
   }, [isDemoMode, isDemoParam, locale, scenario?.templateId, resolvedConfidence, error, setDemoContract]);
 
+  // ── Auto-load scenario from URL param on mount / navigation ──
+  // Ensures deep-links like ?scenario=gcc_cyber_attack load the correct dataset
+  const scenarioSyncRef = React.useRef<string | null>(null);
+  useEffect(() => {
+    if (!scenarioParam || !isDemoMode) return;
+    // Only switch if the store isn't already on this scenario
+    const currentTemplateId = scenario?.templateId;
+    if (currentTemplateId === scenarioParam) return;
+    // Prevent re-firing for the same URL param
+    if (scenarioSyncRef.current === scenarioParam) return;
+    scenarioSyncRef.current = scenarioParam;
+
+    const key = TEMPLATE_TO_SCENARIO_KEY[scenarioParam];
+    if (key) {
+      switchScenario(key);
+    }
+  }, [scenarioParam, isDemoMode, scenario?.templateId, switchScenario]);
+
   // ── Scenario selection ──
-  // Mock mode: switch scenario via store (no API call)
+  // Mock mode: visible simulation transition → switch → tab switch → URL update
   // Live mode: POST /api/v1/runs → navigate to new run
   const handleScenarioSelect = useCallback(
     async (templateId: string) => {
@@ -1300,20 +1320,30 @@ function CommandCenterInner() {
         if (!key) {
           // No full payload for this scenario — show institutional message, do NOT change active scenario
           setScenarioUnavailableId(templateId);
+          setSimulationLoadedLabel(null);
           return;
         }
 
+        // ── Phase 1: Visible "Running" state ──
         setScenarioUnavailableId(null);
+        setSimulationLoadedLabel(null);
         setIsRunningScenario(true);
+
+        // Brief delay so user sees the "Running..." state on the button
+        await new Promise((resolve) => setTimeout(resolve, 600));
+
+        // ── Phase 2: Load scenario data into store ──
         switchScenario(key);
 
-        // Update demo contract with new scenario — mark complete since key exists
+        // ── Phase 3: Update demo contract with unique run identity ──
+        const demoRunId = `demo_${templateId}_${Date.now()}`;
         if (isDemoMode) {
           const currentContract = useCommandCenterStore.getState().demoContract;
           if (currentContract) {
             useCommandCenterStore.getState().setDemoContract({
               ...currentContract,
               scenarioId: templateId,
+              runId: demoRunId,
               generatedAt: new Date().toISOString(),
               isScenarioComplete: true,
               missingSections: [],
@@ -1321,12 +1351,30 @@ function CommandCenterInner() {
           }
         }
 
+        // ── Phase 4: Navigate to briefing tab with scenario in URL ──
+        const params = new URLSearchParams();
+        if (isDemoParam) params.set("demo", "true");
+        params.set("scenario", templateId);
+        // Tab is "dashboard" (briefing) — omit param since it's the default
+        router.push(`/command-center?${params.toString()}`);
+
+        // ── Phase 5: Scroll to top so briefing is visible ──
+        window.scrollTo({ top: 0, behavior: "smooth" });
+
+        // ── Phase 6: Show "Simulation Loaded" banner ──
+        const scenarioTitle =
+          SCENARIO_LABELS[templateId]?.[locale === "ar" ? "ar" : "en"] ?? templateId;
+        setSimulationLoadedLabel(scenarioTitle);
         setIsRunningScenario(false);
+
+        // Auto-dismiss the loaded banner after 6 seconds
+        setTimeout(() => setSimulationLoadedLabel(null), 6000);
         return;
       }
 
       // Live mode: call backend API
       setIsRunningScenario(true);
+      setSimulationLoadedLabel(null);
       try {
         const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
         const res = await fetch(`${API_BASE}/api/v1/runs`, {
@@ -1351,7 +1399,7 @@ function CommandCenterInner() {
         setIsRunningScenario(false);
       }
     },
-    [dataSource, isDemoMode, router, switchToMock, switchScenario],
+    [dataSource, isDemoMode, isDemoParam, locale, router, switchToMock, switchScenario],
   );
 
   const handleSubmitForReview = useCallback(
@@ -1786,20 +1834,59 @@ function CommandCenterInner() {
         <DemoDataBanner locale={locale} demoContract={demoContract} />
       )}
 
-      {/* Scenario Unavailable Banner — institutional, no Pipeline Error */}
-      {scenarioUnavailableId && (
-        <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex-shrink-0">
+      {/* Simulation Loaded Banner — visible confirmation of scenario switch */}
+      {simulationLoadedLabel && (
+        <div className="flex items-center justify-between px-4 py-2.5 bg-emerald-50 border-b border-emerald-200 flex-shrink-0 animate-in slide-in-from-top-1 duration-300">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-slate-400" />
-            <p className="text-[12px] font-medium text-slate-700">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <p className="text-[12px] font-semibold text-emerald-800">
               {locale === "ar"
-                ? `هذا السيناريو غير متاح حالياً في مجموعة البيانات المرجعية التجريبية.`
-                : `This scenario is not yet available in the Reference Demo Dataset.`}
+                ? `تم تحميل المحاكاة: ${simulationLoadedLabel}`
+                : `Simulation Loaded: ${simulationLoadedLabel}`}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] text-emerald-600">
+              {locale === "ar" ? "١٧ مرحلة مكتملة" : "17-stage pipeline complete"}
+            </span>
+            <button
+              onClick={() => setSimulationLoadedLabel(null)}
+              className="ml-2 flex-shrink-0 px-3 py-1 text-[10px] font-semibold rounded bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors"
+            >
+              {locale === "ar" ? "إغلاق" : "Dismiss"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Simulation Running Overlay — visible "simulation in progress" feedback */}
+      {isRunningScenario && (
+        <div className="flex items-center justify-center px-4 py-3 bg-blue-50 border-b border-blue-200 flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-[12px] font-semibold text-blue-800">
+              {locale === "ar"
+                ? "جاري تشغيل المحاكاة — معالجة ١٧ مرحلة..."
+                : "Running Simulation — Processing 17-stage pipeline..."}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Scenario Unavailable Banner — explicit dataset incomplete message */}
+      {scenarioUnavailableId && (
+        <div className="flex items-center justify-between px-4 py-2.5 bg-amber-50 border-b border-amber-200 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-500" />
+            <p className="text-[12px] font-semibold text-amber-800">
+              {locale === "ar"
+                ? `مجموعة بيانات السيناريو غير مكتملة — لا يمكن تشغيل المحاكاة.`
+                : `Scenario dataset incomplete — cannot run simulation.`}
             </p>
           </div>
           <button
             onClick={() => setScenarioUnavailableId(null)}
-            className="ml-3 flex-shrink-0 px-3 py-1 text-[10px] font-semibold rounded bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+            className="ml-3 flex-shrink-0 px-3 py-1 text-[10px] font-semibold rounded bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors"
           >
             {locale === "ar" ? "إغلاق" : "Dismiss"}
           </button>

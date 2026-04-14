@@ -72,12 +72,15 @@ export function ObservatoryShell({
   const runId = searchParams.get("run");
   const demoParam = searchParams.get("demo");
 
+  const scenarioParam = searchParams.get("scenario");
+
   const handleTabClick = (tabId: string) => {
-    // Build query params preserving run and demo state
+    // Build query params preserving run, demo, and scenario state
     const params = new URLSearchParams();
     if (tabId !== "dashboard") params.set("tab", tabId);
     if (runId) params.set("run", runId);
     if (demoParam) params.set("demo", demoParam);
+    if (scenarioParam) params.set("scenario", scenarioParam);
     const qs = params.toString();
     router.push(`/command-center${qs ? `?${qs}` : ""}`);
   };
