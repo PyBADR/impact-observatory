@@ -621,6 +621,9 @@ export function useCommandCenter(runId?: string | null) {
     error: runQuery.error?.message ?? store.error,
     dataSource: store.dataSource,
 
+    // Demo Contract
+    demoContract: store.demoContract,
+
     // Data
     scenario: store.scenario,
     headline: store.headline,

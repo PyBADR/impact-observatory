@@ -62,7 +62,7 @@ export default function LandingPage() {
           {/* ── Entry ── */}
           <div className="mt-16">
             <Link
-              href="/command-center"
+              href="/command-center?demo=true"
               className="
                 inline-flex items-center gap-3
                 text-[0.9375rem] font-medium text-charcoal

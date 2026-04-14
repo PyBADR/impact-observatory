@@ -1013,7 +1013,7 @@ function MacroIntelligenceView(
             <p className="text-xs text-slate-600 mt-2">
               {isAr ? "الحساسية: " : "Sensitivity: "}
               <span className="font-semibold text-slate-700">
-                {scenario.severity != null ? `${(scenario.severity * 100).toFixed(0)}%` : "N/A"}
+                {scenario.severity != null ? `${(scenario.severity * 100).toFixed(0)}%` : "—"}
               </span>
             </p>
           </div>
@@ -1057,7 +1057,7 @@ function MacroIntelligenceView(
             <p className="text-sm text-slate-700">
               {sectionLabel("System Risk Index: ", "مؤشر مخاطر النظام: ")}
               <span className="font-semibold text-io-status-severe">
-                {(macroContext?.system_risk_index || 0) * 100 || "N/A"}%
+                {macroContext?.system_risk_index ? `${(macroContext.system_risk_index * 100).toFixed(0)}` : "—"}%
               </span>
             </p>
             {macroContext?.macro_signals && (
@@ -1086,7 +1086,7 @@ function MacroIntelligenceView(
               {sectionLabel("Confidence", "الثقة")}
             </p>
             <p className="text-lg font-bold text-io-accent">
-              {confidence != null ? `${(confidence * 100).toFixed(0)}%` : "N/A"}
+              {confidence != null && confidence > 0 ? `${(confidence * 100).toFixed(0)}%` : "—"}
             </p>
           </div>
           <div className="bg-slate-50 rounded-lg p-4">
@@ -1124,25 +1124,26 @@ function DemoDataBanner({ locale, demoContract }: { locale: "en" | "ar"; demoCon
 
   if (!demoContract || demoContract.mode === "live") return null;
 
-  const sourceLabel = demoContract.dataSourceType === "seeded_institutional"
+  const isSeeded = demoContract.dataSourceType === "seeded_institutional";
+  const sourceLabel = isSeeded
     ? (isAr ? "بيانات مرجعية مؤسسية محملة" : "Reference Demo Dataset Loaded")
-    : demoContract.dataSourceType === "fallback_mock"
-      ? (isAr ? "بيانات احتياطية — الخادم غير متوفر" : "Fallback Data — Backend Unavailable")
-      : (isAr ? "بيانات حية" : "Live Data");
+    : (isAr ? "بيانات مرجعية محملة — الخادم غير متصل" : "Reference Dataset Loaded — No Backend Connected");
 
-  const fallbackNote = demoContract.fallbackStatus !== "none"
-    ? (isAr ? ` — ${demoContract.errorState || "الخادم غير متاح"}` : ` — ${demoContract.errorState || "Backend unavailable"}`)
-    : "";
+  // Blue for explicit demo, amber for implicit fallback
+  const bgColor = isSeeded ? "bg-blue-50 border-blue-200" : "bg-amber-50 border-amber-200";
+  const dotColor = isSeeded ? "bg-blue-500" : "bg-amber-500";
+  const textColor = isSeeded ? "text-blue-800" : "text-amber-800";
+  const metaColor = isSeeded ? "text-blue-600" : "text-amber-600";
 
   return (
-    <div className="flex items-center justify-between px-4 py-2 bg-blue-50 border-b border-blue-200 flex-shrink-0">
+    <div className={`flex items-center justify-between px-4 py-2 ${bgColor} border-b flex-shrink-0`}>
       <div className="flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-        <p className="text-[11px] font-semibold text-blue-800">
-          {sourceLabel}{fallbackNote}
+        <div className={`w-2 h-2 rounded-full ${dotColor} animate-pulse`} />
+        <p className={`text-[11px] font-semibold ${textColor}`}>
+          {sourceLabel}
         </p>
       </div>
-      <div className="flex items-center gap-3 text-[10px] text-blue-600">
+      <div className={`flex items-center gap-3 text-[10px] ${metaColor}`}>
         <span>{isAr ? "المصدر:" : "Source:"} {demoContract.provenance.join(" → ")}</span>
         <span>|</span>
         <span>{isAr ? "الثقة:" : "Confidence:"} {(demoContract.confidence * 100).toFixed(0)}%</span>
@@ -1165,7 +1166,7 @@ function CommandCenterInner() {
 
   const runId = searchParams.get("run");
   const activeTab = searchParams.get("tab") || "dashboard";
-  const isDemoMode = searchParams.get("demo") === "true";
+  const isDemoParam = searchParams.get("demo") === "true";
   const [isRunningScenario, setIsRunningScenario] = useState(false);
 
   // ── Demo contract from store ──
@@ -1223,7 +1224,11 @@ function CommandCenterInner() {
     collaborationStage,
   } = useCommandCenter(runId);
 
-  // ── Initialize and maintain demo contract when demo=true ──
+  // ── Effective demo mode: explicit ?demo=true OR implicit mock fallback ──
+  // Eliminates silent fallback — any mock-data state gets an explicit banner
+  const isDemoMode = isDemoParam || (dataSource === "mock" && !runId);
+
+  // ── Initialize and maintain demo contract ──
   const resolvedConfidence = confidence && confidence > 0 ? confidence : 0.87;
 
   useEffect(() => {
@@ -1232,18 +1237,21 @@ function CommandCenterInner() {
     const currentContract = useCommandCenterStore.getState().demoContract;
 
     if (!currentContract) {
-      // First init
+      // First init — distinguish explicit demo from implicit mock fallback
+      const isExplicitDemo = isDemoParam;
       const contract: UnifiedScenarioRun = {
         scenarioId: scenario?.templateId ?? "hormuz_chokepoint_disruption",
         runId: "demo_seeded",
         locale,
-        mode: "demo",
-        dataSourceType: "seeded_institutional",
+        mode: isExplicitDemo ? "demo" : "hybrid",
+        dataSourceType: isExplicitDemo ? "seeded_institutional" : "fallback_mock",
         generatedAt: new Date().toISOString(),
         confidence: resolvedConfidence,
-        provenance: ["Seeded Institutional Dataset", "17-Stage Simulation Engine", "Intelligence Engine v6"],
-        fallbackStatus: "none",
-        errorState: null,
+        provenance: isExplicitDemo
+          ? ["Seeded Institutional Dataset", "17-Stage Simulation Engine", "Intelligence Engine v6"]
+          : ["Mock Fallback", "No Backend Connected", "17-Stage Simulation Engine"],
+        fallbackStatus: isExplicitDemo ? "none" : "api_unavailable",
+        errorState: isExplicitDemo ? null : "Backend not connected — using reference dataset",
       };
       setDemoContract(contract);
       return;
@@ -1266,7 +1274,7 @@ function CommandCenterInner() {
         ...(error ? { dataSourceType: "fallback_mock" as const, fallbackStatus: "api_unavailable" as const, errorState: error } : {}),
       });
     }
-  }, [isDemoMode, locale, scenario?.templateId, resolvedConfidence, error, setDemoContract]);
+  }, [isDemoMode, isDemoParam, locale, scenario?.templateId, resolvedConfidence, error, setDemoContract]);
 
   // ── Scenario selection ──
   // Mock mode: switch scenario via store (no API call)
