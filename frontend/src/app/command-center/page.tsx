@@ -22,6 +22,7 @@ import { useCommandCenterStore } from "@/features/command-center/lib/command-sto
 import type { CountryBakeEntry } from "@/features/command-center/lib/intelligence-engine";
 import type { UnifiedScenarioRun } from "@/types/observatory";
 import { TEMPLATE_TO_SCENARIO_KEY } from "@/features/command-center/lib/mock-data";
+import { generateScenarioPdf, type PdfExportPayload } from "@/features/command-center/lib/pdf-export";
 
 // ── Scenario Label Catalog (for demo mode label override) ──
 const SCENARIO_LABELS: Record<string, { en: string; ar: string }> = {
@@ -179,6 +180,7 @@ function DashboardView(
     decisionROI,
     outcomeConfirmation,
     collaborationStage,
+    demoContract,
   }: {
     runId?: string | null;
     scenario: ReturnType<typeof useCommandCenter>["scenario"];
@@ -199,6 +201,7 @@ function DashboardView(
     decisionROI: ReturnType<typeof useCommandCenter>["decisionROI"];
     outcomeConfirmation: ReturnType<typeof useCommandCenter>["outcomeConfirmation"];
     collaborationStage: ReturnType<typeof useCommandCenter>["collaborationStage"];
+    demoContract?: UnifiedScenarioRun | null;
   }
 ) {
   const isAr = locale === "ar";
@@ -206,17 +209,40 @@ function DashboardView(
   const [exportError, setExportError] = useState<string | null>(null);
 
   const handleExportPDF = useCallback(async () => {
-    if (!runId) return;
     setIsExporting(true);
     setExportError(null);
     try {
-      await downloadRunPDF(runId, locale);
+      // Live mode: download from backend API
+      if (runId) {
+        await downloadRunPDF(runId, locale);
+        return;
+      }
+      // Demo/mock mode: generate client-side PDF from intelligence engine data
+      if (scenario && headline) {
+        const payload: PdfExportPayload = {
+          scenario,
+          headline,
+          narrativeEn: narrativeEn ?? "",
+          confidence: confidence ?? 0.84,
+          causalChain,
+          executiveStatus: executiveStatus ?? null,
+          countryBake: countryBake ?? [],
+          sectorFormulas: sectorFormulas ?? [],
+          decisionROI: decisionROI ?? [],
+          outcomeConfirmation: outcomeConfirmation ?? null,
+          demoContract: demoContract ?? null,
+          sectorRollups: sectorRollups as PdfExportPayload["sectorRollups"],
+        };
+        generateScenarioPdf(payload);
+        return;
+      }
+      throw new Error("No scenario data available for export.");
     } catch (err) {
       setExportError(err instanceof Error ? err.message : "Export failed");
     } finally {
       setIsExporting(false);
     }
-  }, [runId, locale]);
+  }, [runId, locale, scenario, headline, narrativeEn, confidence, causalChain, executiveStatus, countryBake, sectorFormulas, decisionROI, outcomeConfirmation, demoContract, sectorRollups]);
 
   return (
     <div className="space-y-6 p-6 max-w-7xl mx-auto" dir={isAr ? "rtl" : "ltr"}>
@@ -231,27 +257,25 @@ function DashboardView(
               <span className="text-xs text-io-secondary">
                 {isAr ? scenario.labelAr || scenario.label : scenario.label}
               </span>
-              {runId && (
-                <button
-                  onClick={handleExportPDF}
-                  disabled={isExporting}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-io-border bg-white text-io-primary hover:bg-slate-50 transition-colors disabled:opacity-50"
-                >
-                  {isExporting ? (
-                    <>
-                      <span className="w-3 h-3 border border-io-secondary/40 border-t-io-secondary rounded-full animate-spin" />
-                      {isAr ? "جارٍ التصدير..." : "Exporting..."}
-                    </>
-                  ) : (
-                    <>
-                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M14 10v3a1 1 0 01-1 1H3a1 1 0 01-1-1v-3M8 2v8M5 7l3 3 3-3" />
-                      </svg>
-                      {isAr ? "تصدير التقرير" : "Export Report"}
-                    </>
-                  )}
-                </button>
-              )}
+              <button
+                onClick={handleExportPDF}
+                disabled={isExporting}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-io-border bg-white text-io-primary hover:bg-slate-50 transition-colors disabled:opacity-50"
+              >
+                {isExporting ? (
+                  <>
+                    <span className="w-3 h-3 border border-io-secondary/40 border-t-io-secondary rounded-full animate-spin" />
+                    {isAr ? "جارٍ التصدير..." : "Exporting..."}
+                  </>
+                ) : (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 10v3a1 1 0 01-1 1H3a1 1 0 01-1-1v-3M8 2v8M5 7l3 3 3-3" />
+                    </svg>
+                    {isAr ? "تصدير PDF" : "Export PDF"}
+                  </>
+                )}
+              </button>
             </div>
           </div>
           {exportError && (
@@ -1816,6 +1840,7 @@ function CommandCenterInner() {
             decisionROI={decisionROI}
             outcomeConfirmation={outcomeConfirmation}
             collaborationStage={collaborationStage}
+            demoContract={demoContract}
           />
         );
     }
