@@ -18,6 +18,27 @@ import React, { Suspense, useState, useCallback, useMemo, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAppStore } from "@/store/app-store";
 import { useCommandCenter } from "@/features/command-center/lib/use-command-center";
+import { useCommandCenterStore } from "@/features/command-center/lib/command-store";
+import type { CountryBakeEntry } from "@/features/command-center/lib/intelligence-engine";
+
+// ── Scenario Label Catalog (for demo mode label override) ──
+const SCENARIO_LABELS: Record<string, { en: string; ar: string }> = {
+  hormuz_chokepoint_disruption: { en: "Energy & Trade Flow Disruption — Strait of Hormuz", ar: "اضطراب تدفق الطاقة والتجارة — مضيق هرمز" },
+  hormuz_full_closure: { en: "Full Hormuz Closure — Extreme Scenario", ar: "إغلاق مضيق هرمز الكامل — سيناريو متطرف" },
+  qatar_lng_disruption: { en: "Qatar LNG Export Disruption", ar: "تعطل صادرات الغاز القطري المسال" },
+  gcc_cyber_attack: { en: "GCC Cyber Infrastructure Attack", ar: "هجوم سيبراني على البنية التحتية الخليجية" },
+  red_sea_trade_corridor_instability: { en: "Red Sea Trade Corridor Instability", ar: "عدم استقرار ممر تجارة البحر الأحمر" },
+  regional_liquidity_stress_event: { en: "Regional Liquidity Stress Event — Cross-Border Banking", ar: "حدث ضغط سيولة إقليمي — القطاع المصرفي العابر للحدود" },
+  saudi_oil_shock: { en: "Saudi Aramco Production Shock", ar: "صدمة إنتاج أرامكو السعودية" },
+  uae_banking_crisis: { en: "UAE Banking Sector Stress", ar: "ضغط القطاع المصرفي الإماراتي" },
+  bahrain_sovereign_stress: { en: "Bahrain Fiscal & Sovereign Stress", ar: "ضغط مالي وسيادي بحريني" },
+  kuwait_fiscal_shock: { en: "Kuwait Oil Revenue Shock", ar: "صدمة إيرادات النفط الكويتية" },
+  oman_port_closure: { en: "Oman Port Closure — Salalah/Sohar", ar: "إغلاق موانئ عمان — صلالة/صحار" },
+  energy_market_volatility_shock: { en: "GCC Energy Price Shock", ar: "صدمة أسعار الطاقة الخليجية" },
+  critical_port_throughput_disruption: { en: "Multi-Port Throughput Failure", ar: "فشل إنتاجية الموانئ المتعددة" },
+  financial_infrastructure_cyber_disruption: { en: "Financial System Cyber Attack", ar: "هجوم سيبراني على النظام المالي" },
+  iran_regional_escalation: { en: "Iran Regional Geopolitical Escalation", ar: "تصعيد جيوسياسي إيراني إقليمي" },
+};
 
 // ── Shell & Navigation ──
 import { ObservatoryShell } from "@/components/shell/ObservatoryShell";
@@ -667,6 +688,93 @@ function DashboardView(
   );
 }
 
+// ══════════════════════════════════════════════════════════════
+// COUNTRY EXPOSURE MATRIX — GCC Exposure Tab primary view
+// ══════════════════════════════════════════════════════════════
+
+function CountryExposureMatrix({ countryBake, locale }: { countryBake: CountryBakeEntry[]; locale: "en" | "ar" }) {
+  const isAr = locale === "ar";
+  const hasData = countryBake.some(c => c.exposureUsd > 0);
+
+  const stressBadge = (pct: number) => {
+    if (pct >= 80) return { bg: "bg-io-status-severe/15", text: "text-io-status-severe", label: isAr ? "حرج" : "SEVERE" };
+    if (pct >= 65) return { bg: "bg-io-status-high/15", text: "text-io-status-high", label: isAr ? "عالي" : "HIGH" };
+    if (pct >= 50) return { bg: "bg-io-status-elevated/15", text: "text-io-status-elevated", label: isAr ? "مرتفع" : "ELEVATED" };
+    if (pct >= 35) return { bg: "bg-io-status-guarded/15", text: "text-io-status-guarded", label: isAr ? "حذر" : "GUARDED" };
+    return { bg: "bg-io-accent/10", text: "text-io-accent", label: isAr ? "منخفض" : "LOW" };
+  };
+
+  const fmtUsd = (v: number) => {
+    if (v >= 1e9) return `$${(v / 1e9).toFixed(1)}B`;
+    if (v >= 1e6) return `$${(v / 1e6).toFixed(0)}M`;
+    return `$${(v / 1e3).toFixed(0)}K`;
+  };
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm" dir={isAr ? "rtl" : "ltr"}>
+      <h2 className="text-base font-bold text-slate-900 mb-1">
+        {isAr ? "مصفوفة تعرض الدول" : "Country Exposure Matrix"}
+      </h2>
+      <p className="text-xs text-slate-500 mb-4">
+        {isAr ? "٦ دول — الإجهاد والخسارة والقطاع والمحرك والثقة والسياسة" : "6 nations — stress, estimated loss, primary sector, driver, confidence, policy lever"}
+      </p>
+      {!hasData ? (
+        <p className="text-sm text-slate-400 text-center py-8">
+          {isAr ? "اختر سيناريو لعرض بيانات التعرض" : "Select a scenario to view exposure data"}
+        </p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-left text-[10px] text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                <th className="pb-2 pr-3">{isAr ? "الدولة" : "Country"}</th>
+                <th className="pb-2 pr-3 tabular-nums">{isAr ? "الضغط" : "Stress"}</th>
+                <th className="pb-2 pr-3 tabular-nums">{isAr ? "الخسارة" : "Est. Loss"}</th>
+                <th className="pb-2 pr-3">{isAr ? "القطاع" : "Primary Sector"}</th>
+                <th className="pb-2 pr-3">{isAr ? "المحرك" : "Driver"}</th>
+                <th className="pb-2 pr-3 tabular-nums">{isAr ? "الثقة" : "Confidence"}</th>
+                <th className="pb-2">{isAr ? "الأداة السياسية" : "Policy Lever"}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {countryBake.map(c => {
+                const badge = stressBadge(c.stressPercent);
+                return (
+                  <tr key={c.code} className="border-b border-slate-100">
+                    <td className="py-2.5 pr-3 font-medium text-slate-900">
+                      {isAr ? c.nameAr : c.name}
+                    </td>
+                    <td className="py-2.5 pr-3">
+                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${badge.bg} ${badge.text}`}>
+                        {c.stressPercent.toFixed(0)}% <span className="font-medium">{badge.label}</span>
+                      </span>
+                    </td>
+                    <td className="py-2.5 pr-3 tabular-nums font-semibold text-io-status-severe">
+                      {fmtUsd(c.exposureUsd)}
+                    </td>
+                    <td className="py-2.5 pr-3 text-slate-700">
+                      {isAr ? c.primarySectorAr : c.primarySector}
+                    </td>
+                    <td className="py-2.5 pr-3 text-slate-600 max-w-[200px] truncate">
+                      {isAr ? c.primaryDriverAr : c.primaryDriver}
+                    </td>
+                    <td className="py-2.5 pr-3 tabular-nums text-io-accent font-semibold">
+                      {(c.confidence * 100).toFixed(0)}%
+                    </td>
+                    <td className="py-2.5 text-slate-600 max-w-[180px] truncate">
+                      {isAr ? c.policyLeverAr : c.policyLever}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MetricCard(
   { label, value, color, source, formula, assumption }: {
     label: string;
@@ -1081,6 +1189,18 @@ function CommandCenterInner() {
         setIsRunningScenario(true);
         const key = templateId.includes("liquidity") ? "liquidity" as const : "hormuz" as const;
         switchScenario(key);
+
+        // Override scenario label to match the selected catalog entry
+        const labels = SCENARIO_LABELS[templateId];
+        if (labels) {
+          const currentScenario = useCommandCenterStore.getState().scenario;
+          if (currentScenario) {
+            useCommandCenterStore.setState({
+              scenario: { ...currentScenario, label: labels.en, labelAr: labels.ar },
+            });
+          }
+        }
+
         setIsRunningScenario(false);
         return;
       }
@@ -1222,7 +1342,11 @@ function CommandCenterInner() {
 
       case "map":
         return (
-          <div className="p-6 max-w-7xl mx-auto">
+          <div className="p-6 max-w-7xl mx-auto space-y-6">
+            {/* Country Exposure Matrix — executive-ready table */}
+            <CountryExposureMatrix countryBake={countryBake} locale={locale} />
+
+            {/* GCC Visual Map — secondary */}
             <GCCImpactMap
               countryExposures={countryExposures}
               sectorRollups={

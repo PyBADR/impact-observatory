@@ -17,9 +17,9 @@ interface ObservatoryShellProps {
 
 const TABS = [
   { id: "dashboard", labelEn: "Briefing", labelAr: "الإحاطة التنفيذية" },
+  { id: "scenarios", labelEn: "Scenarios", labelAr: "السيناريوهات" },
   { id: "macro", labelEn: "Macro Outlook", labelAr: "المشهد الكلي" },
   { id: "propagation", labelEn: "Transmission", labelAr: "مسار الانتقال" },
-  { id: "scenarios", labelEn: "Scenarios", labelAr: "السيناريوهات" },
   { id: "map", labelEn: "GCC Exposure", labelAr: "خريطة التعرض" },
   { id: "sectors", labelEn: "Sector Risk", labelAr: "مخاطر القطاعات" },
   { id: "decisions", labelEn: "Decision Room", labelAr: "غرفة القرار" },
