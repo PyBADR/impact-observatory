@@ -6,11 +6,17 @@ import type { IntelligencePerspective } from "@/lib/intelligence/perspectiveEngi
 
 const _PERSONA_KEY = "io_persona_v1";
 
-function _readPersona(): Persona {
-  if (typeof window === "undefined") return "executive";
+/**
+ * Restore persona from localStorage AFTER hydration.
+ * Store always initializes with "executive" so server & client match.
+ * Call this inside a useEffect in consuming components.
+ */
+export function hydratePersonaFromStorage() {
+  if (typeof window === "undefined") return;
   const stored = window.localStorage.getItem(_PERSONA_KEY);
-  if (stored === "executive" || stored === "analyst" || stored === "regulator") return stored;
-  return "executive";
+  if (stored === "executive" || stored === "analyst" || stored === "regulator") {
+    useAppStore.setState({ persona: stored });
+  }
 }
 
 interface CameraPosition {
@@ -121,8 +127,8 @@ export const useAppStore = create<AppState>((set) => ({
   language: "en",
   setLanguage: (lang) => set({ language: lang }),
 
-  // ---- Persona ----
-  persona: _readPersona(),
+  // ---- Persona (always "executive" at init — localStorage restored post-hydration) ----
+  persona: "executive",
   setPersona: (p) => {
     if (typeof window !== "undefined") window.localStorage.setItem(_PERSONA_KEY, p);
     set({ persona: p });

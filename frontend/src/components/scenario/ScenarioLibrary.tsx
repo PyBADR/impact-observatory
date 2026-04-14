@@ -316,12 +316,11 @@ export function ScenarioLibrary(
   const [fetchError, setFetchError] = useState(false);
   const isAr = locale === "ar";
 
-  // Fetch scenario catalog on mount
+  // Fetch scenario catalog on mount (relative URL → Next.js rewrites → backend)
   useEffect(() => {
     let cancelled = false;
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
-    fetch(`${API_BASE}/api/v1/scenarios`)
+    fetch("/api/v1/scenarios")
       .then((r) => r.json())
       .then((data) => {
         if (cancelled) return;

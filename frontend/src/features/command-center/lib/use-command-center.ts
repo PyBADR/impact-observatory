@@ -291,12 +291,12 @@ export function useCommandCenter(runId?: string | null) {
   );
 
   return {
-    // State
+    // State — when API fails but fallback mock loaded, show "ready" with warning
     status: runId
       ? runQuery.isLoading
         ? "loading" as const
         : runQuery.isError
-          ? "error" as const
+          ? (storeStatus === "ready" ? "ready" as const : "error" as const)
           : storeStatus
       : storeStatus,
     error: runQuery.error?.message ?? store.error,

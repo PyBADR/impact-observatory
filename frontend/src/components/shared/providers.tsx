@@ -1,7 +1,8 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { hydratePersonaFromStorage } from "@/store/app-store";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -15,6 +16,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
         },
       })
   );
+
+  // Restore persona from localStorage after hydration (prevents React #300)
+  useEffect(() => {
+    hydratePersonaFromStorage();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>

@@ -18,6 +18,7 @@ import React, { Suspense, useState, useCallback, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAppStore } from "@/store/app-store";
 import { useCommandCenter } from "@/features/command-center/lib/use-command-center";
+import { api } from "@/lib/api";
 
 // ── Shell & Navigation ──
 import { ObservatoryShell } from "@/components/shell/ObservatoryShell";
@@ -661,14 +662,8 @@ function CommandCenterInner() {
     async (templateId: string) => {
       setIsRunningScenario(true);
       try {
-        const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
-        const res = await fetch(`${API_BASE}/api/v1/runs`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ template_id: templateId, severity: 0.75 }),
-        });
-        const json = await res.json();
-        const newRunId = json?.data?.run_id ?? json?.run_id;
+        const result = await api.observatory.run({ template_id: templateId, severity: 0.75 });
+        const newRunId = (result as any)?.data?.run_id ?? (result as any)?.run_id;
         if (newRunId) {
           router.push(`/command-center?run=${newRunId}`);
         }

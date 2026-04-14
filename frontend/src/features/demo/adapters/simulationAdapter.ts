@@ -111,7 +111,7 @@ export interface HormuzRunResult {
 // API Client
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+const API_BASE = "";
 const API_KEY = process.env.NEXT_PUBLIC_IO_API_KEY || "io_master_key_2026";
 
 export class SimulationApiError extends Error {
