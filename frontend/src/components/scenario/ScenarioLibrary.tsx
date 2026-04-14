@@ -446,16 +446,16 @@ export function ScenarioLibrary(
           return (
             <div
               key={scenario.id}
-              className={`bg-white border rounded-lg p-5 hover:shadow-md transition-shadow flex flex-col gap-4 shadow-sm ${
+              className={`bg-white border rounded-xl p-5 transition-all flex flex-col gap-4 ${
                 isSimulationReady
-                  ? "border-slate-200"
-                  : "border-slate-200 opacity-80"
+                  ? "border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300"
+                  : "border-slate-100 opacity-70 grayscale-[15%]"
               }`}
             >
               {/* Header with domain badge, severity, and readiness */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
-                  <h2 className="text-lg font-bold text-slate-900 mb-2 leading-snug">
+                  <h2 className={`text-base font-bold mb-2 leading-snug ${isSimulationReady ? "text-slate-900" : "text-slate-600"}`}>
                     {label}
                   </h2>
                   <div className="flex items-center gap-2 flex-wrap">
@@ -518,11 +518,11 @@ export function ScenarioLibrary(
               </div>
 
               {/* Estimated Loss */}
-              <div className="pt-2 border-t border-slate-200">
-                <div className="text-xs text-slate-600 mb-1">
+              <div className="pt-3 border-t border-slate-100 mt-auto">
+                <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">
                   {isAr ? "الخسارة المقدرة" : "Estimated Loss"}
                 </div>
-                <div className="text-lg font-bold text-red-600">
+                <div className={`text-lg font-bold tabular-nums ${isSimulationReady ? "text-red-600" : "text-slate-400"}`}>
                   {formatCurrency(scenario.base_loss_usd)}
                 </div>
               </div>
@@ -532,7 +532,7 @@ export function ScenarioLibrary(
                 <button
                   onClick={() => onSelectScenario(scenario.id)}
                   disabled={isLoading}
-                  className="mt-auto px-4 py-2.5 bg-io-accent hover:bg-io-accent-hover text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  className="px-4 py-2.5 bg-io-accent hover:bg-io-accent-hover text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm shadow-sm hover:shadow-md"
                 >
                   {isLoading
                     ? isAr
@@ -545,7 +545,7 @@ export function ScenarioLibrary(
               ) : (
                 <button
                   disabled
-                  className="mt-auto px-4 py-2.5 bg-slate-100 text-slate-400 font-semibold rounded-lg text-sm cursor-not-allowed border border-slate-200"
+                  className="px-4 py-2.5 bg-slate-50 text-slate-400 font-medium rounded-lg text-sm cursor-not-allowed border border-slate-100"
                 >
                   {isAr ? "قيد تجهيز البيانات" : "Dataset Pending"}
                 </button>

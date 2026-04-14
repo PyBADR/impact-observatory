@@ -61,9 +61,14 @@ export function ObservatoryShell({
   const flowStageDisplay = useMemo(() => {
     return FLOW_STAGES.map((stage, idx) => (
       <React.Fragment key={stage}>
-        <span className="text-xs font-medium text-io-secondary">{stage}</span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="w-4 h-4 rounded-full bg-io-muted text-[9px] font-bold text-io-secondary flex items-center justify-center flex-shrink-0">
+            {idx + 1}
+          </span>
+          <span className="text-[10px] font-medium text-io-secondary whitespace-nowrap">{stage}</span>
+        </span>
         {idx < FLOW_STAGES.length - 1 && (
-          <ChevronRight className="w-3 h-3 text-border-io-border" />
+          <ChevronRight className="w-3 h-3 text-io-border-soft flex-shrink-0 opacity-40" />
         )}
       </React.Fragment>
     ));
@@ -136,15 +141,8 @@ export function ObservatoryShell({
             </div>
           </div>
 
-          {/* Subtitle — intelligence flow principle */}
-          <p className="text-xs text-io-secondary mb-3">
-            {isArabic
-              ? "إشارة ← انتقال ← تعرض ← بنوك ← تأمين ← قطاعات ← قرار ← نتيجة ← حوكمة"
-              : "Signal → Transmission → Exposure → Banking → Insurance → Sector → Decision → Outcome → Audit"}
-          </p>
-
-          {/* Flow Stages */}
-          <div className="flex items-center gap-2 text-io-secondary overflow-x-auto pb-1">
+          {/* 10-Stage Pipeline Indicator */}
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-hide">
             {flowStageDisplay}
           </div>
         </div>

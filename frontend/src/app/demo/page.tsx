@@ -63,9 +63,20 @@ export default function DemoPage() {
           Institutional Intelligence & Decision Platform
         </p>
 
-        <p className="text-sm text-slate-400 mb-12">
+        <p className="text-sm text-slate-400 mb-4">
           منصة الاستخبارات الاقتصادية والمالية لدول الخليج
         </p>
+
+        {/* Capabilities strip */}
+        <div className="flex items-center justify-center gap-3 mb-10 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+          <span>6 Economies</span>
+          <span className="w-1 h-1 rounded-full bg-slate-300" />
+          <span>15 Scenarios</span>
+          <span className="w-1 h-1 rounded-full bg-slate-300" />
+          <span>17-Stage Pipeline</span>
+          <span className="w-1 h-1 rounded-full bg-slate-300" />
+          <span>PDF Export</span>
+        </div>
 
         {/* Start button — navigates to Command Center */}
         <button
@@ -81,7 +92,7 @@ export default function DemoPage() {
         </button>
 
         {/* Navigation hint */}
-        <div className="mt-8 flex items-center justify-center gap-4">
+        <div className="mt-8 flex items-center justify-center gap-5">
           <KeyHint label="Tabs" description="Navigate flow" />
           <KeyHint label="Scenarios" description="Switch scenarios" />
           <KeyHint label="EN/AR" description="Toggle language" />

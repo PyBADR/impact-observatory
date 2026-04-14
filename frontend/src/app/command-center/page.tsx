@@ -329,23 +329,28 @@ function DashboardView(
             />
           </div>
 
-          {/* Propagation Summary — elevated per Sarah's directive */}
+          {/* Propagation Summary — transmission chain visualization */}
           {causalChain && causalChain.length > 0 && (
-            <div className="border border-slate-200 rounded-lg p-4 mb-5">
-              <h3 className="text-xs font-semibold text-io-secondary uppercase tracking-wider mb-3">
+            <div className="bg-white border border-slate-200 rounded-lg p-4 mb-5 shadow-sm">
+              <h3 className="text-[10px] font-bold text-io-secondary uppercase tracking-widest mb-3">
                 {isAr ? "مسار الانتقال الرئيسي" : "Primary Transmission Path"}
               </h3>
-              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
                 {causalChain.slice(0, 5).map((step, idx) => (
                   <React.Fragment key={idx}>
-                    <div className="flex-shrink-0 bg-slate-50 rounded-lg px-3 py-2 text-center min-w-[100px]">
-                      <p className="text-xs font-semibold text-slate-900 truncate">{step.entity_label}</p>
-                      <p className="text-[10px] text-io-status-elevated tabular-nums mt-0.5">
+                    <div className="flex-shrink-0 bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-center min-w-[110px] hover:bg-slate-100 transition-colors">
+                      <p className="text-[11px] font-semibold text-slate-900 truncate">{step.entity_label}</p>
+                      <p className="text-[10px] text-io-status-elevated tabular-nums mt-1 font-medium">
                         {step.stress_delta > 0 ? "+" : ""}{(step.stress_delta * 100).toFixed(0)}%
                       </p>
                     </div>
                     {idx < Math.min(causalChain.length, 5) - 1 && (
-                      <span className="text-io-accent text-xs flex-shrink-0">→</span>
+                      <div className="flex-shrink-0 flex items-center">
+                        <div className="w-4 h-px bg-io-accent/40" />
+                        <svg width="8" height="8" viewBox="0 0 8 8" className="text-io-accent/60 -ml-px flex-shrink-0">
+                          <path d="M1 1L4 4L1 7" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
                     )}
                   </React.Fragment>
                 ))}
@@ -818,21 +823,21 @@ function MetricCard(
 
   return (
     <div
-      className="bg-slate-50 rounded-lg p-3 relative group"
+      className="bg-white border border-slate-200 rounded-lg p-3.5 relative group shadow-sm hover:shadow-md transition-shadow"
       onMouseEnter={() => hasProvenance && setShowDetail(true)}
       onMouseLeave={() => setShowDetail(false)}
     >
       <div className="flex items-start justify-between">
-        <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">{label}</p>
+        <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1.5">{label}</p>
         {hasProvenance && (
-          <span className="text-[8px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
+          <span className="text-[9px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-help">
             ⓘ
           </span>
         )}
       </div>
-      <p className={`text-lg font-bold ${color}`}>{value}</p>
+      <p className={`text-xl font-bold ${color}`}>{value}</p>
       {showDetail && hasProvenance && (
-        <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-[10px] text-slate-600 space-y-1">
+        <div className="absolute z-20 top-full left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-[11px] text-slate-600 space-y-1.5">
           {source && <p><span className="font-semibold text-slate-700">Source:</span> {source}</p>}
           {formula && <p><span className="font-semibold text-slate-700">Formula:</span> {formula}</p>}
           {assumption && <p><span className="font-semibold text-slate-700">Assumption:</span> {assumption}</p>}
@@ -1170,12 +1175,12 @@ function DemoDataBanner({ locale, demoContract }: { locale: "en" | "ar"; demoCon
           {sourceLabel}
         </p>
       </div>
-      <div className={`flex items-center gap-3 text-[10px] ${metaColor}`}>
+      <div className={`flex items-center gap-2.5 text-[10px] font-medium ${metaColor}`}>
         <span>{isAr ? "المصدر:" : "Source:"} {demoContract.provenance.join(" → ")}</span>
-        <span>|</span>
+        <span className="opacity-30">|</span>
         <span>{isAr ? "الثقة:" : "Confidence:"} {(demoContract.confidence * 100).toFixed(0)}%</span>
-        <span>|</span>
-        <span>{demoContract.generatedAt ? new Date(demoContract.generatedAt).toLocaleTimeString() : ""}</span>
+        <span className="opacity-30">|</span>
+        <span className="tabular-nums">{demoContract.generatedAt ? new Date(demoContract.generatedAt).toLocaleTimeString() : ""}</span>
       </div>
     </div>
   );
