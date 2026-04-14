@@ -13,6 +13,10 @@
 import { create } from "zustand";
 import type {
   UnifiedRunResult,
+  UnifiedScenarioRun,
+  DemoMode,
+  DemoDataSourceType,
+  DemoFallbackStatus,
   KnowledgeGraphNode,
   KnowledgeGraphEdge,
   CausalStep,
@@ -83,6 +87,9 @@ interface CommandCenterState {
   runId: string | null;
   status: "idle" | "loading" | "ready" | "error";
   error: string | null;
+
+  // ---- Unified Demo Contract ----
+  demoContract: UnifiedScenarioRun | null;
 
   // ---- Per-panel states ----
   panelStates: {
@@ -180,6 +187,7 @@ interface CommandCenterState {
     trust: CommandCenterTrust;
   }) => void;
   loadRun: (runId: string, result: UnifiedRunResult) => void;
+  setDemoContract: (contract: UnifiedScenarioRun) => void;
   setSelectedNode: (nodeId: string | null) => void;
   setPanelFocus: (panel: PanelFocus) => void;
   startExecuting: (actionId: string) => void;
@@ -210,6 +218,7 @@ const INITIAL_STATE = {
   runId: null as string | null,
   status: "idle" as const,
   error: null as string | null,
+  demoContract: null as UnifiedScenarioRun | null,
   panelStates: { ...EMPTY_PANEL_STATES },
   scenario: null as CommandCenterScenario | null,
   headline: null as CommandCenterHeadline | null,
@@ -391,7 +400,8 @@ export const useCommandCenterStore = create<CommandCenterState>((set) => ({
       },
     }),
 
-  loadMock: (data) =>
+  loadMock: (data) => {
+    const prevContract = useCommandCenterStore.getState().demoContract;
     set({
       ...data,
       dataSource: "mock",
@@ -399,6 +409,8 @@ export const useCommandCenterStore = create<CommandCenterState>((set) => ({
       status: "ready",
       error: null,
       rawResult: null,
+      // Preserve existing demo contract if set (updated separately via setDemoContract)
+      demoContract: prevContract,
       panelStates: derivePanelStates(
         data.graphNodes,
         data.causalChain,
@@ -407,7 +419,8 @@ export const useCommandCenterStore = create<CommandCenterState>((set) => ({
         data.sectorRollups,
         data.impacts,
       ),
-    }),
+    });
+  },
 
   loadRun: (runId, result) => {
     // Gate 1: reject failed pipeline runs gracefully
@@ -619,6 +632,8 @@ export const useCommandCenterStore = create<CommandCenterState>((set) => ({
       macroContext: (rawAny.macro_context as MacroContext) ?? null,
     });
   },
+
+  setDemoContract: (contract) => set({ demoContract: contract }),
 
   setSelectedNode: (nodeId) => set({ selectedNodeId: nodeId }),
   setPanelFocus: (panel) => set({ panelFocus: panel }),

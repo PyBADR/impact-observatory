@@ -13,6 +13,7 @@ interface ObservatoryShellProps {
   scenarioLabelAr?: string;
   dataSource?: "live" | "mock";
   activeTab?: string;
+  isDemoMode?: boolean;
 }
 
 const TABS = [
@@ -45,6 +46,7 @@ export function ObservatoryShell({
   scenarioLabelAr,
   dataSource = "mock",
   activeTab = "dashboard",
+  isDemoMode = false,
 }: ObservatoryShellProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -68,14 +70,16 @@ export function ObservatoryShell({
   }, []);
 
   const runId = searchParams.get("run");
+  const demoParam = searchParams.get("demo");
 
   const handleTabClick = (tabId: string) => {
-    const runSuffix = runId ? `${tabId === "dashboard" ? "?" : "&"}run=${runId}` : "";
-    if (tabId === "dashboard") {
-      router.push(`/command-center${runSuffix}`);
-    } else {
-      router.push(`/command-center?tab=${tabId}${runId ? `&run=${runId}` : ""}`);
-    }
+    // Build query params preserving run and demo state
+    const params = new URLSearchParams();
+    if (tabId !== "dashboard") params.set("tab", tabId);
+    if (runId) params.set("run", runId);
+    if (demoParam) params.set("demo", demoParam);
+    const qs = params.toString();
+    router.push(`/command-center${qs ? `?${qs}` : ""}`);
   };
 
   const handleLanguageToggle = () => {
@@ -111,7 +115,7 @@ export function ObservatoryShell({
             <div className="flex items-center gap-2">
               {/* Start Demo CTA */}
               <Link
-                href="/demo"
+                href="/command-center?demo=true"
                 className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-io-primary text-white hover:bg-io-accent transition-colors shadow-sm"
               >
                 <Play size={12} />

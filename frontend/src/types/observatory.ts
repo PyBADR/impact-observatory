@@ -748,6 +748,44 @@ export interface UnifiedRunResult {
   assumptions?: string[];
 }
 
+// ============================================================
+// Unified Demo Operating Contract
+// ============================================================
+
+/**
+ * UnifiedScenarioRun — single source of truth for demo/live run state.
+ *
+ * Every tab, panel, and derived computation reads from this contract.
+ * Demo mode uses seeded institutional data with explicit provenance.
+ * Live mode populates from backend API with full trust metadata.
+ */
+export type DemoDataSourceType = "seeded_institutional" | "live_api" | "fallback_mock";
+export type DemoFallbackStatus = "none" | "api_unavailable" | "partial_data" | "degraded";
+export type DemoMode = "demo" | "live" | "hybrid";
+
+export interface UnifiedScenarioRun {
+  /** Active scenario catalog ID (e.g. "hormuz_chokepoint_disruption") */
+  scenarioId: string;
+  /** Unique run identifier — "demo_seeded" for demo mode, UUID for live */
+  runId: string;
+  /** Current locale — drives all bilingual labels */
+  locale: "en" | "ar";
+  /** Operating mode — demo (seeded data), live (backend API), hybrid (live with demo fallback) */
+  mode: DemoMode;
+  /** Where the data comes from */
+  dataSourceType: DemoDataSourceType;
+  /** ISO timestamp when this run state was generated */
+  generatedAt: string;
+  /** Pipeline confidence score (0-1) */
+  confidence: number;
+  /** Data provenance chain for audit */
+  provenance: string[];
+  /** Whether fallback data is being used and why */
+  fallbackStatus: DemoFallbackStatus;
+  /** Error state from live API, if any */
+  errorState: string | null;
+}
+
 /** Available scenario template for graph impact */
 export interface GraphScenarioTemplate {
   id: string;

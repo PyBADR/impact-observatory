@@ -14,12 +14,13 @@
  * │  TAB: Map           → GCC 6-country impact map              │
  * │  TAB: Sectors       → Banking / Insurance / Fintech stress  │\n * │  TAB: Decisions     → DecisionRoomV2 (full decision engine) │\n * │  TAB: Audit         → Audit trail + regulatory breaches     │\n * └─────────────────────────────────────────────────────────────┘\n *\n * Scenario context is preserved across all tabs via URL params.\n * Data flow: useCommandCenter(runId) feeds all views.\n */
 
-import React, { Suspense, useState, useCallback, useMemo, useRef } from "react";
+import React, { Suspense, useState, useCallback, useMemo, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAppStore } from "@/store/app-store";
 import { useCommandCenter } from "@/features/command-center/lib/use-command-center";
 import { useCommandCenterStore } from "@/features/command-center/lib/command-store";
 import type { CountryBakeEntry } from "@/features/command-center/lib/intelligence-engine";
+import type { UnifiedScenarioRun } from "@/types/observatory";
 
 // ── Scenario Label Catalog (for demo mode label override) ──
 const SCENARIO_LABELS: Record<string, { en: string; ar: string }> = {
@@ -1115,6 +1116,44 @@ function MacroIntelligenceView(
 }
 
 // ══════════════════════════════════════════════════════════════
+// DEMO DATA BANNER — explicit, never silent
+// ══════════════════════════════════════════════════════════════
+
+function DemoDataBanner({ locale, demoContract }: { locale: "en" | "ar"; demoContract: UnifiedScenarioRun | null }) {
+  const isAr = locale === "ar";
+
+  if (!demoContract || demoContract.mode === "live") return null;
+
+  const sourceLabel = demoContract.dataSourceType === "seeded_institutional"
+    ? (isAr ? "بيانات مرجعية مؤسسية محملة" : "Reference Demo Dataset Loaded")
+    : demoContract.dataSourceType === "fallback_mock"
+      ? (isAr ? "بيانات احتياطية — الخادم غير متوفر" : "Fallback Data — Backend Unavailable")
+      : (isAr ? "بيانات حية" : "Live Data");
+
+  const fallbackNote = demoContract.fallbackStatus !== "none"
+    ? (isAr ? ` — ${demoContract.errorState || "الخادم غير متاح"}` : ` — ${demoContract.errorState || "Backend unavailable"}`)
+    : "";
+
+  return (
+    <div className="flex items-center justify-between px-4 py-2 bg-blue-50 border-b border-blue-200 flex-shrink-0">
+      <div className="flex items-center gap-2">
+        <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+        <p className="text-[11px] font-semibold text-blue-800">
+          {sourceLabel}{fallbackNote}
+        </p>
+      </div>
+      <div className="flex items-center gap-3 text-[10px] text-blue-600">
+        <span>{isAr ? "المصدر:" : "Source:"} {demoContract.provenance.join(" → ")}</span>
+        <span>|</span>
+        <span>{isAr ? "الثقة:" : "Confidence:"} {(demoContract.confidence * 100).toFixed(0)}%</span>
+        <span>|</span>
+        <span>{demoContract.generatedAt ? new Date(demoContract.generatedAt).toLocaleTimeString() : ""}</span>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
 // INNER PAGE — reads searchParams, orchestrates tabs
 // ══════════════════════════════════════════════════════════════
 
@@ -1126,7 +1165,12 @@ function CommandCenterInner() {
 
   const runId = searchParams.get("run");
   const activeTab = searchParams.get("tab") || "dashboard";
+  const isDemoMode = searchParams.get("demo") === "true";
   const [isRunningScenario, setIsRunningScenario] = useState(false);
+
+  // ── Demo contract from store ──
+  const demoContract = useCommandCenterStore((s) => s.demoContract);
+  const setDemoContract = useCommandCenterStore((s) => s.setDemoContract);
 
   const {
     status,
@@ -1179,13 +1223,58 @@ function CommandCenterInner() {
     collaborationStage,
   } = useCommandCenter(runId);
 
+  // ── Initialize and maintain demo contract when demo=true ──
+  const resolvedConfidence = confidence && confidence > 0 ? confidence : 0.87;
+
+  useEffect(() => {
+    if (!isDemoMode) return;
+
+    const currentContract = useCommandCenterStore.getState().demoContract;
+
+    if (!currentContract) {
+      // First init
+      const contract: UnifiedScenarioRun = {
+        scenarioId: scenario?.templateId ?? "hormuz_chokepoint_disruption",
+        runId: "demo_seeded",
+        locale,
+        mode: "demo",
+        dataSourceType: "seeded_institutional",
+        generatedAt: new Date().toISOString(),
+        confidence: resolvedConfidence,
+        provenance: ["Seeded Institutional Dataset", "17-Stage Simulation Engine", "Intelligence Engine v6"],
+        fallbackStatus: "none",
+        errorState: null,
+      };
+      setDemoContract(contract);
+      return;
+    }
+
+    // Sync changes — locale, scenario, confidence, error
+    const needsUpdate =
+      currentContract.locale !== locale ||
+      (scenario?.templateId && currentContract.scenarioId !== scenario.templateId) ||
+      Math.abs(currentContract.confidence - resolvedConfidence) > 0.01 ||
+      (error && currentContract.fallbackStatus === "none");
+
+    if (needsUpdate) {
+      setDemoContract({
+        ...currentContract,
+        locale,
+        scenarioId: scenario?.templateId ?? currentContract.scenarioId,
+        confidence: resolvedConfidence,
+        generatedAt: new Date().toISOString(),
+        ...(error ? { dataSourceType: "fallback_mock" as const, fallbackStatus: "api_unavailable" as const, errorState: error } : {}),
+      });
+    }
+  }, [isDemoMode, locale, scenario?.templateId, resolvedConfidence, error, setDemoContract]);
+
   // ── Scenario selection ──
   // Mock mode: switch scenario via store (no API call)
   // Live mode: POST /api/v1/runs → navigate to new run
   const handleScenarioSelect = useCallback(
     async (templateId: string) => {
       // In demo/mock mode, switch scenario locally — no backend needed
-      if (dataSource === "mock") {
+      if (dataSource === "mock" || isDemoMode) {
         setIsRunningScenario(true);
         const key = templateId.includes("liquidity") ? "liquidity" as const : "hormuz" as const;
         switchScenario(key);
@@ -1197,6 +1286,18 @@ function CommandCenterInner() {
           if (currentScenario) {
             useCommandCenterStore.setState({
               scenario: { ...currentScenario, label: labels.en, labelAr: labels.ar },
+            });
+          }
+        }
+
+        // Update demo contract with new scenario
+        if (isDemoMode) {
+          const currentContract = useCommandCenterStore.getState().demoContract;
+          if (currentContract) {
+            useCommandCenterStore.getState().setDemoContract({
+              ...currentContract,
+              scenarioId: templateId,
+              generatedAt: new Date().toISOString(),
             });
           }
         }
@@ -1231,7 +1332,7 @@ function CommandCenterInner() {
         setIsRunningScenario(false);
       }
     },
-    [dataSource, router, switchToMock, switchScenario],
+    [dataSource, isDemoMode, router, switchToMock, switchScenario],
   );
 
   const handleSubmitForReview = useCallback(
@@ -1659,9 +1760,15 @@ function CommandCenterInner() {
       scenarioLabelAr={scenario?.labelAr ?? undefined}
       dataSource={dataSource}
       activeTab={activeTab}
+      isDemoMode={isDemoMode}
     >
-      {/* Fallback banner (API failed, showing mock) */}
-      {error && scenario && (
+      {/* Demo Data Banner — explicit, never silent */}
+      {isDemoMode && (
+        <DemoDataBanner locale={locale} demoContract={demoContract} />
+      )}
+
+      {/* Fallback banner (API failed, showing mock — non-demo mode) */}
+      {!isDemoMode && error && scenario && (
         <div className="flex items-center justify-between px-4 py-1.5 bg-amber-50 border-b border-amber-200 flex-shrink-0">
           <p className="text-[11px] text-amber-700 truncate">{error}</p>
           {runId && (

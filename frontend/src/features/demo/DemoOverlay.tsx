@@ -14,8 +14,8 @@ export function DemoOverlay({ onExit }: { onExit?: () => void }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Navigate to Command Center — the full intelligence demo surface
-    router.push("/command-center");
+    // Navigate to Command Center in demo mode — the full intelligence demo surface
+    router.push("/command-center?demo=true");
   }, [router]);
 
   return (

@@ -69,7 +69,7 @@ export default function DemoPage() {
 
         {/* Start button — navigates to Command Center */}
         <button
-          onClick={() => router.push("/command-center")}
+          onClick={() => router.push("/command-center?demo=true")}
           className="group inline-flex items-center gap-3 px-8 py-4 bg-io-primary text-white rounded-xl font-semibold text-sm shadow-lg shadow-io-primary/20 hover:bg-io-accent hover:shadow-xl hover:shadow-io-accent/20 transition-all"
         >
           <Play size={18} />
