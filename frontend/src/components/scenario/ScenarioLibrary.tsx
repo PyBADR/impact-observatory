@@ -13,6 +13,7 @@
  */
 
 import { useState, useEffect, useMemo } from "react";
+import { TEMPLATE_TO_SCENARIO_KEY } from "@/features/command-center/lib/mock-data";
 
 interface ScenarioTemplate {
   id: string;
@@ -440,23 +441,51 @@ export function ScenarioLibrary(
           const description = isAr
             ? scenario.description_ar
             : scenario.description_en;
+          const isSimulationReady = !!TEMPLATE_TO_SCENARIO_KEY[scenario.id];
 
           return (
             <div
               key={scenario.id}
-              className="bg-white border border-slate-200 rounded-lg p-5 hover:shadow-md transition-shadow flex flex-col gap-4 shadow-sm"
+              className={`bg-white border rounded-lg p-5 hover:shadow-md transition-shadow flex flex-col gap-4 shadow-sm ${
+                isSimulationReady
+                  ? "border-slate-200"
+                  : "border-slate-200 opacity-80"
+              }`}
             >
-              {/* Header with domain badge and severity */}
+              {/* Header with domain badge, severity, and readiness */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                   <h2 className="text-lg font-bold text-slate-900 mb-2 leading-snug">
                     {label}
                   </h2>
-                  <div
-                    className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-md border text-xs font-semibold ${domainColor.bg} ${domainColor.text} ${domainColor.border}`}
-                  >
-                    <span className="w-2 h-2 rounded-full bg-current opacity-70"></span>
-                    {scenario.domain}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div
+                      className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-md border text-xs font-semibold ${domainColor.bg} ${domainColor.text} ${domainColor.border}`}
+                    >
+                      <span className="w-2 h-2 rounded-full bg-current opacity-70"></span>
+                      {scenario.domain}
+                    </div>
+                    {/* Readiness Badge */}
+                    <div
+                      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide ${
+                        isSimulationReady
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : "bg-slate-100 text-slate-500 border border-slate-200"
+                      }`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          isSimulationReady ? "bg-emerald-500" : "bg-slate-400"
+                        }`}
+                      />
+                      {isSimulationReady
+                        ? isAr
+                          ? "جاهز"
+                          : "READY"
+                        : isAr
+                          ? "قيد التجهيز"
+                          : "PENDING"}
+                    </div>
                   </div>
                 </div>
                 <div
@@ -498,20 +527,29 @@ export function ScenarioLibrary(
                 </div>
               </div>
 
-              {/* Run Button */}
-              <button
-                onClick={() => onSelectScenario(scenario.id)}
-                disabled={isLoading}
-                className="mt-auto px-4 py-2.5 bg-io-accent hover:bg-io-accent-hover text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-              >
-                {isLoading
-                  ? isAr
-                    ? "جاري التشغيل..."
-                    : "Running..."
-                  : isAr
-                    ? "تشغيل السيناريو"
-                    : "Run Scenario"}
-              </button>
+              {/* Run Button (ready) or Dataset Pending Button (disabled) */}
+              {isSimulationReady ? (
+                <button
+                  onClick={() => onSelectScenario(scenario.id)}
+                  disabled={isLoading}
+                  className="mt-auto px-4 py-2.5 bg-io-accent hover:bg-io-accent-hover text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  {isLoading
+                    ? isAr
+                      ? "جاري التشغيل..."
+                      : "Running..."
+                    : isAr
+                      ? "تشغيل السيناريو"
+                      : "Run Scenario"}
+                </button>
+              ) : (
+                <button
+                  disabled
+                  className="mt-auto px-4 py-2.5 bg-slate-100 text-slate-400 font-semibold rounded-lg text-sm cursor-not-allowed border border-slate-200"
+                >
+                  {isAr ? "قيد تجهيز البيانات" : "Dataset Pending"}
+                </button>
+              )}
             </div>
           );
         })}
