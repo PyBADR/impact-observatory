@@ -72,6 +72,16 @@ import {
   deriveOutcomes,
   deriveMethodology,
 } from "./derive-briefing";
+import {
+  computeExecutiveStatus,
+  computeCountryBake,
+  computeSectorFormulas,
+  computeBankingSimulation,
+  computeInsuranceSimulation,
+  computeDecisionROI,
+  computeOutcomeConfirmation,
+  computeCollaborationStage,
+} from "./intelligence-engine";
 
 // ── Mock impacts (deterministic, matches mock scenario) ──────────────
 
@@ -558,6 +568,47 @@ export function useCommandCenter(runId?: string | null) {
     return store.methodology || "Multi-layer macro-financial analysis covering 43 GCC financial entities across energy, banking, insurance, trade, and sovereign sectors.";
   }, [isLive, rawResult, store.methodology, store.trust]);
 
+  // ── Phase 6: Intelligence Engine computations ──────────────────────
+  const executiveStatus = useMemo(
+    () => computeExecutiveStatus(store.headline, store.causalChain, store.decisionActions, store.graphNodes, store.sectorRollups as any),
+    [store.headline, store.causalChain, store.decisionActions, store.graphNodes, store.sectorRollups],
+  );
+
+  const countryBake = useMemo(
+    () => computeCountryBake(store.graphNodes, store.headline, store.sectorRollups as any),
+    [store.graphNodes, store.headline, store.sectorRollups],
+  );
+
+  const sectorFormulas = useMemo(
+    () => computeSectorFormulas(store.headline, store.sectorRollups as any, store.scenario?.domain ?? "ENERGY_TRADE"),
+    [store.headline, store.sectorRollups, store.scenario?.domain],
+  );
+
+  const bankingSimulation = useMemo(
+    () => computeBankingSimulation(store.sectorRollups as any, store.headline),
+    [store.sectorRollups, store.headline],
+  );
+
+  const insuranceSimulation = useMemo(
+    () => computeInsuranceSimulation(store.sectorRollups as any, store.headline),
+    [store.sectorRollups, store.headline],
+  );
+
+  const decisionROI = useMemo(
+    () => computeDecisionROI(store.decisionActions, store.headline),
+    [store.decisionActions, store.headline],
+  );
+
+  const outcomeConfirmation = useMemo(
+    () => computeOutcomeConfirmation(store.headline, store.decisionActions, briefingOutcomes as any),
+    [store.headline, store.decisionActions, briefingOutcomes],
+  );
+
+  const collaborationStage = useMemo(
+    () => computeCollaborationStage(store.scenario, store.headline, store.decisionActions),
+    [store.scenario, store.headline, store.decisionActions],
+  );
+
   return {
     // State
     status: runId
@@ -645,5 +696,15 @@ export function useCommandCenter(runId?: string | null) {
     // Scenario switching
     switchScenario,
     scenarioPresets: SCENARIO_PRESETS,
+
+    // Phase 6: Intelligence Engine
+    executiveStatus,
+    countryBake,
+    sectorFormulas,
+    bankingSimulation,
+    insuranceSimulation,
+    decisionROI,
+    outcomeConfirmation,
+    collaborationStage,
   };
 }

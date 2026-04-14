@@ -148,6 +148,12 @@ function DashboardView(
     locale,
     onSelectScenario,
     isRunningScenario,
+    executiveStatus,
+    countryBake,
+    sectorFormulas,
+    decisionROI,
+    outcomeConfirmation,
+    collaborationStage,
   }: {
     runId?: string | null;
     scenario: ReturnType<typeof useCommandCenter>["scenario"];
@@ -162,6 +168,12 @@ function DashboardView(
     locale: "en" | "ar";
     onSelectScenario: (id: string) => void;
     isRunningScenario: boolean;
+    executiveStatus: ReturnType<typeof useCommandCenter>["executiveStatus"];
+    countryBake: ReturnType<typeof useCommandCenter>["countryBake"];
+    sectorFormulas: ReturnType<typeof useCommandCenter>["sectorFormulas"];
+    decisionROI: ReturnType<typeof useCommandCenter>["decisionROI"];
+    outcomeConfirmation: ReturnType<typeof useCommandCenter>["outcomeConfirmation"];
+    collaborationStage: ReturnType<typeof useCommandCenter>["collaborationStage"];
   }
 ) {
   const isAr = locale === "ar";
@@ -334,6 +346,309 @@ function DashboardView(
               </span>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ── Executive Status Engine ── */}
+      {executiveStatus && executiveStatus.status !== "STABLE" && (
+        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-bold text-slate-900">
+              {isAr ? "حالة القرار التنفيذي" : "Executive Decision Status"}
+            </h2>
+            <div className="flex items-center gap-2">
+              <span className={`px-2.5 py-1 rounded-md text-xs font-bold ${
+                executiveStatus.status === "CRITICAL" ? "bg-io-status-severe/15 text-io-status-severe" :
+                executiveStatus.status === "SEVERE" ? "bg-io-status-high/15 text-io-status-high" :
+                executiveStatus.status === "ELEVATED" ? "bg-io-status-elevated/15 text-io-status-elevated" :
+                "bg-io-status-guarded/15 text-io-status-guarded"
+              }`}>
+                {isAr ? executiveStatus.statusAr : executiveStatus.status}
+              </span>
+              <span className={`px-2 py-1 rounded text-[10px] font-semibold ${
+                executiveStatus.decisionUrgency === "IMMEDIATE" ? "bg-red-100 text-red-800" :
+                executiveStatus.decisionUrgency === "URGENT" ? "bg-amber-100 text-amber-800" :
+                "bg-blue-100 text-blue-800"
+              }`}>
+                {executiveStatus.decisionUrgency}
+                {executiveStatus.decisionUrgencyHours > 0 && ` (${executiveStatus.decisionUrgencyHours}h)`}
+              </span>
+            </div>
+          </div>
+
+          <p className="text-sm text-slate-700 mb-3">
+            {isAr ? executiveStatus.severityRationaleAr : executiveStatus.severityRationale}
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {executiveStatus.affectedCountries.length > 0 && (
+              <div className="bg-slate-50 rounded-lg p-3">
+                <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">
+                  {isAr ? "الدول المتأثرة" : "Affected Countries"}
+                </p>
+                <p className="text-xs font-semibold text-slate-900">{executiveStatus.affectedCountries.join(", ")}</p>
+              </div>
+            )}
+            {executiveStatus.affectedSectors.length > 0 && (
+              <div className="bg-slate-50 rounded-lg p-3">
+                <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">
+                  {isAr ? "القطاعات المتأثرة" : "Affected Sectors"}
+                </p>
+                <p className="text-xs font-semibold text-slate-900">{executiveStatus.affectedSectors.join(", ")}</p>
+              </div>
+            )}
+            <div className="bg-slate-50 rounded-lg p-3">
+              <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">
+                {isAr ? "ثقة التقييم" : "Assessment Confidence"}
+              </p>
+              <p className="text-xs font-semibold text-io-accent">{(executiveStatus.confidence * 100).toFixed(0)}%</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── GCC Country Exposure Layer ── */}
+      {countryBake && countryBake.length > 0 && headline && (
+        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+          <h2 className="text-base font-bold text-slate-900 mb-4">
+            {isAr ? "تعرض الدول الخليجية" : "GCC Country Exposure"}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {countryBake.filter(c => c.exposureUsd > 0 || c.stressPercent > 0).map(country => (
+              <div key={country.code} className="bg-slate-50 rounded-lg p-4 group relative">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-semibold text-slate-900">
+                    {isAr ? country.nameAr : country.name}
+                  </p>
+                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                    country.stressPercent >= 0.65 ? "bg-io-status-severe/15 text-io-status-severe" :
+                    country.stressPercent >= 0.45 ? "bg-io-status-elevated/15 text-io-status-elevated" :
+                    country.stressPercent >= 0.2 ? "bg-io-status-guarded/15 text-io-status-guarded" :
+                    "bg-io-accent/10 text-io-accent"
+                  }`}>
+                    {(country.stressPercent * 100).toFixed(0)}%
+                  </span>
+                </div>
+                <div className="space-y-1.5 text-xs text-slate-600">
+                  <p>
+                    <span className="font-medium text-slate-700">{isAr ? "التعرض:" : "Exposure:"}</span>{" "}
+                    ${(country.exposureUsd / 1e9).toFixed(2)}B
+                  </p>
+                  <p>
+                    <span className="font-medium text-slate-700">{isAr ? "القطاع الرئيسي:" : "Primary Sector:"}</span>{" "}
+                    {isAr ? country.primarySectorAr : country.primarySector}
+                  </p>
+                  <p>
+                    <span className="font-medium text-slate-700">{isAr ? "المحرك:" : "Driver:"}</span>{" "}
+                    {isAr ? country.primaryDriverAr : country.primaryDriver}
+                  </p>
+                </div>
+                {/* Hover detail */}
+                <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-[10px] text-slate-600 space-y-1 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
+                  <p><span className="font-semibold text-slate-700">{isAr ? "قناة الانتقال:" : "Transmission:"}</span> {isAr ? country.transmissionChannelAr : country.transmissionChannel}</p>
+                  <p><span className="font-semibold text-slate-700">{isAr ? "أداة السياسة:" : "Policy Lever:"}</span> {isAr ? country.policyLeverAr : country.policyLever}</p>
+                  <p><span className="font-semibold text-slate-700">{isAr ? "الثقة:" : "Confidence:"}</span> {(country.confidence * 100).toFixed(0)}%</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Sector Formula Lab ── */}
+      {sectorFormulas && sectorFormulas.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+          <h2 className="text-base font-bold text-slate-900 mb-4">
+            {isAr ? "مختبر صيغ القطاعات" : "Sector Formula Lab"}
+          </h2>
+          <div className="space-y-2">
+            {sectorFormulas.map(sf => (
+              <div key={sf.sector} className="bg-slate-50 rounded-lg p-4 group relative">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-sm font-semibold text-slate-900">{sf.sectorLabel}</p>
+                  <span className="text-sm font-bold text-io-status-severe tabular-nums">
+                    ${(sf.sectorLoss / 1e9).toFixed(2)}B
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-3 text-[10px] text-slate-500">
+                  <span>Allocation: {(sf.allocationWeight * 100).toFixed(0)}%</span>
+                  <span>Sensitivity: {(sf.scenarioSensitivity * 100).toFixed(0)}%</span>
+                  <span>Propagation: {(sf.propagationWeight * 100).toFixed(0)}%</span>
+                  <span>Confidence: {(sf.confidence * 100).toFixed(0)}%</span>
+                </div>
+                {/* Hover provenance */}
+                <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-[10px] text-slate-600 space-y-1 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
+                  <p><span className="font-semibold text-slate-700">Formula:</span> {sf.formula}</p>
+                  <p><span className="font-semibold text-slate-700">Source:</span> {sf.source}</p>
+                  <p><span className="font-semibold text-slate-700">Assumption:</span> {sf.assumption}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Decision ROI Summary ── */}
+      {decisionROI && decisionROI.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+          <h2 className="text-base font-bold text-slate-900 mb-4">
+            {isAr ? "عائد الاستثمار على القرار" : "Decision ROI Engine"}
+          </h2>
+          <div className="space-y-3">
+            {decisionROI.slice(0, 5).map(roi => (
+              <div key={roi.id} className="bg-slate-50 rounded-lg p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <p className="text-sm font-semibold text-slate-900 flex-1">
+                    {isAr ? roi.actionAr : roi.action}
+                  </p>
+                  <span className={`ml-2 px-2 py-0.5 rounded text-[10px] font-bold tabular-nums ${
+                    roi.roiMultiple >= 5 ? "bg-green-100 text-green-800" :
+                    roi.roiMultiple >= 2 ? "bg-emerald-100 text-emerald-700" :
+                    "bg-slate-200 text-slate-700"
+                  }`}>
+                    {roi.roiMultiple.toFixed(1)}x ROI
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-slate-600 mb-2">
+                  <span><span className="font-medium text-slate-700">{isAr ? "التكلفة:" : "Cost:"}</span> ${(roi.costUsd / 1e6).toFixed(0)}M</span>
+                  <span><span className="font-medium text-slate-700">{isAr ? "خسائر متجنبة:" : "Avoided:"}</span> ${(roi.lossAvoidedUsd / 1e9).toFixed(2)}B</span>
+                  <span><span className="font-medium text-slate-700">{isAr ? "صافي الفائدة:" : "Net:"}</span> ${(roi.netBenefit / 1e9).toFixed(2)}B</span>
+                  <span><span className="font-medium text-slate-700">{isAr ? "المسؤول:" : "Owner:"}</span> {roi.owner}</span>
+                </div>
+                {roi.deadlineHours > 0 && (
+                  <div className="flex items-center gap-3 text-[10px] text-slate-500">
+                    <span className="font-medium text-amber-700">{isAr ? "الموعد النهائي:" : "Deadline:"} {roi.deadlineHours}h</span>
+                    <span>{isAr ? roi.consequenceOfDelayAr : roi.consequenceOfDelay}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Outcome Counterfactual ── */}
+      {outcomeConfirmation && (
+        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+          <h2 className="text-base font-bold text-slate-900 mb-4">
+            {isAr ? "تأكيد النتائج — المقارنة المضادة" : "Outcome Confirmation — Counterfactual"}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            {/* Without Action */}
+            <div className="border border-red-200 bg-red-50/50 rounded-lg p-4">
+              <p className="text-[10px] text-red-600 uppercase tracking-wider font-semibold mb-2">
+                {isAr ? "بدون تدخل" : "Without Intervention"}
+              </p>
+              <p className="text-lg font-bold text-red-800 tabular-nums mb-1">
+                ${(outcomeConfirmation.withoutAction.projectedLossLow / 1e9).toFixed(1)}B – ${(outcomeConfirmation.withoutAction.projectedLossHigh / 1e9).toFixed(1)}B
+              </p>
+              <p className="text-xs text-red-700">
+                {isAr ? `التعافي: ${outcomeConfirmation.withoutAction.recoveryDays} يوم` : `Recovery: ${outcomeConfirmation.withoutAction.recoveryDays} days`}
+              </p>
+              <p className="text-[10px] text-slate-600 mt-2">
+                {isAr ? outcomeConfirmation.withoutAction.descriptionAr : outcomeConfirmation.withoutAction.description}
+              </p>
+            </div>
+            {/* Coordinated Response */}
+            <div className="border border-emerald-200 bg-emerald-50/50 rounded-lg p-4">
+              <p className="text-[10px] text-emerald-600 uppercase tracking-wider font-semibold mb-2">
+                {isAr ? "استجابة منسقة" : "Coordinated Response"}
+              </p>
+              <p className="text-lg font-bold text-emerald-800 tabular-nums mb-1">
+                ${(outcomeConfirmation.coordinatedResponse.projectedLossLow / 1e9).toFixed(1)}B – ${(outcomeConfirmation.coordinatedResponse.projectedLossHigh / 1e9).toFixed(1)}B
+              </p>
+              <p className="text-xs text-emerald-700">
+                {isAr ? `التعافي: ${outcomeConfirmation.coordinatedResponse.recoveryDays} يوم` : `Recovery: ${outcomeConfirmation.coordinatedResponse.recoveryDays} days`}
+              </p>
+              <p className="text-[10px] text-slate-600 mt-2">
+                {isAr ? outcomeConfirmation.coordinatedResponse.descriptionAr : outcomeConfirmation.coordinatedResponse.description}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-4 text-xs">
+            <span className="px-2 py-1 rounded bg-emerald-100 text-emerald-800 font-semibold">
+              {isAr ? "تخفيض الخسائر:" : "Loss Reduction:"} {outcomeConfirmation.expectedLossReductionPercent}%
+            </span>
+            <span className="px-2 py-1 rounded bg-blue-100 text-blue-800 font-semibold">
+              {isAr ? "تقليل أفق التعافي:" : "Recovery Shortened:"} {outcomeConfirmation.recoveryHorizonReduction} {isAr ? "يوم" : "days"}
+            </span>
+            <span className="px-2 py-1 rounded bg-slate-100 text-slate-700 font-semibold">
+              {isAr ? "التتبع:" : "Tracking:"} {outcomeConfirmation.outcomeTrackingStatus}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Collaboration / Executive Stage ── */}
+      {collaborationStage && (
+        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-bold text-slate-900">
+              {isAr ? "مرحلة التعاون التنفيذي" : "Executive Collaboration Stage"}
+            </h2>
+            <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold ${
+              collaborationStage.approvalState === "APPROVED" ? "bg-green-100 text-green-800" :
+              collaborationStage.approvalState === "UNDER_REVIEW" ? "bg-amber-100 text-amber-800" :
+              collaborationStage.approvalState === "REJECTED" ? "bg-red-100 text-red-800" :
+              "bg-slate-100 text-slate-700"
+            }`}>
+              {collaborationStage.approvalState}
+            </span>
+          </div>
+          {/* Reviewer Status */}
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            {collaborationStage.reviewers.map(r => (
+              <div key={r.role} className="bg-slate-50 rounded-lg p-3 text-center">
+                <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">{r.role}</p>
+                <p className="text-xs font-semibold text-slate-900">{r.name}</p>
+                <span className={`inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                  r.status === "APPROVED" ? "bg-green-100 text-green-700" :
+                  r.status === "REJECTED" ? "bg-red-100 text-red-700" :
+                  "bg-slate-200 text-slate-600"
+                }`}>
+                  {r.status}
+                </span>
+              </div>
+            ))}
+          </div>
+          {/* Persona Focus Views */}
+          <div className="space-y-2 mb-4">
+            <div className="bg-blue-50/50 border border-blue-200 rounded-lg p-3">
+              <p className="text-[9px] text-blue-600 uppercase tracking-wider font-semibold mb-1">
+                {isAr ? "منظور الرئيس التنفيذي" : "CEO View"}
+              </p>
+              <p className="text-xs text-slate-700">{isAr ? collaborationStage.personaViews.ceo.focusAr : collaborationStage.personaViews.ceo.focus}</p>
+            </div>
+            <div className="bg-amber-50/50 border border-amber-200 rounded-lg p-3">
+              <p className="text-[9px] text-amber-600 uppercase tracking-wider font-semibold mb-1">
+                {isAr ? "منظور إدارة المخاطر" : "Risk Officer View"}
+              </p>
+              <p className="text-xs text-slate-700">{isAr ? collaborationStage.personaViews.risk.focusAr : collaborationStage.personaViews.risk.focus}</p>
+            </div>
+            <div className="bg-purple-50/50 border border-purple-200 rounded-lg p-3">
+              <p className="text-[9px] text-purple-600 uppercase tracking-wider font-semibold mb-1">
+                {isAr ? "منظور الرقابة" : "Regulator View"}
+              </p>
+              <p className="text-xs text-slate-700">{isAr ? collaborationStage.personaViews.regulator.focusAr : collaborationStage.personaViews.regulator.focus}</p>
+            </div>
+          </div>
+          {/* Audit Trail */}
+          {collaborationStage.auditTrail.length > 0 && (
+            <div className="border-t border-slate-200 pt-3">
+              <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-2">
+                {isAr ? "سجل التدقيق" : "Audit Trail"}
+              </p>
+              <div className="space-y-1">
+                {collaborationStage.auditTrail.map((e, idx) => (
+                  <div key={idx} className="flex items-start gap-2 text-[10px] text-slate-600">
+                    <span className="text-slate-400 tabular-nums flex-shrink-0">{new Date(e.timestamp).toLocaleTimeString()}</span>
+                    <span className="font-medium text-slate-700">{e.actor}</span>
+                    <span>{e.detail}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -743,6 +1058,16 @@ function CommandCenterInner() {
     executeAction,
     switchToMock,
     switchToLive,
+
+    // Phase 6: Intelligence Engine
+    executiveStatus,
+    countryBake,
+    sectorFormulas,
+    bankingSimulation,
+    insuranceSimulation,
+    decisionROI,
+    outcomeConfirmation,
+    collaborationStage,
   } = useCommandCenter(runId);
 
   // ── Scenario selection: POST /api/v1/runs → navigate to new run ──
@@ -894,18 +1219,127 @@ function CommandCenterInner() {
 
       case "sectors":
         return (
-          <SectorIntelligenceView
-            locale={locale}
-            scenarioLabel={scenario?.label}
-            scenarioLabelAr={scenario?.labelAr ?? undefined}
-            severity={scenario?.severity}
-            narrativeEn={narrativeEn}
-            narrativeAr={narrativeAr ?? undefined}
-            systemRiskIndex={macroContext?.system_risk_index}
-            macroSignals={macroContext?.macro_signals}
-            causalChain={causalChain}
-            decisionActions={decisionActions as any}
-          />
+          <div className="space-y-6">
+            <SectorIntelligenceView
+              locale={locale}
+              scenarioLabel={scenario?.label}
+              scenarioLabelAr={scenario?.labelAr ?? undefined}
+              severity={scenario?.severity}
+              narrativeEn={narrativeEn}
+              narrativeAr={narrativeAr ?? undefined}
+              systemRiskIndex={macroContext?.system_risk_index}
+              macroSignals={macroContext?.macro_signals}
+              causalChain={causalChain}
+              decisionActions={decisionActions as any}
+            />
+
+            {/* Banking Simulation Layer */}
+            {bankingSimulation && bankingSimulation.metrics.length > 0 && (
+              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm mx-6 max-w-7xl">
+                <h2 className="text-base font-bold text-slate-900 mb-4">
+                  {locale === "ar" ? "محاكاة القطاع المصرفي" : "Banking Simulation Layer"}
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {bankingSimulation.metrics.map(m => (
+                    <div key={m.label} className="bg-slate-50 rounded-lg p-4 group relative">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-xs font-semibold text-slate-900">
+                          {locale === "ar" ? m.labelAr : m.label}
+                        </p>
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                          m.level === "severe" ? "bg-io-status-severe/15 text-io-status-severe" :
+                          m.level === "high" ? "bg-io-status-high/15 text-io-status-high" :
+                          m.level === "elevated" ? "bg-io-status-elevated/15 text-io-status-elevated" :
+                          m.level === "guarded" ? "bg-io-status-guarded/15 text-io-status-guarded" :
+                          "bg-io-accent/10 text-io-accent"
+                        }`}>
+                          {m.level.toUpperCase()}
+                        </span>
+                      </div>
+                      <p className="text-lg font-bold text-slate-900 tabular-nums">{m.value}</p>
+                      {/* Hover provenance */}
+                      <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-[10px] text-slate-600 space-y-1 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
+                        <p><span className="font-semibold text-slate-700">Formula:</span> {m.formula}</p>
+                        <p><span className="font-semibold text-slate-700">Source:</span> {m.source}</p>
+                        <p><span className="font-semibold text-slate-700">Assumption:</span> {m.assumption}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Insurance Simulation Layer */}
+            {insuranceSimulation && insuranceSimulation.metrics.length > 0 && (
+              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm mx-6 max-w-7xl">
+                <h2 className="text-base font-bold text-slate-900 mb-4">
+                  {locale === "ar" ? "محاكاة قطاع التأمين" : "Insurance Simulation Layer"}
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {insuranceSimulation.metrics.map(m => (
+                    <div key={m.label} className="bg-slate-50 rounded-lg p-4 group relative">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-xs font-semibold text-slate-900">
+                          {locale === "ar" ? m.labelAr : m.label}
+                        </p>
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                          m.level === "severe" ? "bg-io-status-severe/15 text-io-status-severe" :
+                          m.level === "high" ? "bg-io-status-high/15 text-io-status-high" :
+                          m.level === "elevated" ? "bg-io-status-elevated/15 text-io-status-elevated" :
+                          m.level === "guarded" ? "bg-io-status-guarded/15 text-io-status-guarded" :
+                          "bg-io-accent/10 text-io-accent"
+                        }`}>
+                          {m.level.toUpperCase()}
+                        </span>
+                      </div>
+                      <p className="text-lg font-bold text-slate-900 tabular-nums">{m.value}</p>
+                      {/* Hover provenance */}
+                      <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-[10px] text-slate-600 space-y-1 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
+                        <p><span className="font-semibold text-slate-700">Formula:</span> {m.formula}</p>
+                        <p><span className="font-semibold text-slate-700">Source:</span> {m.source}</p>
+                        <p><span className="font-semibold text-slate-700">Assumption:</span> {m.assumption}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Sector Formula Breakdown */}
+            {sectorFormulas.length > 0 && (
+              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm mx-6 max-w-7xl">
+                <h2 className="text-base font-bold text-slate-900 mb-4">
+                  {locale === "ar" ? "تفاصيل صيغ القطاعات" : "Sector Formula Breakdown"}
+                </h2>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="text-left text-[10px] text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                        <th className="pb-2 pr-3">{locale === "ar" ? "القطاع" : "Sector"}</th>
+                        <th className="pb-2 pr-3 tabular-nums">{locale === "ar" ? "الخسارة" : "Loss"}</th>
+                        <th className="pb-2 pr-3 tabular-nums">{locale === "ar" ? "التخصيص" : "Allocation"}</th>
+                        <th className="pb-2 pr-3 tabular-nums">{locale === "ar" ? "الحساسية" : "Sensitivity"}</th>
+                        <th className="pb-2 pr-3 tabular-nums">{locale === "ar" ? "الانتشار" : "Propagation"}</th>
+                        <th className="pb-2 tabular-nums">{locale === "ar" ? "الثقة" : "Confidence"}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sectorFormulas.map(sf => (
+                        <tr key={sf.sector} className="border-b border-slate-100 group relative">
+                          <td className="py-2 pr-3 font-medium text-slate-900">{sf.sectorLabel}</td>
+                          <td className="py-2 pr-3 tabular-nums text-io-status-severe font-semibold">${(sf.sectorLoss / 1e9).toFixed(2)}B</td>
+                          <td className="py-2 pr-3 tabular-nums text-slate-600">{(sf.allocationWeight * 100).toFixed(0)}%</td>
+                          <td className="py-2 pr-3 tabular-nums text-slate-600">{(sf.scenarioSensitivity * 100).toFixed(0)}%</td>
+                          <td className="py-2 pr-3 tabular-nums text-slate-600">{(sf.propagationWeight * 100).toFixed(0)}%</td>
+                          <td className="py-2 tabular-nums text-io-accent">{(sf.confidence * 100).toFixed(0)}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
         );
 
       case "decisions":
@@ -919,7 +1353,95 @@ function CommandCenterInner() {
           );
         }
         return (
-          <div className="p-6">
+          <div className="p-6 space-y-6">
+            {/* Decision ROI Engine — above Decision Room */}
+            {decisionROI.length > 0 && (
+              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm max-w-7xl mx-auto">
+                <h2 className="text-base font-bold text-slate-900 mb-4">
+                  {locale === "ar" ? "عائد الاستثمار على القرار" : "Decision ROI Analysis"}
+                </h2>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="text-left text-[10px] text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                        <th className="pb-2 pr-3">{locale === "ar" ? "الإجراء" : "Action"}</th>
+                        <th className="pb-2 pr-3 tabular-nums">{locale === "ar" ? "التكلفة" : "Cost"}</th>
+                        <th className="pb-2 pr-3 tabular-nums">{locale === "ar" ? "متجنبة" : "Avoided"}</th>
+                        <th className="pb-2 pr-3 tabular-nums">{locale === "ar" ? "صافي" : "Net"}</th>
+                        <th className="pb-2 pr-3 tabular-nums">ROI</th>
+                        <th className="pb-2 pr-3">{locale === "ar" ? "الموعد" : "Deadline"}</th>
+                        <th className="pb-2">{locale === "ar" ? "التصعيد" : "Escalation"}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {decisionROI.map(roi => (
+                        <tr key={roi.id} className="border-b border-slate-100">
+                          <td className="py-2 pr-3 text-slate-900 font-medium max-w-[200px] truncate">
+                            {locale === "ar" ? roi.actionAr : roi.action}
+                          </td>
+                          <td className="py-2 pr-3 tabular-nums text-slate-600">${(roi.costUsd / 1e6).toFixed(0)}M</td>
+                          <td className="py-2 pr-3 tabular-nums text-emerald-700">${(roi.lossAvoidedUsd / 1e9).toFixed(2)}B</td>
+                          <td className="py-2 pr-3 tabular-nums font-semibold text-slate-900">${(roi.netBenefit / 1e9).toFixed(2)}B</td>
+                          <td className="py-2 pr-3">
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                              roi.roiMultiple >= 5 ? "bg-green-100 text-green-800" :
+                              roi.roiMultiple >= 2 ? "bg-emerald-100 text-emerald-700" :
+                              "bg-slate-200 text-slate-700"
+                            }`}>{roi.roiMultiple.toFixed(1)}x</span>
+                          </td>
+                          <td className="py-2 pr-3 tabular-nums text-amber-700">{roi.deadlineHours > 0 ? `${roi.deadlineHours}h` : "—"}</td>
+                          <td className="py-2 text-[10px] text-slate-500 max-w-[180px] truncate">
+                            {locale === "ar" ? roi.escalationPathAr : roi.escalationPath}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Outcome Counterfactual — above Decision Room */}
+            {outcomeConfirmation && (
+              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm max-w-7xl mx-auto">
+                <h2 className="text-base font-bold text-slate-900 mb-4">
+                  {locale === "ar" ? "تحليل المقارنة المضادة" : "Counterfactual Analysis"}
+                </h2>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="border border-red-200 bg-red-50/50 rounded-lg p-4">
+                    <p className="text-[10px] text-red-600 uppercase tracking-wider font-semibold mb-2">
+                      {locale === "ar" ? "بدون تدخل" : "Without Intervention"}
+                    </p>
+                    <p className="text-lg font-bold text-red-800 tabular-nums">
+                      ${(outcomeConfirmation.withoutAction.projectedLossLow / 1e9).toFixed(1)}B – ${(outcomeConfirmation.withoutAction.projectedLossHigh / 1e9).toFixed(1)}B
+                    </p>
+                    <p className="text-xs text-red-700 mt-1">
+                      {locale === "ar" ? `التعافي: ${outcomeConfirmation.withoutAction.recoveryDays} يوم` : `Recovery: ${outcomeConfirmation.withoutAction.recoveryDays} days`}
+                    </p>
+                  </div>
+                  <div className="border border-emerald-200 bg-emerald-50/50 rounded-lg p-4">
+                    <p className="text-[10px] text-emerald-600 uppercase tracking-wider font-semibold mb-2">
+                      {locale === "ar" ? "استجابة منسقة" : "Coordinated Response"}
+                    </p>
+                    <p className="text-lg font-bold text-emerald-800 tabular-nums">
+                      ${(outcomeConfirmation.coordinatedResponse.projectedLossLow / 1e9).toFixed(1)}B – ${(outcomeConfirmation.coordinatedResponse.projectedLossHigh / 1e9).toFixed(1)}B
+                    </p>
+                    <p className="text-xs text-emerald-700 mt-1">
+                      {locale === "ar" ? `التعافي: ${outcomeConfirmation.coordinatedResponse.recoveryDays} يوم` : `Recovery: ${outcomeConfirmation.coordinatedResponse.recoveryDays} days`}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 mt-3 text-xs">
+                  <span className="px-2 py-1 rounded bg-emerald-100 text-emerald-800 font-semibold">
+                    {locale === "ar" ? "التخفيض:" : "Reduction:"} {outcomeConfirmation.expectedLossReductionPercent}%
+                  </span>
+                  <span className="px-2 py-1 rounded bg-blue-100 text-blue-800 font-semibold">
+                    {locale === "ar" ? "تسريع التعافي:" : "Faster Recovery:"} {outcomeConfirmation.recoveryHorizonReduction} {locale === "ar" ? "يوم" : "days"}
+                  </span>
+                </div>
+              </div>
+            )}
+
             <DecisionRoomV2
               runId={runId ?? undefined}
               scenarioLabel={scenario.label}
@@ -977,6 +1499,12 @@ function CommandCenterInner() {
             locale={locale}
             onSelectScenario={handleScenarioSelect}
             isRunningScenario={isRunningScenario}
+            executiveStatus={executiveStatus}
+            countryBake={countryBake}
+            sectorFormulas={sectorFormulas}
+            decisionROI={decisionROI}
+            outcomeConfirmation={outcomeConfirmation}
+            collaborationStage={collaborationStage}
           />
         );
     }
