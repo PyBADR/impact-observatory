@@ -12,6 +12,7 @@
  */
 
 import { useState, useEffect, useMemo } from "react";
+import { TEMPLATE_TO_SCENARIO_KEY } from "@/features/command-center/lib/mock-data";
 
 interface ScenarioTemplate {
   id: string;
@@ -109,10 +110,25 @@ export function ScenarioSelector({
     <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-1" dir={isAr ? "rtl" : "ltr"}>
       {displayTemplates.map((t) => {
         const isActive = t.id === activeScenarioId;
+        const isReady = !!TEMPLATE_TO_SCENARIO_KEY[t.id];
         const short = SHORT_NAMES[t.id];
         const label = short
           ? (isAr ? short.ar : short.en)
           : (isAr ? t.name_ar || t.name : t.name).split(/[\s_]/).slice(0, 2).join(" ");
+
+        // Pending scenarios: disabled pill with no onClick
+        if (!isReady) {
+          return (
+            <button
+              key={t.id}
+              disabled
+              className="flex-shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-semibold whitespace-nowrap bg-slate-50 text-slate-300 border border-slate-100 cursor-not-allowed"
+              title={isAr ? "قيد تجهيز البيانات" : "Dataset Pending"}
+            >
+              {label}
+            </button>
+          );
+        }
 
         return (
           <button
