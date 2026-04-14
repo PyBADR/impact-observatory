@@ -2,5 +2,19 @@
   "framework": "nextjs",
   "buildCommand": "cd frontend && npm run build",
   "outputDirectory": "frontend/.next",
-  "installCommand": "cd frontend && npm ci"
+  "installCommand": "cd frontend && npm ci",
+  "rewrites": [
+    {
+      "source": "/api/health",
+      "destination": "${NEXT_PUBLIC_API_URL}/health"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "${NEXT_PUBLIC_API_URL}/api/:path*"
+    },
+    {
+      "source": "/health",
+      "destination": "${NEXT_PUBLIC_API_URL}/health"
+    }
+  ]
 }
