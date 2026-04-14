@@ -15,6 +15,23 @@
 - Backend contracts are the source of truth — TypeScript types must match Pydantic models.
 - All formula weights live in `backend/src/config.py` — never hardcode in engine files.
 
+## AI Simulation Code Reviewer — Interaction Contract
+
+**Contract file**: `frontend/src/features/command-center/__tests__/simulation-interaction-contract.test.ts`
+
+Any change to `handleScenarioSelect` or the scenario data flow MUST preserve these invariants:
+
+1. **Visible running state**: `isRunningScenario=true` must be visible for ≥500ms before data loads
+2. **Tab switch**: After scenario loads, navigate to Briefing (dashboard) tab
+3. **URL update**: Set `?scenario=<templateId>` in the URL for deep-linking
+4. **Loaded banner**: Show green "Simulation Loaded: <title>" banner (auto-dismiss 6s)
+5. **Scroll to top**: `window.scrollTo({ top: 0 })` after scenario switch
+6. **Unique run identity**: Generate `demo_<scenario>_<timestamp>` per execution
+7. **Incomplete guard**: Unmapped scenarios show "Scenario dataset incomplete — cannot run simulation." — NEVER silently fallback to Hormuz
+8. **Data isolation**: Cyber must never show Hormuz data. LNG must never show Hormuz briefing. Every tab must read from the active scenario.
+9. **Deep-link support**: `?scenario=gcc_cyber_attack` on page load must auto-switch to that scenario
+10. **Tab param preservation**: `?scenario=` must survive tab navigation in ObservatoryShell
+
 ---
 
 ## Preview Servers
