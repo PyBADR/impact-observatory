@@ -49,11 +49,13 @@ def is_dev_signal_preview_enabled() -> bool:
 
 
 def is_live_signal_scoring_enabled() -> bool:
-    """Whether live signals affect scoring (FUTURE — not implemented).
+    """Whether live signals affect scoring (gated by governance decision gate).
 
-    Reads: ENABLE_LIVE_SIGNAL_SCORING (default: false)
+    Reads: ENABLE_SIGNAL_SCORING_V5 (default: false)
 
-    This flag is defined but NOT used in v4.
-    It exists to document the v5 gate.
+    When true: signals may influence scenario metrics (if governance gate passes).
+    When false (default, production): signals are advisory-only.
+
+    See docs/GOVERNANCE_DECISION_GATE_V5.md for full policy.
     """
-    return _env_bool("ENABLE_LIVE_SIGNAL_SCORING", default=False)
+    return _env_bool("ENABLE_SIGNAL_SCORING_V5", default=False)
