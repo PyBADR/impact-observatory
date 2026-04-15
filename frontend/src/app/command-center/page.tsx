@@ -74,6 +74,9 @@ import { StatusBar } from "@/features/command-center/components/StatusBar";
 import { DataTrustPanel } from "@/features/command-center/components/DataTrustPanel";
 import { useDataTrust } from "@/features/command-center/lib/use-data-trust";
 
+// ── Dev Signal Preview (gated by NEXT_PUBLIC_ENABLE_DEV_SIGNAL_PREVIEW) ──
+import { DevSignalPreview } from "@/features/command-center/components/DevSignalPreview";
+
 // ── PDF Export ──
 
 const IO_API_KEY = process.env.NEXT_PUBLIC_IO_API_KEY || "io_master_key_2026";
@@ -1965,6 +1968,9 @@ function CommandCenterInner() {
       {scenario && (
         <DataTrustPanel meta={dataTrustMeta} locale={locale} />
       )}
+
+      {/* Dev Signal Preview — only visible when NEXT_PUBLIC_ENABLE_DEV_SIGNAL_PREVIEW=true */}
+      <DevSignalPreview locale={locale} />
 
       {/* Status Bar */}
       <StatusBar dataSource={dataSource} trust={trust} confidence={confidence} />
