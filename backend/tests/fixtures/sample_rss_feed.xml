@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>GCC Energy &amp; Market Intelligence</title>
+    <link>https://example.com/gcc-energy</link>
+    <description>Sample RSS fixture for Impact Observatory connector testing. NOT a real feed.</description>
+    <lastBuildDate>Thu, 10 Apr 2026 14:00:00 +0000</lastBuildDate>
+
+    <item>
+      <title>Brent crude rises 3% on Hormuz tension reports</title>
+      <link>https://example.com/energy/brent-hormuz-2026</link>
+      <description>Oil prices climbed after reports of increased military activity near the Strait of Hormuz. Analysts warn of potential supply disruption to 20% of global oil transit. Brent crude traded at $94.20/bbl, up from $91.50 at the previous close.</description>
+      <pubDate>Thu, 10 Apr 2026 08:30:00 +0000</pubDate>
+      <category>energy</category>
+      <category>maritime</category>
+    </item>
+
+    <item>
+      <title>CBUAE holds rates steady, flags regional liquidity tightening</title>
+      <link>https://example.com/finance/cbuae-rates-2026</link>
+      <description>The Central Bank of the UAE maintained its benchmark rate but warned of tightening liquidity across GCC interbank markets, citing elevated geopolitical uncertainty. The overnight interbank rate rose 12bps to 5.67%.</description>
+      <pubDate>Sat, 12 Apr 2026 14:00:00 +0000</pubDate>
+      <category>banking</category>
+      <category>fintech</category>
+    </item>
+
+    <item>
+      <title>Qatar LNG shipments rerouted via Cape of Good Hope</title>
+      <link>https://example.com/shipping/qatar-lng-reroute</link>
+      <description>Several Qatar LNG carriers diverted from the Red Sea route to the Cape of Good Hope corridor, adding 12-15 days transit time and $2-4M per voyage in additional costs. RasGas confirmed schedule delays on 4 cargoes.</description>
+      <pubDate>Tue, 08 Apr 2026 11:15:00 +0000</pubDate>
+      <category>energy</category>
+      <category>maritime</category>
+      <category>logistics</category>
+    </item>
+
+    <item>
+      <title>Saudi Aramco Q1 production exceeds OPEC+ quota by 200k bbl/d</title>
+      <link>https://example.com/energy/aramco-q1-overproduction</link>
+      <description>Saudi Aramco's Q1 2026 production averaged 10.4M bbl/d, exceeding the OPEC+ quota of 10.2M bbl/d. Market analysts attribute the overshoot to planned maintenance deferrals. No pricing impact observed yet.</description>
+      <pubDate>Mon, 07 Apr 2026 06:00:00 +0000</pubDate>
+      <category>energy</category>
+    </item>
+
+    <item>
+      <title>GCC insurance reserves adequate despite claims surge — S&amp;P</title>
+      <link>https://example.com/insurance/gcc-reserves-sp</link>
+      <description>S&amp;P Global Ratings affirmed that GCC insurance reserves remain adequate at 1.4x minimum solvency, despite a 28% increase in marine P&amp;I claims during Q1. IFRS 17 transition compliance at 73% across the region.</description>
+      <pubDate>Wed, 09 Apr 2026 09:45:00 +0000</pubDate>
+      <category>insurance</category>
+    </item>
+
+  </channel>
+</rss>
