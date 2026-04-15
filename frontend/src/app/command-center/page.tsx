@@ -77,6 +77,9 @@ import { useDataTrust } from "@/features/command-center/lib/use-data-trust";
 // ── Dev Signal Preview (gated by NEXT_PUBLIC_ENABLE_DEV_SIGNAL_PREVIEW) ──
 import { DevSignalPreview } from "@/features/command-center/components/DevSignalPreview";
 
+// ── Advisory Signal Context v5 (gated by NEXT_PUBLIC_ENABLE_SIGNAL_ADVISORY_V5) ──
+import { AdvisorySignalPanel } from "@/features/command-center/components/AdvisorySignalPanel";
+
 // ── PDF Export ──
 
 const IO_API_KEY = process.env.NEXT_PUBLIC_IO_API_KEY || "io_master_key_2026";
@@ -1968,6 +1971,9 @@ function CommandCenterInner() {
       {scenario && (
         <DataTrustPanel meta={dataTrustMeta} locale={locale} />
       )}
+
+      {/* Advisory Signal Context v5 — only visible when NEXT_PUBLIC_ENABLE_SIGNAL_ADVISORY_V5=true */}
+      <AdvisorySignalPanel locale={locale} />
 
       {/* Dev Signal Preview — only visible when NEXT_PUBLIC_ENABLE_DEV_SIGNAL_PREVIEW=true */}
       <DevSignalPreview locale={locale} />

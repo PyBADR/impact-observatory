@@ -23,6 +23,8 @@ class SignalAuditAction(str, Enum):
     SNAPSHOT_CREATED = "snapshot_created"    # Snapshot successfully created
     SOURCE_FAILED = "source_failed"         # Source lookup or fetch failed
     FALLBACK_USED = "fallback_used"         # Source disabled/unavailable, using fallback
+    ADVISORY_GENERATED = "advisory_generated"  # v5: advisory interpretation created
+    ADVISORY_FALLBACK = "advisory_fallback"    # v5: low-confidence/stale → fallback advisory
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

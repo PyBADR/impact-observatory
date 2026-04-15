@@ -48,6 +48,25 @@ def is_dev_signal_preview_enabled() -> bool:
     return _env_bool("ENABLE_DEV_SIGNAL_PREVIEW", default=False)
 
 
+def is_signal_advisory_v5_enabled() -> bool:
+    """Whether the v5 advisory signal interpretation layer is active.
+
+    Reads: ENABLE_SIGNAL_ADVISORY_V5 (default: false)
+
+    When true:
+      - Advisory signal context is generated alongside scenario outputs
+      - Advisory panel is visible in the command center
+      - Signals explain context but do NOT change any metric
+
+    When false (default, production):
+      - Advisory panel is hidden
+      - No advisory interpretations are generated
+
+    See docs/LIVE_DATA_V5_ADVISORY_SIGNAL_BRIEF.md for full design.
+    """
+    return _env_bool("ENABLE_SIGNAL_ADVISORY_V5", default=False)
+
+
 def is_live_signal_scoring_enabled() -> bool:
     """Whether live signals affect scoring (gated by governance decision gate).
 

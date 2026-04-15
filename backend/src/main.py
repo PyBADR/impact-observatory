@@ -42,6 +42,7 @@ from src.banking_intelligence.api.v1.decisions import router as v1_banking_decis
 from src.api.v1.institutional import router as v1_institutional_router
 from src.api.v1.provenance import router as v1_provenance_router
 from src.api.v1.signal_preview import router as v1_signal_preview_router
+from src.api.v1.signal_advisory import router as v1_signal_advisory_router
 
 # Data Foundation — Outcome/Evaluation/Replay API
 from src.data_foundation.api.outcomes import router as df_outcomes_router
@@ -315,6 +316,9 @@ api_v1.include_router(df_enforcement_router)
 
 # ── Signal Preview — dev/test-only, gated by ENABLE_DEV_SIGNAL_PREVIEW ──
 app.include_router(v1_signal_preview_router)
+
+# ── Signal Advisory v5 — advisory-only, gated by ENABLE_SIGNAL_ADVISORY_V5 ──
+app.include_router(v1_signal_advisory_router)
 
 # ── Auth endpoints — no API key required ─────────────────────────────────
 app.include_router(v1_auth_router, prefix="/api/v1")
