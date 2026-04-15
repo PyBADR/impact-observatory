@@ -117,8 +117,8 @@ export default function LandingPage() {
         style={{
           background: `
             linear-gradient(180deg, #F7F7F5 0%, #F0F0EC 40%, #EAEAE5 100%),
-            repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(0,0,0,0.018) 59px, rgba(0,0,0,0.018) 60px),
-            repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(0,0,0,0.018) 59px, rgba(0,0,0,0.018) 60px)
+            repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(0,0,0,0.024) 59px, rgba(0,0,0,0.024) 60px),
+            repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(0,0,0,0.024) 59px, rgba(0,0,0,0.024) 60px)
           `,
         }}
       />
@@ -168,7 +168,7 @@ export default function LandingPage() {
             <p
               className="
                 mt-2.5 text-[0.9375rem] sm:text-[1.0625rem]
-                leading-[1.7] text-tx-tertiary
+                leading-[1.7] text-tx-secondary
                 max-w-[460px]
               "
               dir="rtl"
@@ -177,7 +177,7 @@ export default function LandingPage() {
             </p>
 
             {/* ── Value line ── */}
-            <p className="mt-7 text-[0.875rem] sm:text-[0.9375rem] font-medium text-charcoal/75 tracking-[-0.005em] max-w-[460px]">
+            <p className="mt-7 text-[0.875rem] sm:text-[0.9375rem] font-semibold text-charcoal/70 tracking-[-0.005em] max-w-[460px]">
               Understand Impact. Control Transmission. Execute Decisions.
             </p>
 
@@ -233,7 +233,7 @@ export default function LandingPage() {
       </main>
 
       {/* ── Footer ── */}
-      <footer className="relative z-10 px-8 sm:px-12 pb-8 flex items-end justify-between">
+      <footer className="relative z-10 px-8 sm:px-12 pb-8 pt-6 border-t border-charcoal/5 flex items-end justify-between">
         <span className="text-[0.6875rem] text-tx-tertiary tracking-[0.02em]">
           GCC Decision Intelligence Platform
         </span>
