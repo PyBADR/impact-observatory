@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useCallback } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useAppStore } from "@/store/app-store";
 import { t, type Locale } from "@/i18n/dictionary";
-import { Globe, ChevronRight, Play } from "lucide-react";
-import Link from "next/link";
+import { Globe, ChevronRight, Play, CheckCircle } from "lucide-react";
 
 interface ObservatoryShellProps {
   children: React.ReactNode;
@@ -90,6 +89,28 @@ export function ObservatoryShell({
     router.push(`/command-center${qs ? `?${qs}` : ""}`);
   };
 
+  const handleStartDemo = useCallback(() => {
+    if (typeof window === "undefined") return;
+
+    // Set ?demo=true in the URL (preserving other params)
+    const url = new URL(window.location.href);
+    url.searchParams.set("demo", "true");
+    window.history.pushState({}, "", url.toString());
+
+    // Dispatch event for any listeners
+    window.dispatchEvent(new CustomEvent("impact-demo:start"));
+
+    // Navigate to command center with demo=true if not already there
+    if (pathname !== "/command-center") {
+      router.push("/command-center?demo=true");
+    } else {
+      // Already on command center — force React to pick up the new param
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("demo", "true");
+      router.push(`/command-center?${params.toString()}`);
+    }
+  }, [pathname, router, searchParams]);
+
   const handleLanguageToggle = () => {
     setLanguage(language === "en" ? "ar" : "en");
   };
@@ -122,13 +143,19 @@ export function ObservatoryShell({
 
             <div className="flex items-center gap-2">
               {/* Start Demo CTA */}
-              <Link
-                href="/command-center?demo=true"
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-io-primary text-white hover:bg-io-accent transition-colors shadow-sm"
+              <button
+                onClick={handleStartDemo}
+                className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg transition-colors shadow-sm ${
+                  isDemoMode
+                    ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                    : "bg-io-primary text-white hover:bg-io-accent"
+                }`}
               >
-                <Play size={12} />
-                {isArabic ? "عرض تجريبي" : "Start Demo"}
-              </Link>
+                {isDemoMode ? <CheckCircle size={12} /> : <Play size={12} />}
+                {isDemoMode
+                  ? (isArabic ? "العرض نشط" : "Demo Active")
+                  : (isArabic ? "عرض تجريبي" : "Start Demo")}
+              </button>
 
               {/* Language Toggle Button */}
               <button
