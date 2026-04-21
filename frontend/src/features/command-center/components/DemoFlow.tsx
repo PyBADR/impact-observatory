@@ -51,6 +51,7 @@ import {
   safeNum,
   safeStr,
 } from "../lib/format";
+import { mechanismLabelFor } from "@/lib/mechanism-labels";
 import type {
   CausalStep,
   SectorImpact,
@@ -199,7 +200,7 @@ function CascadeStep({
             className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded"
             style={{ backgroundColor: `${color}20`, color }}
           >
-            {(step.mechanism ?? "").replace(/_/g, " ")}
+            {mechanismLabelFor(step.mechanism)}
           </span>
         </div>
         <p className="text-[13px] text-slate-300 leading-relaxed">

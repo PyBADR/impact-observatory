@@ -529,19 +529,54 @@ function MacroIntelligenceView(
             {sectionLabel("Sector Impact", "تأثير القطاع")}
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {Object.entries(sectorRollups).map(([sector, data]: any) => (
-              <div key={sector} className="bg-slate-50 rounded-lg p-3">
-                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">
-                  {sector}
-                </p>
-                <p className="text-sm font-bold text-slate-900">
-                  {((data?.stress || 0) * 100).toFixed(0)}% stress
-                </p>
-                <p className="text-xs text-slate-600">
-                  Loss: ${((data?.loss_usd || 0) / 1e9).toFixed(1)}B
-                </p>
-              </div>
-            ))}
+            {Object.entries(sectorRollups).map(([sector, data]: any) => {
+              // Bilingual sector label map — never render raw lowercase keys to
+              // executives. Unknown keys fall back to sentence-cased humanisation.
+              const SECTOR_LABELS_INLINE: Record<string, { en: string; ar: string }> = {
+                banking: { en: "Banking", ar: "البنوك" },
+                insurance: { en: "Insurance", ar: "التأمين" },
+                fintech: { en: "Fintech", ar: "التقنية المالية" },
+                energy: { en: "Energy", ar: "الطاقة" },
+                maritime: { en: "Maritime", ar: "القطاع البحري" },
+                logistics: { en: "Logistics", ar: "اللوجستيات" },
+                infrastructure: { en: "Infrastructure", ar: "البنية التحتية" },
+                government: { en: "Government", ar: "الحكومة" },
+                healthcare: { en: "Healthcare", ar: "الرعاية الصحية" },
+                shipping: { en: "Shipping", ar: "الشحن" },
+                trade: { en: "Trade", ar: "التجارة" },
+                payments: { en: "Payments", ar: "المدفوعات" },
+                currency: { en: "Currency", ar: "العملة" },
+                utilities: { en: "Utilities", ar: "المرافق" },
+                transport: { en: "Transport", ar: "النقل" },
+                retail: { en: "Retail", ar: "التجزئة" },
+                defense: { en: "Defense", ar: "الدفاع" },
+                cyber: { en: "Technology", ar: "التكنولوجيا" },
+              };
+              const raw = String(sector || "").toLowerCase();
+              const labelPair = SECTOR_LABELS_INLINE[raw];
+              const sectorLabel = labelPair
+                ? (isAr ? labelPair.ar : labelPair.en)
+                : raw
+                    .split("_")
+                    .filter(Boolean)
+                    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+                    .join(" ");
+              const stressPct = ((data?.stress || 0) * 100).toFixed(0);
+              const lossB = ((data?.loss_usd || 0) / 1e9).toFixed(1);
+              return (
+                <div key={sector} className="bg-slate-50 rounded-lg p-3">
+                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">
+                    {sectorLabel}
+                  </p>
+                  <p className="text-sm font-bold text-slate-900">
+                    {isAr ? `${stressPct}٪ ضغط` : `${stressPct}% stress`}
+                  </p>
+                  <p className="text-xs text-slate-600">
+                    {isAr ? `الخسارة: $${lossB} مليار` : `Loss: $${lossB}B`}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -581,16 +616,36 @@ function MacroIntelligenceView(
             {sectionLabel("Decision Actions", "إجراءات القرار")}
           </h3>
           <div className="space-y-2">
-            {decisionActions.slice(0, 5).map((action: any, idx: number) => (
-              <div key={idx} className="bg-slate-50 p-3 rounded-lg">
-                <p className="text-sm font-semibold text-slate-900">
-                  {action.title || action.label || `Action ${idx + 1}`}
-                </p>
-                {action.rationale && (
-                  <p className="text-xs text-slate-600 mt-1">{action.rationale}</p>
-                )}
-              </div>
-            ))}
+            {decisionActions.slice(0, 5).map((action: any, idx: number) => {
+              // Prefer the backend-bound action copy bilingually. Only if BOTH
+              // localized strings are missing do we render a safe, scenario-
+              // aware fallback — never a bare "Action N" placeholder.
+              const titleAr: string | undefined =
+                action.action_ar || action.title_ar || action.label_ar;
+              const titleEn: string | undefined =
+                action.action || action.title || action.label;
+              const resolvedTitle = isAr
+                ? (titleAr || titleEn)
+                : (titleEn || titleAr);
+              const fallbackTitle = isAr
+                ? `إجراء موصى به — ${action.sector || "متعدد القطاعات"}`
+                : `Recommended action — ${action.sector || "cross-sector"}`;
+              const rationaleAr: string | undefined = action.rationale_ar;
+              const rationaleEn: string | undefined = action.rationale;
+              const resolvedRationale = isAr
+                ? (rationaleAr || rationaleEn)
+                : (rationaleEn || rationaleAr);
+              return (
+                <div key={idx} className="bg-slate-50 p-3 rounded-lg">
+                  <p className="text-sm font-semibold text-slate-900">
+                    {resolvedTitle || fallbackTitle}
+                  </p>
+                  {resolvedRationale && (
+                    <p className="text-xs text-slate-600 mt-1">{resolvedRationale}</p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

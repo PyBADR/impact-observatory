@@ -212,10 +212,23 @@ export function useCommandCenter(runId?: string | null) {
   }, [runId, runQuery.data, runQuery.isError, runQuery.error, storeStatus, loadRun, loadMock]);
 
   // ---- Manual mock/live toggle ----
-  const switchToMock = useCallback(() => {
+  // When templateId is supplied (scenario selection fallback), override the
+  // displayed scenario label so every downstream panel shows the correct name
+  // even though the underlying simulation data is the standard hormuz mock.
+  const switchToMock = useCallback((templateId?: string) => {
     fallbackFired.current = false;
     mockLoaded.current = true;
     loadMockIntoStore(loadMock);
+    if (templateId) {
+      const formattedLabel = templateId
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+      useCommandCenterStore.setState((s) => ({
+        scenario: s.scenario
+          ? { ...s.scenario, templateId, label: formattedLabel }
+          : s.scenario,
+      }));
+    }
   }, [loadMock]);
 
   const switchToLive = useCallback(
