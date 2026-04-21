@@ -72,15 +72,15 @@ export default function DemoPage() {
         </div>
 
         <h1 className="text-h1 md:text-display-sm text-slate-900 mb-4">
-          Impact Observatory
+          GCC Economic Macro
         </h1>
 
         <p className="text-body-lg text-slate-500 mb-2">
-          GCC Macro-Financial Intelligence
+          From Signal to Economic Decisions
         </p>
 
-        <p className="text-sm text-slate-400 mb-12">
-          Institutional Financial Intelligence & Decision Platform
+        <p className="text-sm text-slate-400 mb-12" dir="rtl">
+          من الإشارة إلى القرارات الاقتصادية
         </p>
 
         {/* Start button */}
