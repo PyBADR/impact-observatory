@@ -1,6 +1,7 @@
 "use client";
 
 import type { PropagationContract, InterventionSpec } from "@/types/banking-intelligence";
+import { mechanismLabelFor } from "@/lib/mechanism-labels";
 
 const MECHANISM_COLORS: Record<string, string> = {
   liquidity_channel: "bg-blue-900 text-blue-300",
@@ -45,7 +46,7 @@ function InterventionDetail({ spec }: { spec: InterventionSpec }) {
   );
 }
 
-function PropagationCard({ prop }: { prop: PropagationContract }) {
+function PropagationCard({ prop, lang }: { prop: PropagationContract; lang: "en" | "ar" }) {
   const mechClass = MECHANISM_COLORS[prop.transfer_mechanism] || "bg-zinc-800 text-zinc-300";
   const bestIntervention = prop.interventions?.find(
     (i) => i.readiness === "ready" || i.readiness === "requires_approval"
@@ -62,8 +63,8 @@ function PropagationCard({ prop }: { prop: PropagationContract }) {
       </div>
 
       <div className="flex items-center gap-2 flex-wrap mb-3">
-        <span className={`text-[10px] px-1.5 py-0.5 rounded capitalize ${mechClass}`}>
-          {prop.transfer_mechanism.replace(/_/g, " ")}
+        <span className={`text-[10px] px-1.5 py-0.5 rounded ${mechClass}`}>
+          {mechanismLabelFor(prop.transfer_mechanism, lang)}
         </span>
         {prop.breakable_point ? (
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-900 text-emerald-300">BREAKABLE</span>
@@ -122,7 +123,7 @@ export default function PropagationPathView({ propagations, lang }: { propagatio
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {sorted.map((p) => (
-          <PropagationCard key={p.propagation_id} prop={p} />
+          <PropagationCard key={p.propagation_id} prop={p} lang={lang} />
         ))}
       </div>
     </div>

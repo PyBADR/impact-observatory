@@ -12,6 +12,7 @@
 
 import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { Play, ArrowRight } from "lucide-react";
 
 // Lazy-load DemoOverlay to avoid blank flash while heavy JS loads
@@ -100,6 +101,19 @@ export default function DemoPage() {
             className="group-hover:translate-x-1 transition-transform"
           />
         </button>
+
+        {/* Secondary entry — skip the narrated overlay and go straight to the command center */}
+        <div className="mt-6">
+          <Link
+            href="/command-center"
+            className="text-xs text-slate-500 hover:text-slate-900 transition-colors inline-flex items-center gap-1.5"
+          >
+            <span>Enter Command Center</span>
+            <span className="text-slate-400">·</span>
+            <span dir="rtl">الدخول إلى مركز القيادة</span>
+            <ArrowRight size={12} />
+          </Link>
+        </div>
 
         {/* Keyboard hint */}
         <div className="mt-8 flex items-center justify-center gap-4">

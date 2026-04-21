@@ -15,6 +15,7 @@ import {
   GitBranch,
 } from "lucide-react";
 import { formatUSD, formatPct, classificationColor, stressToClassification, safeNum, safeStr } from "../lib/format";
+import { mechanismLabelFor } from "@/lib/mechanism-labels";
 import type { CausalStep, SectorImpact } from "@/types/observatory";
 
 // ── Types ─────────────────────────────────────────────────────────────
@@ -40,10 +41,13 @@ const MECHANISM_STYLES: Record<string, string> = {
 };
 
 function MechanismTag({ mechanism }: { mechanism: string }) {
-  const safeMechanism = safeStr(mechanism, "unknown");
+  const safeMechanism = safeStr(mechanism, "propagation");
   const style =
     MECHANISM_STYLES[safeMechanism] ?? "text-slate-400 bg-slate-400/10";
-  const label = safeMechanism.replace(/_/g, " ");
+  // Render the humanised business-safe label instead of the raw key
+  // (e.g. `price_transmission` → `Price Transmission`). Unknown keys
+  // still sentence-case safely via the fallback inside mechanismLabelFor.
+  const label = mechanismLabelFor(safeMechanism);
   return (
     <span
       className={`px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider rounded ${style}`}
