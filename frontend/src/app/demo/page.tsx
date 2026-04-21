@@ -29,8 +29,8 @@ function DemoLoader() {
     <div className="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center gap-5">
       {/* Pulsing IO mark */}
       <div className="animate-pulse">
-        <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center">
-          <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
+        <div className="w-14 h-14 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center">
+          <div className="w-7 h-7 rounded-lg bg-[#1B1B19] flex items-center justify-center">
             <span className="text-white font-bold text-[10px]">IO</span>
           </div>
         </div>
@@ -64,8 +64,8 @@ export default function DemoPage() {
       <div className="text-center max-w-xl">
         {/* Logo / badge */}
         <div className="mb-8 flex justify-center">
-          <div className="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+          <div className="w-16 h-16 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[#1B1B19] flex items-center justify-center">
               <span className="text-white font-bold text-sm">IO</span>
             </div>
           </div>
@@ -86,10 +86,15 @@ export default function DemoPage() {
         {/* Start button */}
         <button
           onClick={() => setDemoStarted(true)}
-          className="group inline-flex items-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold text-sm shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-200 transition-all"
+          className="group inline-flex items-center gap-3 px-8 py-4 bg-[#1B1B19] text-white rounded-xl font-semibold text-sm shadow-lg hover:bg-[#2C2C2A] hover:shadow-xl transition-all"
         >
           <Play size={18} />
-          Start Executive Demo
+          <span>
+            Start Executive Demo
+            <span className="block text-[11px] font-normal text-white/60 leading-none mt-0.5">
+              ابدأ العرض التنفيذي
+            </span>
+          </span>
           <ArrowRight
             size={16}
             className="group-hover:translate-x-1 transition-transform"

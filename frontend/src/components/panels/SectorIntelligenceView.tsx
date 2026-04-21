@@ -426,6 +426,42 @@ export function SectorIntelligenceView(props: SectorIntelligenceViewProps) {
 
   return (
     <div className={`space-y-4 ${isRTL ? "font-ar" : "font-sans"}`} dir={isRTL ? "rtl" : "ltr"}>
+
+      {/* ── Sector Intelligence Interpretation Context ── */}
+      <div className="bg-io-surface border border-io-border rounded-xl p-5 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-io-accent/10 flex items-center justify-center mt-0.5">
+            <span className="text-xs font-bold text-io-accent">§</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-sm font-bold text-io-primary mb-1">
+              {isRTL ? "استخبارات القطاعات" : "Sector Intelligence"}
+            </h2>
+            <p className="text-xs text-io-secondary leading-relaxed">
+              {isRTL
+                ? "يوضح هذا القسم كيفية انتقال الضغط الناجم عن الصدمة عبر القطاعات المالية الرئيسية. تعكس مؤشرات الضغط البنكي والتأميني تراكم المخاطر المالية قبل أن تتحول إلى خسائر فعلية. كل قطاع يحمل رافعة قرار محددة."
+                : "This section shows how shock-driven stress propagates across key financial sectors. Banking and insurance stress indicators reflect the build-up of financial risk before it materialises into losses. Each sector carries a specific decision lever."}
+            </p>
+            {props.systemRiskIndex != null && (
+              <div className="mt-3 flex items-center gap-3">
+                <span className="text-[10px] text-io-secondary uppercase tracking-wider">
+                  {isRTL ? "مؤشر مخاطر النظام" : "System Risk Index"}
+                </span>
+                <div className="flex-1 max-w-[120px] h-1.5 bg-io-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-io-status-elevated transition-all"
+                    style={{ width: `${Math.min(props.systemRiskIndex * 100, 100)}%` }}
+                  />
+                </div>
+                <span className="text-xs font-bold text-io-status-elevated tabular-nums">
+                  {Math.round(props.systemRiskIndex * 100)}%
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Tab Bar */}
       <div className="bg-io-surface border border-io-border rounded-xl p-1 shadow-sm flex flex-wrap gap-1">
         {tabs.map((tab) => (
@@ -459,7 +495,40 @@ export function SectorIntelligenceView(props: SectorIntelligenceViewProps) {
         )}
 
         {activeTab === "banking" && (
-          <>
+          <div className="space-y-5">
+            {/* Banking interpretation block */}
+            <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-orange-700 mb-2">
+                {isRTL ? "ما الذي يحدث" : "What is happening"}
+              </p>
+              <p className="text-sm text-orange-900 leading-relaxed mb-3">
+                {isRTL
+                  ? "يتعرض القطاع المصرفي لضغط على السيولة ناجم عن انكشاف تمويل التجارة وتصاعد نفقات التشغيل. ارتفاع معدلات الإقراض بين البنوك يعكس شُح التمويل قصير الأجل."
+                  : "The banking sector faces liquidity pressure from trade finance exposure and rising funding costs. Elevated interbank lending rates reflect short-term funding scarcity."}
+              </p>
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <p className="font-semibold text-orange-800 mb-0.5">
+                    {isRTL ? "لماذا يهم" : "Why it matters"}
+                  </p>
+                  <p className="text-orange-700">
+                    {isRTL
+                      ? "ضغط السيولة المصرفية ينتقل إلى الاقتصاد الحقيقي عبر تشديد الائتمان وتجميد خطوط التمويل."
+                      : "Banking liquidity stress transmits to the real economy through credit tightening and frozen financing lines."}
+                  </p>
+                </div>
+                <div>
+                  <p className="font-semibold text-orange-800 mb-0.5">
+                    {isRTL ? "رافعة القرار" : "Decision lever"}
+                  </p>
+                  <p className="text-orange-700">
+                    {isRTL
+                      ? "نافذة السيولة الطارئة للبنك المركزي تُوقف التوتر بين البنوك خلال 4–6 ساعات."
+                      : "Central bank emergency liquidity window arrests interbank stress within 4–6 hours."}
+                  </p>
+                </div>
+              </div>
+            </div>
             {props.bankingStress ? (
               <BankingDetailPanel data={props.bankingStress} lang={props.locale} />
             ) : (
@@ -467,11 +536,44 @@ export function SectorIntelligenceView(props: SectorIntelligenceViewProps) {
                 <p className="text-io-secondary">{t.no_banking}</p>
               </div>
             )}
-          </>
+          </div>
         )}
 
         {activeTab === "insurance" && (
-          <>
+          <div className="space-y-5">
+            {/* Insurance interpretation block */}
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-red-700 mb-2">
+                {isRTL ? "ما الذي يحدث" : "What is happening"}
+              </p>
+              <p className="text-sm text-red-900 leading-relaxed mb-3">
+                {isRTL
+                  ? "تتصاعد المطالبات البحرية وتدعيات البضائع بشكل حاد، في حين تقترب طاقة إعادة التأمين من حدود العقود. يُفضي تفعيل أقساط مخاطر الحرب إلى ثغرات في التغطية التأمينية."
+                  : "Marine hull and cargo claims are surging while reinsurance treaty capacity approaches its limits. War-risk premium activation is creating coverage gaps across GCC maritime policies."}
+              </p>
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <p className="font-semibold text-red-800 mb-0.5">
+                    {isRTL ? "لماذا يهم" : "Why it matters"}
+                  </p>
+                  <p className="text-red-700">
+                    {isRTL
+                      ? "ثغرات التغطية تُبطئ الإفراج عن البضائع وتُضاعف الخسائر في سلسلة الإمداد بمرور الوقت."
+                      : "Coverage gaps slow cargo release and compound supply chain losses over time."}
+                  </p>
+                </div>
+                <div>
+                  <p className="font-semibold text-red-800 mb-0.5">
+                    {isRTL ? "رافعة القرار" : "Decision lever"}
+                  </p>
+                  <p className="text-red-700">
+                    {isRTL
+                      ? "ضمان إعادة التأمين الحكومي يُثبّت الطاقة ويمنع مزيداً من ارتفاع الأقساط."
+                      : "Government-backed reinsurance backstop stabilises capacity and prevents further premium escalation."}
+                  </p>
+                </div>
+              </div>
+            </div>
             {props.insuranceStress ? (
               <InsuranceDetailPanel data={props.insuranceStress} lang={props.locale} />
             ) : (
@@ -479,7 +581,7 @@ export function SectorIntelligenceView(props: SectorIntelligenceViewProps) {
                 <p className="text-io-secondary">{t.no_insurance}</p>
               </div>
             )}
-          </>
+          </div>
         )}
 
         {activeTab === "fintech" && (

@@ -621,6 +621,7 @@ function CommandCenterInner() {
   const activeTab = searchParams.get("tab") || "dashboard";
   const activeMode = searchParams.get("mode") ?? undefined;
   const [isRunningScenario, setIsRunningScenario] = useState(false);
+  const [scenarioFallbackId, setScenarioFallbackId] = useState<string | null>(null);
 
   const {
     status,
@@ -669,6 +670,7 @@ function CommandCenterInner() {
   const handleScenarioSelect = useCallback(
     async (templateId: string) => {
       setIsRunningScenario(true);
+      setScenarioFallbackId(null);
       try {
         const result = await api.observatory.run({ template_id: templateId, severity: 0.75 });
         const newRunId = (result as any)?.data?.run_id ?? (result as any)?.run_id;
@@ -676,7 +678,9 @@ function CommandCenterInner() {
           router.push(`/command-center?run=${newRunId}`);
         }
       } catch {
+        // Backend unavailable — load demo data and surface the fallback to the user
         switchToMock();
+        setScenarioFallbackId(templateId);
       } finally {
         setIsRunningScenario(false);
       }
@@ -935,6 +939,23 @@ function CommandCenterInner() {
               Retry Live
             </button>
           )}
+        </div>
+      )}
+
+      {/* Scenario fallback banner (backend unreachable on scenario selection) */}
+      {scenarioFallbackId && (
+        <div className="flex items-center justify-between px-4 py-1.5 bg-amber-50 border-b border-amber-200 flex-shrink-0">
+          <p className="text-[11px] text-amber-700">
+            {locale === "ar"
+              ? `الخادم غير متاح — يتم عرض بيانات تجريبية للسيناريو: ${scenarioFallbackId.replace(/_/g, " ")}`
+              : `Live backend unavailable — showing demo data for: ${scenarioFallbackId.replace(/_/g, " ")}`}
+          </p>
+          <button
+            onClick={() => setScenarioFallbackId(null)}
+            className="ml-3 flex-shrink-0 text-[10px] text-amber-700 hover:text-amber-900 font-semibold transition-colors"
+          >
+            ✕
+          </button>
         </div>
       )}
 

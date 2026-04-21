@@ -2,8 +2,8 @@
 
 import { motion } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
-import { demoScenario } from "@/features/demo/data/demo-scenario";
 import type { Locale } from "@/i18n/dictionary";
+import { useTraceImpactScenario } from "../lib/trace-impact-context";
 
 const SEVERITY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   CRITICAL: { bg: "bg-io-status-severe/10", text: "text-io-status-severe", border: "border-io-status-severe/30" },
@@ -27,7 +27,7 @@ interface ShockStepProps {
  * Minimal:   severity badge · scenario name
  */
 export function ShockStep({ locale, totalLossUsd }: ShockStepProps) {
-  const s = demoScenario;
+  const s = useTraceImpactScenario();
   const isAr = locale === "ar";
   const sev = SEVERITY_COLORS[s.severityLabel.toUpperCase()] ?? SEVERITY_COLORS.ELEVATED;
 

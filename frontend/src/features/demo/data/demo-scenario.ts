@@ -311,7 +311,7 @@ const hormuzScenario: Scenario = {
     { country: "Bahrain", flag: "BH", sectorStress: 0.42, estimatedLoss: "$210M", impactLevel: "MODERATE", topSector: "Insurance", driver: "Regional reinsurance center — war-risk premium cascade", channel: "Reinsurance → coverage capacity" },
     { country: "Oman", flag: "OM", sectorStress: 0.58, estimatedLoss: "$310M", impactLevel: "MODERATE", topSector: "Port & Shipping", driver: "Salalah/Sohar ports on disrupted route corridor", channel: "Port throughput → trade flow" },
   ],
-  exposureFilter: ["SA", "AE", "KW", "QA"],
+  exposureFilter: ["SA", "AE", "KW", "QA", "BH", "OM"],
 
   bankingLayer: {
     stressIndex: 0.67,

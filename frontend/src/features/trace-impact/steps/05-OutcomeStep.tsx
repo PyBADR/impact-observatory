@@ -3,8 +3,8 @@
 import { motion } from "framer-motion";
 import { CheckCircle, TrendingDown, BarChart2, ArrowRight, ArrowLeft } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { demoScenario } from "@/features/demo/data/demo-scenario";
 import type { Locale } from "@/i18n/dictionary";
+import { useTraceImpactScenario } from "../lib/trace-impact-context";
 
 interface OutcomeStepProps {
   locale: Locale;
@@ -18,7 +18,7 @@ interface OutcomeStepProps {
  * Minimal:   one-line confirmation + compact pipeline footer
  */
 export function OutcomeStep({ locale }: OutcomeStepProps) {
-  const s = demoScenario;
+  const s = useTraceImpactScenario();
   const isAr = locale === "ar";
   const { outcome, trust } = s;
   const router = useRouter();

@@ -277,6 +277,57 @@ export const RegulatoryAuditView: React.FC<RegulatoryAuditViewProps> = ({
       className={`w-full space-y-4 ${isArabic ? "dir-rtl" : "dir-ltr"}`}
       dir={isArabic ? "rtl" : "ltr"}
     >
+      {/* ── Governance Trust Intro ── */}
+      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center mt-0.5">
+            <CheckCircle size={16} className="text-slate-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-sm font-bold text-slate-900 mb-1">
+              {locale === "ar" ? "طبقة الحوكمة والثقة" : "Governance & Trust Layer"}
+            </h2>
+            <p className="text-xs text-slate-600 leading-relaxed mb-3">
+              {locale === "ar"
+                ? "كل رقم في هذا التقييم قابل للتدقيق وقابل للتتبع. تُوضح هذه الطبقة المصادر التي أغذت كل إشارة، والافتراضات التي بُنيت عليها التقديرات، ودرجة الثقة المحسوبة لكل مخرج. الإجابة على السؤال: «لماذا يجب أن أثق بهذا النظام؟»"
+                : "Every number in this assessment is auditable and traceable. This layer shows which data sources fed each signal, what assumptions underlie the estimates, and the confidence score derived for each output. It directly answers: \"Why should I trust this system?\""}
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                <p className="font-semibold text-slate-700 mb-1">
+                  {locale === "ar" ? "المصادر → الإشارات" : "Sources → Signals"}
+                </p>
+                <p className="text-slate-500">
+                  {locale === "ar"
+                    ? "كل إشارة مرتبطة بمصدر بيانات موثق. الإشارات المحاكاة مُعلَّمة."
+                    : "Every signal is linked to a documented data source. Simulated signals are labelled."}
+                </p>
+              </div>
+              <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                <p className="font-semibold text-slate-700 mb-1">
+                  {locale === "ar" ? "الافتراضات → النتائج" : "Assumptions → Outcomes"}
+                </p>
+                <p className="text-slate-500">
+                  {locale === "ar"
+                    ? "الافتراضات ذات الحساسية العالية تؤثر مباشرة على نطاق التقديرات المالية."
+                    : "High-sensitivity assumptions directly affect the financial estimate range — shown as confidence bands."}
+                </p>
+              </div>
+              <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                <p className="font-semibold text-slate-700 mb-1">
+                  {locale === "ar" ? "درجة الثقة" : "Confidence Score"}
+                </p>
+                <p className="text-slate-500">
+                  {locale === "ar"
+                    ? "تعكس نسبة الثقة مستوى التوافق بين الإشارات المستقلة."
+                    : "The confidence score reflects the consensus level across independent signals, not data completeness."}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Header with Scenario Context */}
       <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
         <h1 className="text-lg font-bold text-slate-900 mb-2">{labels.title}</h1>

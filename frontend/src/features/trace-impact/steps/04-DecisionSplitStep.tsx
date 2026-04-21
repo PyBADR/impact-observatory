@@ -3,8 +3,8 @@
 import { motion } from "framer-motion";
 import { Clock } from "lucide-react";
 import { BeforeAfterDecisionPanel } from "../components/BeforeAfterDecisionPanel";
-import { demoScenario } from "@/features/demo/data/demo-scenario";
 import type { Locale } from "@/i18n/dictionary";
+import { useTraceImpactScenario } from "../lib/trace-impact-context";
 
 interface DecisionSplitStepProps {
   locale: Locale;
@@ -18,7 +18,7 @@ interface DecisionSplitStepProps {
  * Minimal:   single-line escalation caption
  */
 export function DecisionSplitStep({ locale }: DecisionSplitStepProps) {
-  const s = demoScenario;
+  const s = useTraceImpactScenario();
   const isAr = locale === "ar";
   const { decisionPressure } = s;
 
