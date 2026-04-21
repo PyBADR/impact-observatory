@@ -18,6 +18,7 @@ import React, { Suspense, useState, useCallback, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAppStore } from "@/store/app-store";
 import { useCommandCenter } from "@/features/command-center/lib/use-command-center";
+import type { BankingStress, InsuranceStress } from "@/types/observatory";
 import { api } from "@/lib/api";
 
 // ── Shell & Navigation ──
@@ -323,6 +324,83 @@ function MacroIntelligenceView(
 
   return (
     <div className="space-y-6 p-6 max-w-7xl mx-auto" dir={isAr ? "rtl" : "ltr"}>
+
+      {/* 0. Macro Interpretation — "So What?" briefing block */}
+      <div className="bg-[#1B1B19] text-white rounded-xl p-5 shadow-md">
+        <div className="flex items-start gap-3 mb-4">
+          <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
+            <span className="text-white font-bold text-[10px]">IO</span>
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-sm font-bold text-white">
+                {isAr ? "ملخص المخاطر الاقتصادية الكلية" : "Macro Risk Briefing"}
+              </h3>
+              {scenario?.severity != null && (
+                <span className={`text-[10px] px-2 py-0.5 rounded font-semibold ${
+                  scenario.severity >= 0.80 ? "bg-red-500/20 text-red-300"
+                  : scenario.severity >= 0.65 ? "bg-orange-500/20 text-orange-300"
+                  : scenario.severity >= 0.50 ? "bg-yellow-500/20 text-yellow-300"
+                  : "bg-green-500/20 text-green-300"
+                }`}>
+                  {scenario.severity >= 0.80 ? (isAr ? "حرج" : "SEVERE")
+                    : scenario.severity >= 0.65 ? (isAr ? "عالٍ" : "HIGH")
+                    : scenario.severity >= 0.50 ? (isAr ? "مرتفع" : "ELEVATED")
+                    : (isAr ? "محدود" : "GUARDED")}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-white/60 mt-0.5">
+              {scenario ? (isAr ? scenario.labelAr || scenario.label : scenario.label) : (isAr ? "جارٍ تحليل السيناريو..." : "Analysing scenario…")}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+            <p className="text-[10px] text-white/50 uppercase tracking-wider mb-1.5 font-semibold">
+              {isAr ? "ما الذي حدث؟" : "What triggered this?"}
+            </p>
+            <p className="text-xs text-white/80 leading-relaxed">
+              {isAr
+                ? `اضطراب في ${scenario?.domain || "القطاع المالي"} أطلق موجة ضغط منهجية عبر مؤسسات ${headline?.nodesImpacted ?? "—"} عقدة متصلة.`
+                : `A ${scenario?.domain || "financial"}-sector disruption triggered a systemic stress wave across ${headline?.nodesImpacted ?? "—"} connected institutional nodes.`}
+            </p>
+          </div>
+          <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+            <p className="text-[10px] text-white/50 uppercase tracking-wider mb-1.5 font-semibold">
+              {isAr ? "ماذا يعني ذلك للقرارات؟" : "What does it mean for decisions?"}
+            </p>
+            <p className="text-xs text-white/80 leading-relaxed">
+              {isAr
+                ? `الخسارة المتوقعة تبلغ $${headline ? (headline.totalLossUsd / 1e9).toFixed(1) : "—"}B خلال ${headline?.maxRecoveryDays ?? "—"} يوماً. نافذة القرار محدودة — التأخر يُضاعف الخسائر.`
+                : `Projected loss of $${headline ? (headline.totalLossUsd / 1e9).toFixed(1) : "—"}B over ${headline?.maxRecoveryDays ?? "—"} days. Decision window is narrow — delay amplifies losses.`}
+            </p>
+          </div>
+          <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+            <p className="text-[10px] text-white/50 uppercase tracking-wider mb-1.5 font-semibold">
+              {isAr ? "لماذا مستوى الخطر مرتفع؟" : "Why is the regime ELEVATED?"}
+            </p>
+            <p className="text-xs text-white/80 leading-relaxed">
+              {isAr
+                ? `${headline?.criticalCount ?? "—"} عقدة حرجة و${headline?.elevatedCount ?? "—"} عقدة مرتفعة الخطر. عمق الانتشار ${headline?.propagationDepth ?? "—"} طبقة — فوق عتبة التدخل.`
+                : `${headline?.criticalCount ?? "—"} critical nodes, ${headline?.elevatedCount ?? "—"} elevated. Propagation depth ${headline?.propagationDepth ?? "—"} layers — above intervention threshold.`}
+            </p>
+          </div>
+        </div>
+
+        {narrativeEn && !isAr && (
+          <p className="text-xs text-white/60 leading-relaxed border-t border-white/10 pt-3">
+            {narrativeEn.slice(0, 280)}{narrativeEn.length > 280 ? "…" : ""}
+          </p>
+        )}
+        {narrativeAr && isAr && (
+          <p className="text-xs text-white/60 leading-relaxed border-t border-white/10 pt-3">
+            {narrativeAr.slice(0, 280)}{narrativeAr.length > 280 ? "…" : ""}
+          </p>
+        )}
+      </div>
+
       {/* 1. Macro Shock */}
       {headline && (
         <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
@@ -678,8 +756,9 @@ function CommandCenterInner() {
           router.push(`/command-center?run=${newRunId}`);
         }
       } catch {
-        // Backend unavailable — load demo data and surface the fallback to the user
-        switchToMock();
+        // Backend unavailable — load mock data but override the scenario label
+        // so all downstream panels show the correct selected scenario name.
+        switchToMock(templateId);
         setScenarioFallbackId(templateId);
       } finally {
         setIsRunningScenario(false);
@@ -742,6 +821,46 @@ function CommandCenterInner() {
     return Object.keys(exposures).length > 0 ? exposures : undefined;
   }, [impacts]);
 
+  // ── Derive BankingStress from impacts (fills sector detail panel) ──
+  const bankingStress = useMemo((): BankingStress | undefined => {
+    const b = impacts?.find((i) => i.sector === "banking");
+    if (!b) return undefined;
+    return {
+      run_id: runId ?? "mock",
+      total_exposure_usd: b.lossUsd,
+      liquidity_stress: b.lcr ? Math.max(0, 1 - b.lcr) : 0.40,
+      credit_stress: 0.55,
+      fx_stress: 0.28,
+      interbank_contagion: 0.62,
+      time_to_liquidity_breach_hours: 48,
+      capital_adequacy_impact_pct: b.cet1Ratio ? Math.max(0, (0.20 - b.cet1Ratio) * 100) : 6,
+      aggregate_stress: b.stressLevel,
+      classification: b.stressTier as any,
+      affected_institutions: [],
+    };
+  }, [impacts, runId]);
+
+  // ── Derive InsuranceStress from impacts (fills sector detail panel) ──
+  const insuranceStress = useMemo((): InsuranceStress | undefined => {
+    const ins = impacts?.find((i) => i.sector === "insurance");
+    if (!ins) return undefined;
+    return {
+      run_id: runId ?? "mock",
+      portfolio_exposure_usd: ins.lossUsd,
+      claims_surge_multiplier: 2.4,
+      severity_index: ins.stressLevel,
+      loss_ratio: 0.78,
+      combined_ratio: ins.combinedRatio || 1.05,
+      underwriting_status: "STRESSED",
+      time_to_insolvency_hours: 96,
+      reinsurance_trigger: true,
+      ifrs17_risk_adjustment_pct: 0.12,
+      aggregate_stress: ins.stressLevel,
+      classification: ins.stressTier as any,
+      affected_lines: [],
+    };
+  }, [impacts, runId]);
+
   // ── Render active tab content ──
   const renderTabContent = () => {
     switch (activeTab) {
@@ -794,9 +913,85 @@ function CommandCenterInner() {
           />
         );
 
-      case "map":
+      case "map": {
+        const isAr = locale === "ar";
         return (
-          <div className="p-6 max-w-7xl mx-auto">
+          <div className="p-6 max-w-7xl mx-auto space-y-5">
+            {/* GCC Exposure Interpretation Block */}
+            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-[#1B1B19] flex items-center justify-center flex-shrink-0">
+                  <span className="text-white font-bold text-[10px]">GCC</span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    {isAr ? "لماذا تتعرض دول مجلس التعاون الخليجي كلها لهذا؟" : "Why All 6 GCC Countries Are Exposed"}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {isAr
+                      ? "ترابط منهجي — المخاطر تنتقل عبر القنوات المالية والتجارية والطاقة"
+                      : "Systemic interconnection — risk propagates across financial, trade, and energy channels"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                <div className="bg-orange-50 border border-orange-100 rounded-lg p-3">
+                  <p className="text-[10px] font-bold text-orange-700 uppercase tracking-wider mb-1">
+                    {isAr ? "قناة الطاقة" : "Energy Channel"}
+                  </p>
+                  <p className="text-xs text-slate-700">
+                    {isAr
+                      ? "الهيدروكربونات تشكّل 50-70٪ من إيرادات الدولة. اضطراب التصدير يضغط مباشرة على الميزانيات السيادية."
+                      : "Hydrocarbons represent 50–70% of state revenue. Export disruption directly pressures sovereign budgets."}
+                  </p>
+                </div>
+                <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                  <p className="text-[10px] font-bold text-blue-700 uppercase tracking-wider mb-1">
+                    {isAr ? "قناة التجارة" : "Trade Channel"}
+                  </p>
+                  <p className="text-xs text-slate-700">
+                    {isAr
+                      ? "60٪+ من واردات السلع يمر عبر ممرات بحرية مشتركة. إغلاق أي مسار رئيسي يؤثر على سلاسل التوريد الإقليمية."
+                      : "60%+ of goods imports transit shared maritime corridors. Closure of any major route disrupts regional supply chains."}
+                  </p>
+                </div>
+                <div className="bg-purple-50 border border-purple-100 rounded-lg p-3">
+                  <p className="text-[10px] font-bold text-purple-700 uppercase tracking-wider mb-1">
+                    {isAr ? "قناة التمويل" : "Financial Channel"}
+                  </p>
+                  <p className="text-xs text-slate-700">
+                    {isAr
+                      ? "البنوك الإقليمية المترابطة والتعرض المشترك لصناديق الثروة السيادية ينشر الضغط عبر الحدود."
+                      : "Interconnected regional banks and shared sovereign wealth fund exposure spread stress across borders."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+                {[
+                  { flag: "🇸🇦", code: "SA", name: isAr ? "السعودية" : "Saudi Arabia", role: isAr ? "مصدر الصدمة الأساسي" : "Primary shock origin", color: "border-red-300" },
+                  { flag: "🇦🇪", code: "AE", name: isAr ? "الإمارات" : "UAE", role: isAr ? "مركز تمويلي مرتبط" : "Linked financial hub", color: "border-orange-300" },
+                  { flag: "🇰🇼", code: "KW", name: isAr ? "الكويت" : "Kuwait", role: isAr ? "ضغط على الميزانية النفطية" : "Oil budget pressure", color: "border-amber-300" },
+                  { flag: "🇶🇦", code: "QA", name: isAr ? "قطر" : "Qatar", role: isAr ? "خسائر تصدير الغاز" : "LNG export losses", color: "border-yellow-300" },
+                  { flag: "🇧🇭", code: "BH", name: isAr ? "البحرين" : "Bahrain", role: isAr ? "تدفق مخاطر إعادة التأمين" : "Reinsurance risk spill", color: "border-blue-300" },
+                  { flag: "🇴🇲", code: "OM", name: isAr ? "عُمان" : "Oman", role: isAr ? "اضطراب مينائي وتجاري" : "Port & trade disruption", color: "border-green-300" },
+                ].map((c) => (
+                  <div key={c.code} className={`bg-slate-50 border ${c.color} rounded-lg p-2 text-center`}>
+                    <span className="text-lg block mb-0.5">{c.flag}</span>
+                    <p className="text-[10px] font-bold text-slate-800">{c.name}</p>
+                    <p className="text-[9px] text-slate-500 leading-tight mt-0.5">{c.role}</p>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-[10px] text-slate-400 mt-3 border-t border-slate-100 pt-2">
+                {isAr
+                  ? "⚠ المخاطر العابرة للحدود: الصدمة الأولية تضاعف من خلال شبكات التعرض السيادية البينية"
+                  : "⚠ Cross-border contagion: primary shock amplified through sovereign inter-exposure networks"}
+              </p>
+            </div>
+
             <GCCImpactMap
               countryExposures={countryExposures}
               sectorRollups={
@@ -809,6 +1004,7 @@ function CommandCenterInner() {
             />
           </div>
         );
+      }
 
       case "sectors":
         return (
@@ -823,6 +1019,8 @@ function CommandCenterInner() {
             macroSignals={macroContext?.macro_signals}
             causalChain={causalChain}
             decisionActions={decisionActions as any}
+            bankingStress={bankingStress}
+            insuranceStress={insuranceStress}
           />
         );
 
