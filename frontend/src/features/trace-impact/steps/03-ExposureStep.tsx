@@ -3,9 +3,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
-import { demoScenario } from "@/features/demo/data/demo-scenario";
 import type { SectorImpact } from "@/features/demo/data/demo-scenario";
 import type { Locale } from "@/i18n/dictionary";
+import { useTraceImpactScenario } from "../lib/trace-impact-context";
 
 // Risk rank for sorting (higher first)
 const RISK_RANK: Record<SectorImpact["riskLevel"], number> = {
@@ -73,7 +73,7 @@ interface ExposureStepProps {
  * Minimal:   "Show all" expansion + country flag strip
  */
 export function ExposureStep({ locale }: ExposureStepProps) {
-  const s = demoScenario;
+  const s = useTraceImpactScenario();
   const isAr = locale === "ar";
 
   // Rank ALL sectors by risk; take top-N for initial view
@@ -195,6 +195,75 @@ export function ExposureStep({ locale }: ExposureStepProps) {
           })}
         </div>
       </div>
+
+      {/* COUNTRY EXPOSURE INTERPRETATION — all 6 GCC countries */}
+      {visibleSectors >= topSectors.length && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+          className="mb-6"
+        >
+          <div className={`flex items-baseline justify-between mb-3 ${isAr ? "flex-row-reverse" : ""}`}>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-io-tertiary">
+              {isAr ? "التعرض الإقليمي — دول مجلس التعاون" : "Regional Exposure — GCC Countries"}
+            </h3>
+          </div>
+          <div className="space-y-2">
+            {s.countries.map((c) => {
+              const isCritical = c.impactLevel === "CRITICAL";
+              const isElevated = c.impactLevel === "ELEVATED";
+              const borderColor = isCritical
+                ? "border-io-status-severe/40"
+                : isElevated
+                ? "border-io-status-elevated/35"
+                : "border-io-border";
+              const lossColor = isCritical
+                ? "text-io-status-severe"
+                : isElevated
+                ? "text-io-status-elevated"
+                : "text-io-primary";
+              return (
+                <div
+                  key={c.country}
+                  className={`rounded-card border ${borderColor} bg-io-surface px-4 py-3`}
+                >
+                  <div className={`flex items-start justify-between gap-3 ${isAr ? "flex-row-reverse" : ""}`}>
+                    <div className={`flex items-center gap-2 ${isAr ? "flex-row-reverse" : ""}`}>
+                      <span className="text-base">{getFlag(c.flag)}</span>
+                      <div>
+                        <p className="text-sm font-semibold text-io-primary leading-none">
+                          {c.country}
+                        </p>
+                        <p className="text-[10px] text-io-tertiary mt-0.5">{c.topSector}</p>
+                      </div>
+                    </div>
+                    <p className={`text-sm font-bold tabular-nums ${lossColor} flex-shrink-0`}>
+                      {c.estimatedLoss}
+                    </p>
+                  </div>
+                  <p className="text-[11px] text-io-secondary mt-2 leading-snug">
+                    {c.driver}
+                  </p>
+                  <p className="text-[10px] text-io-tertiary mt-1">
+                    {isAr ? "مسار:" : "Channel:"}{" "}
+                    <span className="font-medium text-io-secondary">{c.channel}</span>
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Cross-border risk footer */}
+          <div className={`mt-3 px-4 py-3 rounded-card bg-io-muted border border-io-border flex items-start gap-2.5 ${isAr ? "flex-row-reverse" : ""}`}>
+            <span className="text-[11px] text-io-secondary leading-snug">
+              {isAr
+                ? "ينتقل الضغط عبر صادرات السلع والتسويات المالية والشبكات الإقليمية. تتأثر جميع دول المجلس الست في آنٍ واحد."
+                : "Stress transmits through commodity exports, financial settlements, and regional supply networks. All six GCC economies face simultaneous pressure."}
+            </span>
+          </div>
+        </motion.div>
+      )}
 
       {/* Expansion toggle */}
       {remainingSectors.length > 0 && visibleSectors >= topSectors.length && (

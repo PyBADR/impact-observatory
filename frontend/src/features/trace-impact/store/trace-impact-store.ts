@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 
-export const TOTAL_STEPS = 5;
+export const TOTAL_STEPS = 6;
 
 interface TraceImpactState {
   stepIndex: number;

@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { demoScenario } from "@/features/demo/data/demo-scenario";
 import type { Locale } from "@/i18n/dictionary";
+import { useTraceImpactScenario } from "../lib/trace-impact-context";
 
 const NODE_COLORS: Record<string, { bg: string; ring: string; dot: string }> = {
   oil:        { bg: "bg-amber-50",   ring: "ring-amber-300",   dot: "bg-amber-500" },
@@ -27,7 +27,7 @@ interface PropagationStepProps {
  * Minimal:   post-cascade summary line
  */
 export function PropagationStep({ locale }: PropagationStepProps) {
-  const s = demoScenario;
+  const s = useTraceImpactScenario();
   const isAr = locale === "ar";
   const points = s.transmission.points;
   const cascadeLabels = s.transmission.cascadeLabels;

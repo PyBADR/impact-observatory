@@ -6,6 +6,14 @@ export interface StepCopy {
 
 export const STEP_COPY: StepCopy[] = [
   {
+    label: { en: "Macro Signal", ar: "الإشارة الكلية" },
+    title: { en: "GCC Macro-Financial Intelligence", ar: "الاستخبارات الاقتصادية الكلية لمنطقة الخليج" },
+    subtitle: {
+      en: "Regional macro conditions are shifting. Energy-driven stress has elevated systemic risk across six GCC economies.",
+      ar: "تتحول الظروف الاقتصادية الكلية الإقليمية. أفضى الضغط الناجم عن قطاع الطاقة إلى ارتفاع المخاطر المنهجية عبر اقتصادات دول الخليج الست.",
+    },
+  },
+  {
     label: { en: "Shock Event", ar: "حدث الصدمة" },
     title: { en: "Strait of Hormuz Disruption", ar: "اضطراب مضيق هرمز" },
     subtitle: {
@@ -25,7 +33,7 @@ export const STEP_COPY: StepCopy[] = [
     label: { en: "GCC Exposure", ar: "تعرض دول المجلس" },
     title: { en: "Who Bears the Impact", ar: "من يتحمل الأثر" },
     subtitle: {
-      en: "Six Gulf economies face simultaneous pressure across energy, banking, and trade sectors.",
+      en: "All six Gulf economies face simultaneous pressure across energy, banking, and trade sectors.",
       ar: "ست اقتصادات خليجية تواجه ضغطاً متزامناً عبر قطاعات الطاقة والمصارف والتجارة.",
     },
   },

@@ -702,6 +702,58 @@ export function DecisionRoomV2({
       )}
 
       {/* ═══════════════════════════════════════════════════════════════
+           DECISION TRIGGER CONTEXT — Why action is required NOW
+           Links upstream stress signals → sector impact → decision need
+           ═══════════════════════════════════════════════════════════════ */}
+      {topDecisions.length > 0 && (
+        <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-amber-400 mb-2">
+            {isAr ? "لماذا الإجراء مطلوب الآن" : "Why Action is Required Now"}
+          </p>
+          <p className="text-xs text-io-secondary leading-relaxed mb-3">
+            {isAr
+              ? `الضغط المنهجي عند ${(averageStress * 100).toFixed(0)}٪ يسير عبر ${propagationDepth} قناة انتقال. بدون تدخل، تتراكم الخسائر لتتجاوز تقديرات الخط الأساسي.`
+              : `System stress at ${(averageStress * 100).toFixed(0)}% is propagating across ${propagationDepth} transmission channels. Without intervention, losses compound beyond base-case projections.`}
+          </p>
+          {/* Trigger chain: top macro signal → sector → decision */}
+          <div className="space-y-1.5">
+            {topDecisions.slice(0, 3).map((action, i) => {
+              // urgency is 0–1 in DecisionActionV2; treat ≥0.7 as Immediate, ≥0.4 as 24h
+              const urgencyScore = (action.urgency ?? 0);
+              const urgencyLabel = urgencyScore >= 0.7
+                ? (isAr ? "فوري" : "Immediate")
+                : urgencyScore >= 0.4
+                  ? (isAr ? "خلال 24 ساعة" : "Within 24h")
+                  : (isAr ? "خلال 72 ساعة" : "Within 72h");
+              const urgencyColor = urgencyScore >= 0.7
+                ? "text-red-400"
+                : urgencyScore >= 0.4
+                  ? "text-amber-400"
+                  : "text-io-secondary";
+              return (
+                <div key={action.id} className={`flex items-start gap-2 text-[11px] ${isAr ? "flex-row-reverse text-right" : ""}`}>
+                  <span className={`font-bold flex-shrink-0 mt-0.5 ${urgencyColor}`}>{urgencyLabel}</span>
+                  <span className="text-io-secondary">·</span>
+                  <span className="text-io-secondary font-medium">{action.sector}</span>
+                  <span className="text-io-secondary">→</span>
+                  <span className="text-io-primary font-medium flex-1 leading-tight">
+                    {isAr ? action.action_ar : action.action}
+                  </span>
+                  {action.loss_avoided_usd > 0 && (
+                    <span className="text-emerald-400 font-bold flex-shrink-0 tabular-nums ml-1">
+                      +{action.loss_avoided_usd >= 1e9
+                        ? `$${(action.loss_avoided_usd / 1e9).toFixed(1)}B`
+                        : `$${(action.loss_avoided_usd / 1e6).toFixed(0)}M`}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════
            DECISION CARDS — Numeric WHY + Trust Breakdown (STEPS 2, 6)
            ═══════════════════════════════════════════════════════════════ */}
       {topDecisions.length > 0 && (
