@@ -18,26 +18,24 @@ interface ObservatoryShellProps {
 }
 
 const TABS = [
-  { id: "dashboard", labelEn: "Briefing", labelAr: "الإحاطة التنفيذية" },
-  { id: "macro", labelEn: "Macro Outlook", labelAr: "المشهد الكلي" },
-  { id: "propagation", labelEn: "Transmission", labelAr: "مسار الانتقال" },
+  { id: "dashboard", labelEn: "Executive Brief", labelAr: "الموجز التنفيذي" },
+  { id: "macro", labelEn: "Macro Overview", labelAr: "النظرة الكلية" },
+  { id: "propagation", labelEn: "Transmission Path", labelAr: "مسار الانتقال" },
   { id: "scenarios", labelEn: "Scenarios", labelAr: "السيناريوهات" },
-  { id: "map", labelEn: "GCC Exposure", labelAr: "خريطة التعرض" },
-  { id: "sectors", labelEn: "Sector Risk", labelAr: "مخاطر القطاعات" },
-  { id: "decisions", labelEn: "Decision Room", labelAr: "غرفة القرار" },
-  { id: "audit", labelEn: "Governance", labelAr: "الحوكمة والرقابة" },
+  { id: "map", labelEn: "Exposure Map", labelAr: "خريطة التعرض" },
+  { id: "sectors", labelEn: "Sector Impact", labelAr: "الأثر القطاعي" },
+  { id: "decisions", labelEn: "Decision Path", labelAr: "مسار القرار" },
+  { id: "audit", labelEn: "Outcome Review", labelAr: "مراجعة النتائج" },
 ];
 
+// Customer-facing journey pills — aligned to the Signal → Outcome narrative.
 const FLOW_STAGES = [
-  "Macro",
-  "Banking",
-  "Insurance",
-  "Sectors",
+  "Signal",
+  "Impact",
   "Transmission",
   "Exposure",
   "Decision",
-  "Counterfactual",
-  "Governance",
+  "Outcome",
 ];
 
 export function ObservatoryShell({
@@ -105,7 +103,7 @@ export function ObservatoryShell({
                   {isArabic ? "مرصد الأثر" : "Impact Observatory"}
                 </h1>
                 <p className="text-xs text-io-secondary">
-                  {isArabic ? "الذكاء المالي الكلي — دول مجلس التعاون" : "GCC Macro-Financial Intelligence"}
+                  {isArabic ? "الاستخبارات الاقتصادية الكلية لدول الخليج" : "Macroeconomic Intelligence for the GCC"}
                 </p>
               </div>
             </div>
@@ -134,11 +132,9 @@ export function ObservatoryShell({
             </div>
           </div>
 
-          {/* Subtitle */}
-          <p className="text-xs text-io-secondary mb-3">
-            {isArabic
-              ? "منصة الاستخبارات المالية والقرار المؤسسي لدول مجلس التعاون"
-              : "Institutional Financial Intelligence & Decision Platform"}
+          {/* Positioning line */}
+          <p className="text-xs text-io-secondary mb-3 tracking-wide">
+            {isArabic ? "من الإشارة إلى القرار" : "From Signal to Decision"}
           </p>
 
           {/* Flow Stages */}

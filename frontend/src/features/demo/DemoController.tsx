@@ -26,7 +26,7 @@ const STEP_LABELS = [
   "Banking",
   "Insurance",
   "Sector Impact",
-  "Decision Room",
+  "Decision Path",
   "Outcome",
   "Trust Layer",
 ];
@@ -90,7 +90,7 @@ export function DemoController({
               Impact Observatory
             </p>
             <p className="text-[9px] text-slate-400 font-medium">
-              GCC Macro-Financial Intelligence
+              Macroeconomic Intelligence for the GCC
             </p>
           </div>
         </div>

@@ -149,7 +149,7 @@ function DashboardView(
         <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-bold text-slate-900">
-              {isAr ? "الإحاطة التنفيذية" : "Executive Briefing"}
+              {isAr ? "الموجز التنفيذي" : "Executive Brief"}
             </h2>
             <span className="text-xs text-io-secondary">
               {isAr ? scenario.labelAr || scenario.label : scenario.label}

@@ -72,16 +72,20 @@ export default function DemoPage() {
           </div>
         </div>
 
-        <h1 className="text-h1 md:text-display-sm text-slate-900 mb-4">
-          GCC Economic Macro
+        <h1 className="text-h1 md:text-display-sm text-slate-900 mb-3">
+          Impact Observatory
         </h1>
 
         <p className="text-body-lg text-slate-500 mb-2">
-          From Signal to Economic Decisions
+          Macroeconomic Intelligence for the GCC
+        </p>
+
+        <p className="text-sm text-slate-500 mb-1 tracking-wide">
+          From Signal to Decision
         </p>
 
         <p className="text-sm text-slate-400 mb-12" dir="rtl">
-          من الإشارة إلى القرارات الاقتصادية
+          من الإشارة إلى القرار
         </p>
 
         {/* Start button */}
@@ -108,9 +112,9 @@ export default function DemoPage() {
             href="/command-center"
             className="text-xs text-slate-500 hover:text-slate-900 transition-colors inline-flex items-center gap-1.5"
           >
-            <span>Enter Command Center</span>
+            <span>Enter Impact Observatory</span>
             <span className="text-slate-400">·</span>
-            <span dir="rtl">الدخول إلى مركز القيادة</span>
+            <span dir="rtl">الدخول إلى مرصد الأثر</span>
             <ArrowRight size={12} />
           </Link>
         </div>

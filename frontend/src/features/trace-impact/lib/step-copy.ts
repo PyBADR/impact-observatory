@@ -6,15 +6,15 @@ export interface StepCopy {
 
 export const STEP_COPY: StepCopy[] = [
   {
-    label: { en: "Macro Signal", ar: "الإشارة الكلية" },
-    title: { en: "GCC Macro-Financial Intelligence", ar: "الاستخبارات الاقتصادية الكلية لمنطقة الخليج" },
+    label: { en: "Signal", ar: "الإشارة" },
+    title: { en: "Macroeconomic Intelligence for the GCC", ar: "الاستخبارات الاقتصادية الكلية لدول الخليج" },
     subtitle: {
       en: "Regional macro conditions are shifting. Energy-driven stress has elevated systemic risk across six GCC economies.",
       ar: "تتحول الظروف الاقتصادية الكلية الإقليمية. أفضى الضغط الناجم عن قطاع الطاقة إلى ارتفاع المخاطر المنهجية عبر اقتصادات دول الخليج الست.",
     },
   },
   {
-    label: { en: "Shock Event", ar: "حدث الصدمة" },
+    label: { en: "Impact", ar: "الأثر" },
     title: { en: "Strait of Hormuz Disruption", ar: "اضطراب مضيق هرمز" },
     subtitle: {
       en: "A maritime disruption cuts 60% of Gulf oil transit, triggering systemic stress across six GCC economies.",
@@ -30,7 +30,7 @@ export const STEP_COPY: StepCopy[] = [
     },
   },
   {
-    label: { en: "GCC Exposure", ar: "تعرض دول المجلس" },
+    label: { en: "Exposure", ar: "التعرض" },
     title: { en: "Who Bears the Impact", ar: "من يتحمل الأثر" },
     subtitle: {
       en: "All six Gulf economies face simultaneous pressure across energy, banking, and trade sectors.",
@@ -38,7 +38,7 @@ export const STEP_COPY: StepCopy[] = [
     },
   },
   {
-    label: { en: "Decision Point", ar: "نقطة القرار" },
+    label: { en: "Decision", ar: "القرار" },
     title: { en: "Act or Absorb", ar: "التدخل أو الاستيعاب" },
     subtitle: {
       en: "A 71-hour decision window separates a $4.3B outcome from a $4.9B loss trajectory.",

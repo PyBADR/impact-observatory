@@ -172,7 +172,7 @@ export function TrustStepV3(_props: DemoStepProps) {
       {/* Footer */}
       <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-xl p-4 text-white">
         <p className="text-sm font-semibold mb-3">
-          This is not a dashboard. This is Institutional Financial Intelligence.
+          This is not a dashboard. This is institutional macroeconomic intelligence.
         </p>
         <div className="flex items-center gap-2 mb-3 text-[9px] text-slate-300">
           <span>Assessment flow:</span>

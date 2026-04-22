@@ -25,8 +25,8 @@ const dict: Record<string, { en: string; ar: string }> = {
   "app.retry":              { en: "Retry",                  ar: "إعادة المحاولة" },
   "app.loading":            { en: "Loading intelligence pipeline…", ar: "جاري تحميل محرك الذكاء…" },
 
-  // ── Decision Room ──
-  "dr.title":               { en: "Decision Room",          ar: "غرفة القرار" },
+  // ── Decision Path ──
+  "dr.title":               { en: "Decision Path",          ar: "مسار القرار" },
   "dr.top_decisions":       { en: "Top Decisions",          ar: "أهم القرارات" },
   "dr.cascade_view":        { en: "Cascade View",           ar: "مسار الانتشار" },
   "dr.map_view":            { en: "Map View",               ar: "خريطة الأثر" },
@@ -115,15 +115,15 @@ const dict: Record<string, { en: string; ar: string }> = {
   "prop.entity":            { en: "Entity",                 ar: "الكيان" },
   "prop.impact":            { en: "Impact",                 ar: "الأثر" },
 
-  // ── Navigation / Tabs (Sarah-aligned order) ──
-  "nav.briefing":           { en: "Briefing",               ar: "الإحاطة التنفيذية" },
-  "nav.macro":              { en: "Macro Outlook",           ar: "المشهد الكلي" },
-  "nav.transmission":       { en: "Transmission",            ar: "مسار الانتقال" },
+  // ── Navigation / Tabs (institutional naming system) ──
+  "nav.briefing":           { en: "Executive Brief",         ar: "الموجز التنفيذي" },
+  "nav.macro":              { en: "Macro Overview",          ar: "النظرة الكلية" },
+  "nav.transmission":       { en: "Transmission Path",       ar: "مسار الانتقال" },
   "nav.scenarios":          { en: "Scenarios",               ar: "السيناريوهات" },
-  "nav.gcc_exposure":       { en: "GCC Exposure",            ar: "خريطة التعرض" },
-  "nav.sector_risk":        { en: "Sector Risk",             ar: "مخاطر القطاعات" },
-  "nav.decision_room":      { en: "Decision Room",           ar: "غرفة القرار" },
-  "nav.governance":         { en: "Governance",              ar: "الحوكمة والرقابة" },
+  "nav.gcc_exposure":       { en: "Exposure Map",            ar: "خريطة التعرض" },
+  "nav.sector_risk":        { en: "Sector Impact",           ar: "الأثر القطاعي" },
+  "nav.decision_room":      { en: "Decision Path",           ar: "مسار القرار" },
+  "nav.governance":         { en: "Outcome Review",          ar: "مراجعة النتائج" },
 
   // ── Scenario Library ──
   "scenario.library":       { en: "Scenario Library",       ar: "مكتبة السيناريوهات" },
@@ -188,18 +188,18 @@ const dict: Record<string, { en: string; ar: string }> = {
   "experience.step_of":           { en: "of",                         ar: "من" },
   "experience.next":              { en: "Next",                       ar: "التالي" },
   "experience.prev":              { en: "Previous",                   ar: "السابق" },
-  "experience.finish":            { en: "View Decision Room",         ar: "غرفة القرار" },
+  "experience.finish":            { en: "View Decision Path",         ar: "مسار القرار" },
   "experience.keyboard_hint":     { en: "← → to navigate",           ar: "← → للتنقل" },
   "experience.new_badge":         { en: "New",                        ar: "جديد" },
 
   // ── Trace Impact Steps ──
-  "trace.step.shock.label":       { en: "Shock Event",                ar: "حدث الصدمة" },
+  "trace.step.shock.label":       { en: "Impact",                     ar: "الأثر" },
   "trace.step.shock.title":       { en: "Strait of Hormuz Disruption",ar: "اضطراب مضيق هرمز" },
   "trace.step.prop.label":        { en: "Transmission",               ar: "مسار الانتقال" },
   "trace.step.prop.title":        { en: "How the Shock Spreads",      ar: "كيف تنتشر الصدمة" },
-  "trace.step.exposure.label":    { en: "GCC Exposure",               ar: "تعرض دول المجلس" },
+  "trace.step.exposure.label":    { en: "Exposure",                   ar: "التعرض" },
   "trace.step.exposure.title":    { en: "Who Bears the Impact",       ar: "من يتحمل الأثر" },
-  "trace.step.decision.label":    { en: "Decision Point",             ar: "نقطة القرار" },
+  "trace.step.decision.label":    { en: "Decision",                   ar: "القرار" },
   "trace.step.decision.title":    { en: "Act or Absorb",              ar: "التدخل أو الاستيعاب" },
   "trace.step.outcome.label":     { en: "Outcome",                    ar: "النتيجة" },
   "trace.step.outcome.title":     { en: "What Coordinated Action Achieves", ar: "ما يحققه التدخل المنسق" },
