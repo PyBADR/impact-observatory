@@ -85,7 +85,7 @@ export function MacroEntryStep({ locale }: MacroEntryStepProps) {
       {/* Title */}
       <motion.div variants={staggerItem} className="mb-3">
         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-io-tertiary mb-2">
-          {isAr ? "الاستخبارات الاقتصادية الكلية" : "Macro-Financial Intelligence"}
+          {isAr ? "الذكاء الاقتصادي الكلي لدول مجلس التعاون" : "Macroeconomic Intelligence for the GCC"}
         </p>
         <h1
           className="font-bold text-io-primary leading-tight"

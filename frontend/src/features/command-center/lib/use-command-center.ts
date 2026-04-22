@@ -164,11 +164,16 @@ export function useCommandCenter(runId?: string | null) {
   const fallbackFired = useRef(false);
 
   // ---- Fetch live run result ----
+  // NOTE: backend returns a FLAT run payload (no { data: … } wrapper). Reading
+  // `res.data` produced `undefined`, which triggered React Query's
+  // "Query data cannot be undefined. Affected query key: [command-center, run, …]"
+  // error and surfaced the amber "Live fetch failed — showing demo data / Retry Live"
+  // banner after every successful run. Return the flat response directly.
   const runQuery = useQuery({
     queryKey: ["command-center", "run", runId],
     queryFn: async () => {
       const res = await api.observatory.result(runId!);
-      return res.data as unknown as UnifiedRunResult;
+      return res as unknown as UnifiedRunResult;
     },
     enabled: !!runId,
     staleTime: Infinity,

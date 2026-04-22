@@ -7,7 +7,7 @@ export interface StepCopy {
 export const STEP_COPY: StepCopy[] = [
   {
     label: { en: "Signal", ar: "الإشارة" },
-    title: { en: "Macroeconomic Intelligence for the GCC", ar: "الاستخبارات الاقتصادية الكلية لدول الخليج" },
+    title: { en: "Macroeconomic Intelligence for the GCC", ar: "الذكاء الاقتصادي الكلي لدول مجلس التعاون" },
     subtitle: {
       en: "Regional macro conditions are shifting. Energy-driven stress has elevated systemic risk across six GCC economies.",
       ar: "تتحول الظروف الاقتصادية الكلية الإقليمية. أفضى الضغط الناجم عن قطاع الطاقة إلى ارتفاع المخاطر المنهجية عبر اقتصادات دول الخليج الست.",

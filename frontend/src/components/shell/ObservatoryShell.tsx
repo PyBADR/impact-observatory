@@ -103,7 +103,7 @@ export function ObservatoryShell({
                   {isArabic ? "مرصد الأثر" : "Impact Observatory"}
                 </h1>
                 <p className="text-xs text-io-secondary">
-                  {isArabic ? "الاستخبارات الاقتصادية الكلية لدول الخليج" : "Macroeconomic Intelligence for the GCC"}
+                  {isArabic ? "الذكاء الاقتصادي الكلي لدول مجلس التعاون" : "Macroeconomic Intelligence for the GCC"}
                 </p>
               </div>
             </div>
