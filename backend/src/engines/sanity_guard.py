@@ -52,7 +52,7 @@ def _safe_repr(v: Any) -> Any:
 
 # Sentinel values used internally — replace for UI display
 SENTINEL_HOURS = 9999.0
-SENTINEL_REPLACEMENT_HOURS = None  # null in JSON = "not applicable"
+SENTINEL_REPLACEMENT_HOURS = SENTINEL_HOURS  # preserve 9999.0 sentinel — contract requires numeric (see simulation_schemas.InsuranceStress)
 
 # Maximum sane values
 MAX_PERCENTAGE = 100.0
@@ -81,8 +81,13 @@ def _clamp(v: float, lo: float, hi: float) -> float:
     return max(lo, min(hi, v))
 
 
-def _sanitize_hours(v: Any) -> float | None:
-    """Sanitize hours — replace 9999 sentinel with None."""
+def _sanitize_hours(v: Any) -> float:
+    """Sanitize hours — preserve 9999 numeric sentinel (contract: never null).
+
+    Per simulation_schemas.InsuranceStress contract, 9999.0 means 'no imminent risk'.
+    Upstream tests (test_pipeline_contracts, test_api_endpoints) assert this field
+    is always numeric. Returning None violated that contract.
+    """
     f = _safe_float(v, 0.0)
     if f >= SENTINEL_HOURS:
         return SENTINEL_REPLACEMENT_HOURS
