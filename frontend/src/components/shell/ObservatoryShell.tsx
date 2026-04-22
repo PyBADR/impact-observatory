@@ -22,10 +22,10 @@ const TABS = [
   { id: "macro", labelEn: "Macro Overview", labelAr: "النظرة الكلية" },
   { id: "propagation", labelEn: "Transmission Path", labelAr: "مسار الانتقال" },
   { id: "scenarios", labelEn: "Scenarios", labelAr: "السيناريوهات" },
-  { id: "map", labelEn: "Exposure Map", labelAr: "خريطة التعرض" },
+  { id: "map", labelEn: "Regional Exposure", labelAr: "التعرض الإقليمي" },
   { id: "sectors", labelEn: "Sector Impact", labelAr: "الأثر القطاعي" },
-  { id: "decisions", labelEn: "Decision Path", labelAr: "مسار القرار" },
-  { id: "audit", labelEn: "Outcome Review", labelAr: "مراجعة النتائج" },
+  { id: "decisions", labelEn: "Decision Panel", labelAr: "لوحة القرار" },
+  { id: "audit", labelEn: "Governance & Reliability", labelAr: "الحوكمة والموثوقية" },
 ];
 
 // Customer-facing journey pills — aligned to the Signal → Outcome narrative.

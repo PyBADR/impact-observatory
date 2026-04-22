@@ -27,7 +27,7 @@ const NAV_ITEMS = [
   { key: "dashboard", href: "/", en: "Dashboard", ar: "لوحة المعلومات" },
   { key: "graph", href: "/graph-explorer", en: "Propagation", ar: "الانتشار" },
   { key: "map", href: "/map", en: "Impact Map", ar: "خريطة الأثر" },
-  { key: "decisions", href: "/decisions", en: "Decision Path", ar: "مسار القرار" },
+  { key: "decisions", href: "/decisions", en: "Decision Panel", ar: "لوحة القرار" },
 ] as const;
 
 const PERSONA_LABELS: Record<Persona, { en: string; ar: string; desc: string }> = {

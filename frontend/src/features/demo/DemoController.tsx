@@ -26,7 +26,7 @@ const STEP_LABELS = [
   "Banking",
   "Insurance",
   "Sector Impact",
-  "Decision Path",
+  "Decision Panel",
   "Outcome",
   "Trust Layer",
 ];

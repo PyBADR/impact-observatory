@@ -973,7 +973,7 @@ function GccImpactMap({
     <div className="bg-io-surface rounded-xl border border-io-border p-4">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-[10px] font-semibold text-io-secondary uppercase tracking-wider">
-          {isAr ? "الاستخبارات الجغرافية — دول الخليج" : "Geographic Intelligence — GCC"}
+          {isAr ? "الرؤية الجغرافية — دول الخليج" : "Geographic Perspective — GCC"}
         </h3>
         <div className="flex items-center gap-3 text-[9px] text-io-secondary">
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500/70" /> {isAr ? "مرتفع" : "High"}</span>

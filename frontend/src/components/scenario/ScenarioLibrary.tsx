@@ -82,8 +82,8 @@ const FALLBACK_CATALOG: ScenarioCard[] = [
   },
   {
     id: "financial_infrastructure_cyber_disruption",
-    label_en: "Financial Infrastructure Cyber Attack",
-    label_ar: "هجوم سيبراني على البنية التحتية المالية",
+    label_en: "Critical Financial Infrastructure Disruption",
+    label_ar: "تعطل البنية المالية الحرجة",
     domain: "CYBER",
     severity: "CRITICAL",
     description_en:

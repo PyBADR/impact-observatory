@@ -25,8 +25,8 @@ const dict: Record<string, { en: string; ar: string }> = {
   "app.retry":              { en: "Retry",                  ar: "إعادة المحاولة" },
   "app.loading":            { en: "Loading intelligence pipeline…", ar: "جاري تحميل محرك الذكاء…" },
 
-  // ── Decision Path ──
-  "dr.title":               { en: "Decision Path",          ar: "مسار القرار" },
+  // ── Decision Panel ──
+  "dr.title":               { en: "Decision Panel",         ar: "لوحة القرار" },
   "dr.top_decisions":       { en: "Top Decisions",          ar: "أهم القرارات" },
   "dr.cascade_view":        { en: "Cascade View",           ar: "مسار الانتشار" },
   "dr.map_view":            { en: "Map View",               ar: "خريطة الأثر" },
@@ -120,10 +120,10 @@ const dict: Record<string, { en: string; ar: string }> = {
   "nav.macro":              { en: "Macro Overview",          ar: "النظرة الكلية" },
   "nav.transmission":       { en: "Transmission Path",       ar: "مسار الانتقال" },
   "nav.scenarios":          { en: "Scenarios",               ar: "السيناريوهات" },
-  "nav.gcc_exposure":       { en: "Exposure Map",            ar: "خريطة التعرض" },
+  "nav.gcc_exposure":       { en: "Regional Exposure",       ar: "التعرض الإقليمي" },
   "nav.sector_risk":        { en: "Sector Impact",           ar: "الأثر القطاعي" },
-  "nav.decision_room":      { en: "Decision Path",           ar: "مسار القرار" },
-  "nav.governance":         { en: "Outcome Review",          ar: "مراجعة النتائج" },
+  "nav.decision_room":      { en: "Decision Panel",          ar: "لوحة القرار" },
+  "nav.governance":         { en: "Governance & Reliability",ar: "الحوكمة والموثوقية" },
 
   // ── Scenario Library ──
   "scenario.library":       { en: "Scenario Library",       ar: "مكتبة السيناريوهات" },
@@ -188,7 +188,7 @@ const dict: Record<string, { en: string; ar: string }> = {
   "experience.step_of":           { en: "of",                         ar: "من" },
   "experience.next":              { en: "Next",                       ar: "التالي" },
   "experience.prev":              { en: "Previous",                   ar: "السابق" },
-  "experience.finish":            { en: "View Decision Path",         ar: "مسار القرار" },
+  "experience.finish":            { en: "View Decision Panel",        ar: "لوحة القرار" },
   "experience.keyboard_hint":     { en: "← → to navigate",           ar: "← → للتنقل" },
   "experience.new_badge":         { en: "New",                        ar: "جديد" },
 

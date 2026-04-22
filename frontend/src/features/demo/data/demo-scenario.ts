@@ -257,7 +257,7 @@ const hormuzScenario: Scenario = {
       { indicator: "GCC Interbank Rate", value: "4.82%", change: "+190bps", direction: "up" },
       { indicator: "Baltic Dry Index", value: "892", change: "-44%", direction: "down" },
       { indicator: "Marine War-Risk Premium", value: "2.8%", change: "+680bps", direction: "up" },
-      { indicator: "GCC CDS Spread", value: "142bps", change: "+58bps", direction: "up" },
+      { indicator: "GCC Sovereign Risk Spread", value: "142bps", change: "+58bps", direction: "up" },
       { indicator: "FX Reserves Drawdown", value: "$12.4B", change: "est. 14-day", direction: "down" },
     ],
     regimeMetrics: {

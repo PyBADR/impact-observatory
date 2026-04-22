@@ -634,7 +634,7 @@ export const scenarioCatalog: DemoScenario[] = [
   {
     meta: {
       id: "financial_infrastructure_cyber_disruption",
-      name: "Financial Cyber Disruption",
+      name: "Critical Financial Infrastructure Disruption",
       domain: "CYBER",
       baseLossLabel: "$1.3B",
       peakDay: "Day 1",
@@ -642,7 +642,7 @@ export const scenarioCatalog: DemoScenario[] = [
     },
     data: {
       shock: {
-        title: "Financial Cyber Disruption",
+        title: "Critical Financial Infrastructure Disruption",
         subtitle: "SAMA + CBUAE payment rails compromised — cross-border settlements frozen",
         severity: 76,
         impact: 84,

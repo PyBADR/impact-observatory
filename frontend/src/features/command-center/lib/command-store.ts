@@ -242,6 +242,16 @@ const INITIAL_STATE = {
 
 // ── Helpers: extract from UnifiedRunResult ─────────────────────────────
 
+// Display-layer overrides for visible scenario labels that the backend emits
+// under more technical names. Applied only at the UI boundary — backend
+// payloads, API contracts, and analytics IDs are untouched.
+const SCENARIO_LABEL_OVERRIDE: Record<string, { en: string; ar: string }> = {
+  financial_infrastructure_cyber_disruption: {
+    en: "Critical Financial Infrastructure Disruption",
+    ar: "تعطل البنية المالية الحرجة",
+  },
+};
+
 function inferDomain(templateId: string): string {
   if (templateId.includes("hormuz") || templateId.includes("port") || templateId.includes("red_sea")) return "MARITIME";
   if (templateId.includes("oil") || templateId.includes("energy") || templateId.includes("lng")) return "ENERGY";
@@ -542,15 +552,23 @@ export const useCommandCenterStore = create<CommandCenterState>((set) => ({
         sectorRollups,
         impacts,
       ),
-      scenario: {
-        templateId: result.scenario?.template_id ?? "unknown",
-        label: result.scenario?.label ?? "Unknown Scenario",
-        labelAr: null,
-        domain: inferDomain(result.scenario?.template_id ?? ""),
-        severity: result.scenario?.severity ?? 0,
-        horizonHours: result.scenario?.horizon_hours ?? 168,
-        triggerTime: new Date().toISOString(),
-      },
+      scenario: (() => {
+        const tid = result.scenario?.template_id
+          ?? (result.scenario as unknown as { scenario_id?: string })?.scenario_id
+          ?? "unknown";
+        const override = SCENARIO_LABEL_OVERRIDE[tid];
+        return {
+          templateId: tid,
+          label: override?.en ?? result.scenario?.label ?? "Unknown Scenario",
+          labelAr: override?.ar
+            ?? (result.scenario as unknown as { label_ar?: string | null })?.label_ar
+            ?? null,
+          domain: inferDomain(tid),
+          severity: result.scenario?.severity ?? 0,
+          horizonHours: result.scenario?.horizon_hours ?? 168,
+          triggerTime: new Date().toISOString(),
+        };
+      })(),
       headline: {
         totalLossUsd: result.headline?.total_loss_usd ?? 0,
         nodesImpacted: result.headline?.total_nodes_impacted ?? 0,

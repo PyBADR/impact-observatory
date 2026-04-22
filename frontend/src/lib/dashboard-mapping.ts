@@ -127,8 +127,8 @@ export const scenarioPresentationMap: Record<string, ScenarioPresentation> = {
   },
   financial_infrastructure_cyber_disruption: {
     scenarioId: "financial_infrastructure_cyber_disruption",
-    titleAr: "تعطّل البنية المالية نتيجة هجوم سيبراني",
-    titleEn: "Financial Infrastructure Cyber Disruption",
+    titleAr: "تعطل البنية المالية الحرجة",
+    titleEn: "Critical Financial Infrastructure Disruption",
     subtitleAr: "تعطل المدفوعات، مخاطر الاحتيال، وتأخر التسوية",
     subtitleEn: "Payment disruption, fraud risk, and settlement delay",
     severityLabel: "60%",

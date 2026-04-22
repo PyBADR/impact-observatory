@@ -278,11 +278,11 @@ export function GCCImpactMap({
         </div>
       </div>
 
-      {/* Info footer */}
+      {/* Info footer — no false click promise when the caller doesn't wire onCountryClick */}
       <p className="text-xs text-slate-600 mt-4 text-center">
         {locale === "ar"
-          ? "انقر على البلد لعرض التفاصيل • الألوان تمثل مستويات الإجهاد النسبية"
-          : "Click a country for details • Colors represent relative stress levels"}
+          ? "استعراض التعرض حسب الدولة • الألوان تمثل مستويات الإجهاد النسبية"
+          : "Regional exposure by country • Colors represent relative stress levels"}
       </p>
     </div>
   );
