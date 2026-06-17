@@ -86,3 +86,25 @@ export interface SignalAuditSummary {
   readonly failures: number;
   readonly fallbacks: number;
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Signal Advisory (v5 — advisory only, no scoring)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export interface SignalAdvisory {
+  readonly advisory_id: string;
+  readonly scenario_id: string;
+  readonly snapshot_id: string;
+  readonly source_id: string;
+  readonly confidence: number;              // 0.0–1.0
+  readonly freshness_status: SnapshotFreshness;
+  readonly advisory_text: string;
+  readonly risk_context: string;
+  readonly suggested_review: string;
+  readonly metric_before: number;
+  readonly metric_after: number;            // Must equal metric_before
+  readonly scoring_applied: boolean;        // Must always be false
+  readonly fallback_used: boolean;
+  readonly timestamp: string;               // ISO-8601
+}

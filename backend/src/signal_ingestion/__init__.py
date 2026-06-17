@@ -30,6 +30,11 @@ from src.signal_ingestion.audit_log import (
     SignalAuditAction,
     SignalAuditLog,
 )
+from src.signal_ingestion.advisory_model import SignalAdvisory
+from src.signal_ingestion.advisory_service import (
+    evaluate_advisory,
+    evaluate_advisories,
+)
 
 __all__ = [
     # Models
@@ -46,4 +51,8 @@ __all__ = [
     "SignalAuditEntry",
     "SignalAuditAction",
     "SignalAuditLog",
+    # Advisory (v5)
+    "SignalAdvisory",
+    "evaluate_advisory",
+    "evaluate_advisories",
 ]
