@@ -2,9 +2,25 @@
 
 GCC macro financial intelligence — from signals to decisions to accountability.
 
-A sovereign-grade briefing system for executive decision-makers. Impact Observatory traces how macro shocks move through GCC economies, surfaces the institutional response required, and evaluates whether those decisions worked.
+A briefing system for executive decision-makers. Impact Observatory traces how macro shocks move through GCC economies, surfaces the institutional response required, and evaluates whether those decisions worked.
 
 من الإشارات الكلية إلى القرارات الاقتصادية — مرصد الأثر يتتبع انتقال الصدمات عبر اقتصادات الخليج، ويحدد الاستجابة المؤسسية المطلوبة، ويقيّم فعالية القرارات.
+
+> **Status**: working system with a deployed demo. Backend and frontend run end to end,
+> with 140 backend tests and CI. Scenarios are analyst-authored and deterministic — the
+> engine does not forecast, and no production institutional use is claimed.
+
+## Where to start
+
+The repository root also holds architecture and product working notes. For orientation:
+
+| Path | What it holds |
+|---|---|
+| `backend/` | FastAPI service, the 17-stage scenario engine, and `backend/tests` (140 tests) |
+| `frontend/` | Next.js briefing surface — scenario register, briefing, directive, evaluation |
+| `docs/` | Engine and schema specifications, roadmap, runbook |
+| `API.md` · `DEPLOYMENT.md` | Interface and deployment reference |
+| `.github/workflows/` | CI and deployment verification |
 
 ## Architecture
 
@@ -24,7 +40,7 @@ The frontend renders each layer as calm, readable prose. No KPI grids, no dashbo
 
 **Scenario Briefing** — vertical five-section analysis for each scenario: what happened, how pressure transmits through the system, which institutions are exposed, what decisions are required, and what the expected outcome is if those decisions execute.
 
-**Decision Directive** — sovereign-grade decision document. One dominant primary directive with rationale and consequence of inaction. Supporting actions beneath. Owner and deadline embedded in prose, not metadata rows.
+**Decision Directive** — structured institutional decision document. One dominant primary directive with rationale and consequence of inaction. Supporting actions beneath. Owner and deadline embedded in prose, not metadata rows.
 
 **Evaluation Review** — post-decision accountability layer. Expected versus actual outcomes in institutional language. Correctness assessment, analyst commentary, institutional learning, and rule performance audit.
 
@@ -55,7 +71,8 @@ Scenario → Physics → Graph → Propagation → Financial → Banking → Ins
 Decision → Explainability → Reporting → Audit → Business Impact → Timeline → Regulatory
 ```
 
-17-stage deterministic simulation engine. 43 nodes. <2ms execution per scenario.
+17-stage deterministic simulation engine, 43 nodes. Sub-millisecond to low-millisecond
+execution per scenario on a development machine — indicative, not a benchmarked figure.
 
 ## Stack
 
